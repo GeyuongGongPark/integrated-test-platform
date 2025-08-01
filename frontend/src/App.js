@@ -1,5 +1,5 @@
 // src/App.js
-import React from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import TestCaseApp from './TestCaseAPP';
 import PerformanceTestManager from './PerformanceTestManager';
@@ -7,6 +7,37 @@ import UnifiedDashboard from './UnifiedDashboard';
 import ErrorBoundary from './ErrorBoundary';
 
 function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return (
+          <ErrorBoundary>
+            <UnifiedDashboard />
+          </ErrorBoundary>
+        );
+      case 'testcases':
+        return (
+          <ErrorBoundary>
+            <TestCaseApp />
+          </ErrorBoundary>
+        );
+      case 'performance':
+        return (
+          <ErrorBoundary>
+            <PerformanceTestManager />
+          </ErrorBoundary>
+        );
+      default:
+        return (
+          <ErrorBoundary>
+            <UnifiedDashboard />
+          </ErrorBoundary>
+        );
+    }
+  };
+
   return (
     <ErrorBoundary>
       <div className="App">
@@ -15,16 +46,35 @@ function App() {
           <p>✅ 백엔드 배포 성공 | ✅ 프론트엔드 배포 성공</p>
           <p>🚀 완전한 CI/CD 파이프라인 구축 완료!</p>
         </header>
-        <main>
-          <ErrorBoundary>
-            <TestCaseApp />
-          </ErrorBoundary>
-          <ErrorBoundary>
-            <PerformanceTestManager />
-          </ErrorBoundary>
-          <ErrorBoundary>
-            <UnifiedDashboard />
-          </ErrorBoundary>
+        
+        <nav className="navbar">
+          <div className="nav-brand">
+            <h1>Integrated Test Platform</h1>
+          </div>
+          <div className="nav-links">
+            <button 
+              className={`nav-link ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('dashboard')}
+            >
+              📊 대시보드
+            </button>
+            <button 
+              className={`nav-link ${activeTab === 'testcases' ? 'active' : ''}`}
+              onClick={() => setActiveTab('testcases')}
+            >
+              🧪 테스트 케이스
+            </button>
+            <button 
+              className={`nav-link ${activeTab === 'performance' ? 'active' : ''}`}
+              onClick={() => setActiveTab('performance')}
+            >
+              ⚡ 성능 테스트
+            </button>
+          </div>
+        </nav>
+
+        <main className="main-content">
+          {renderContent()}
         </main>
       </div>
     </ErrorBoundary>
