@@ -528,5 +528,10 @@ if __name__ == '__main__':
 # 헬스체크 엔드포인트 추가
 @app.route('/health', methods=['GET'])
 def health_check():
-    return jsonify({'status': 'healthy', 'message': 'Test Platform Backend is running'}), 200
+    return jsonify({
+        'status': 'healthy', 
+        'message': 'Test Platform Backend is running',
+        'version': '1.0.0',
+        'timestamp': datetime.now().isoformat()
+    }), 200
 
