@@ -4,8 +4,8 @@ const config = {
     uploadUrl: 'http://localhost:5000/uploads'
   },
   production: {
-    apiUrl: process.env.REACT_APP_API_URL || 'https://your-backend-domain.vercel.app',
-    uploadUrl: process.env.REACT_APP_UPLOAD_URL || 'https://your-backend-domain.vercel.app/uploads'
+    apiUrl: process.env.REACT_APP_API_URL || 'https://integrated-test-platform.vercel.app',
+    uploadUrl: process.env.REACT_APP_UPLOAD_URL || 'https://integrated-test-platform.vercel.app/uploads'
   }
 };
 
