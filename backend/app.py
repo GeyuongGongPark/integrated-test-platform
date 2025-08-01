@@ -7,11 +7,7 @@ import os
 import tempfile
 import subprocess
 import json
-import pymysql
 from config import config
-
-# PyMySQL을 MySQLdb로 등록
-pymysql.install_as_MySQLdb()
 
 def create_app(config_name=None):
     if config_name is None:
@@ -485,7 +481,7 @@ def create_folder():
 def init_db():
     """데이터베이스 초기화 및 기본 데이터 생성"""
     with app.app_context():
-        print("MySQL 데이터베이스 초기화 시작...")
+        print("SQLite 데이터베이스 초기화 시작...")
         
         # 테이블 생성
         db.create_all()
@@ -518,7 +514,7 @@ def init_db():
             db.session.commit()
             print("기본 성능 테스트가 생성되었습니다.")
         
-        print("MySQL 데이터베이스 초기화 완료!")
+        print("SQLite 데이터베이스 초기화 완료!")
 
 # Flask 서버 실행
 if __name__ == '__main__':
