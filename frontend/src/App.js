@@ -1,10 +1,10 @@
 // src/App.js
 import React, { useState } from 'react';
 import './App.css';
-import TestCaseApp from './TestCaseAPP';
-import PerformanceTestManager from './PerformanceTestManager';
-import UnifiedDashboard from './UnifiedDashboard';
-import ErrorBoundary from './ErrorBoundary';
+import TestCaseApp from './components/testcases';
+import PerformanceTestManager from './components/performance';
+import UnifiedDashboard from './components/dashboard';
+import { ErrorBoundary } from './components/utils';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
