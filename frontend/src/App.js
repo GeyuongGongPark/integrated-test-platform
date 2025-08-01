@@ -9,8 +9,9 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Test Platform - Auto Deploy Test v1.0.1</h1>
-        <p>GitHub Actions CI/CD 테스트 중...</p>
+        <h1>Test Platform - Auto Deploy Test v1.0.2</h1>
+        <p>GitHub Actions CI/CD 테스트 중... ✅ 백엔드 배포 성공!</p>
+        <p>프론트엔드 자동 배포 테스트 중...</p>
       </header>
       <main>
         <TestCaseApp />
