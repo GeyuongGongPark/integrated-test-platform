@@ -1,7 +1,7 @@
 // src/App.js
 import React from 'react';
 import './App.css';
-import TestCaseApp from './TestCaseApp';
+import TestCaseApp from './TestCaseAPP';
 import PerformanceTestManager from './PerformanceTestManager';
 import UnifiedDashboard from './UnifiedDashboard';
 
