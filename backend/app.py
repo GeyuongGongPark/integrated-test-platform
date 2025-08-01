@@ -8,19 +8,27 @@ import tempfile
 import subprocess
 import json
 import pymysql
+from config import config
 
 # PyMySQL을 MySQLdb로 등록
 pymysql.install_as_MySQLdb()
 
-app = Flask(__name__)
-CORS(app)
+def create_app(config_name=None):
+    if config_name is None:
+        config_name = os.environ.get('FLASK_ENV', 'development')
+    
+    app = Flask(__name__)
+    app.config.from_object(config[config_name])
+    config[config_name].init_app(app)
+    
+    CORS(app, origins=os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(','))
+    
+    db = SQLAlchemy(app)
+    migrate = Migrate(app, db)
+    
+    return app, db, migrate
 
-# MySQL 데이터베이스 설정
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root@localhost:3306/testmanager'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+app, db, migrate = create_app()
 
 # 기존 TCM 모델들
 class Project(db.Model):
@@ -516,4 +524,9 @@ def init_db():
 if __name__ == '__main__':
     init_db()  # 데이터베이스 초기화
     app.run(debug=True, port=8000)
+
+# 헬스체크 엔드포인트 추가
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'healthy', 'message': 'Test Platform Backend is running'}), 200
 
