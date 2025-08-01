@@ -7,22 +7,16 @@ import os
 import tempfile
 import subprocess
 import json
+import pymysql
+
+# PyMySQL을 MySQLdb로 등록
+pymysql.install_as_MySQLdb()
 
 app = Flask(__name__)
 CORS(app)
 
-# 파일 기반 SQLite 데이터베이스 사용 (데이터 지속성)
-basedir = os.path.abspath(os.path.dirname(__file__))
-db_path = os.path.join(basedir, "test_management.db")
-
-# 데이터베이스 파일이 읽기 전용인 경우 임시 디렉토리 사용
-if os.path.exists(db_path) and not os.access(db_path, os.W_OK):
-    print(f"경고: 데이터베이스 파일에 쓰기 권한이 없습니다. 임시 디렉토리를 사용합니다.")
-    temp_dir = tempfile.gettempdir()
-    db_path = os.path.join(temp_dir, "test_management.db")
-    print(f"임시 데이터베이스 경로: {db_path}")
-
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+# MySQL 데이터베이스 설정
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root@localhost:3306/testmanager'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
