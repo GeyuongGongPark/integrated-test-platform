@@ -1,4 +1,4 @@
-name: Deploy to Vercel
+name: Test and Deploy
 
 on:
   push:
@@ -11,47 +11,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-      - name: Install dependencies
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install Backend Dependencies
         run: |
           cd backend
           pip install -r requirements.txt
-      - name: Run tests
+      
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+      
+      - name: Test Backend
         run: |
           cd backend
-          python -c "import app; print('App imports successfully')"
+          python -c "import app; print('✅ Backend imports successfully')"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-  deploy-backend:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Deploy Backend to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_BACKEND }}
-          working-directory: ./backend
-          vercel-args: '--prod'
-
-  deploy-frontend:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Deploy Frontend to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-          working-directory: ./frontend
-          vercel-args: '--prod' 
+      
+      - name: Test Frontend Build
+        run: |
+          cd frontend
+          npm run build
+      
+      - name: Deploy Status
+        run: |
+          echo "✅ All tests passed!"
+          echo "🚀 Ready for manual deployment to Vercel"
+          echo "📋 Backend: https://vercel.com/dashboard (backend directory)"
+          echo "📋 Frontend: https://vercel.com/dashboard (frontend directory)" 
