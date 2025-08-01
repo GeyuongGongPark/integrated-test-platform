@@ -144,20 +144,39 @@ integrated-test-platform/
 │   └── vercel.json        # Vercel 배포 설정
 ├── frontend/               # React 프론트엔드
 │   ├── src/
-│   │   ├── App.js         # 메인 컴포넌트
-│   │   ├── TestCaseAPP.js # 테스트 케이스 관리
-│   │   ├── PerformanceTestManager.js # 성능 테스트 관리
-│   │   ├── UnifiedDashboard.js # 통합 대시보드
-│   │   ├── ErrorBoundary.js # 에러 처리
-│   │   └── config.js      # API 설정
+│   │   ├── App.js         # 메인 앱 컴포넌트
+│   │   ├── App.css        # 메인 스타일
+│   │   ├── config.js      # API 설정
+│   │   └── components/    # 컴포넌트 폴더
+│   │       ├── dashboard/     # 📊 대시보드
+│   │       │   ├── UnifiedDashboard.js
+│   │       │   ├── index.js
+│   │       │   └── README.md
+│   │       ├── testcases/     # 🧪 테스트 케이스
+│   │       │   ├── TestCaseAPP.js
+│   │       │   ├── index.js
+│   │       │   └── README.md
+│   │       ├── performance/   # ⚡ 성능 테스트
+│   │       │   ├── PerformanceTestManager.js
+│   │       │   ├── index.js
+│   │       │   └── README.md
+│   │       └── utils/         # 🛠️ 공통 유틸리티
+│   │           ├── ErrorBoundary.js
+│   │           ├── index.js
+│   │           └── README.md
 │   ├── package.json       # Node.js 의존성
 │   └── vercel.json       # Vercel 배포 설정
 ├── .github/workflows/     # GitHub Actions
 │   └── deploy.yml        # CI/CD 워크플로우
-└── docs/                 # 문서
-    ├── DEPLOYMENT_SUCCESS.md
-    ├── VERCEL_FRONTEND_DEPLOY.md
-    └── WHITE_SCREEN_FIX.md
+├── docs/                 # 📚 문서
+│   ├── README.md         # 문서 목록
+│   ├── DEPLOYMENT_SUCCESS.md
+│   ├── VERCEL_FRONTEND_DEPLOY.md
+│   └── WHITE_SCREEN_FIX.md
+└── test-scripts/         # 🧪 성능 테스트 스크립트
+    ├── performance/
+    ├── clm/
+    └── common/
 ```
 
 ### 에러 처리
