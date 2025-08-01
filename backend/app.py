@@ -530,8 +530,9 @@ if __name__ == '__main__':
 def health_check():
     return jsonify({
         'status': 'healthy', 
-        'message': 'Test Platform Backend is running',
-        'version': '1.0.0',
-        'timestamp': datetime.now().isoformat()
+        'message': 'Test Platform Backend is running - Auto Deploy Test',
+        'version': '1.0.1',
+        'timestamp': datetime.now().isoformat(),
+        'deploy_test': 'GitHub Actions CI/CD working!'
     }), 200
 
