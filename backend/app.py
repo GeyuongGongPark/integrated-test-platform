@@ -477,21 +477,7 @@ def create_folder():
 def init_db():
     """데이터베이스 초기화 및 기본 데이터 생성"""
     with app.app_context():
-        print(f"데이터베이스 경로: {db_path}")
-        
-        # 데이터베이스 디렉토리 권한 확인
-        db_dir = os.path.dirname(db_path)
-        if not os.access(db_dir, os.W_OK):
-            print(f"경고: 데이터베이스 디렉토리에 쓰기 권한이 없습니다: {db_dir}")
-            print("임시 디렉토리를 사용합니다.")
-        
-        # 기존 데이터베이스 파일이 읽기 전용인 경우 삭제
-        if os.path.exists(db_path) and not os.access(db_path, os.W_OK):
-            try:
-                os.remove(db_path)
-                print(f"읽기 전용 데이터베이스 파일 삭제: {db_path}")
-            except Exception as e:
-                print(f"데이터베이스 파일 삭제 실패: {e}")
+        print("MySQL 데이터베이스 초기화 시작...")
         
         # 테이블 생성
         db.create_all()
@@ -524,13 +510,7 @@ def init_db():
             db.session.commit()
             print("기본 성능 테스트가 생성되었습니다.")
         
-        # 데이터베이스 파일 권한 확인
-        if os.path.exists(db_path):
-            print(f"데이터베이스 파일 생성됨: {db_path}")
-            print(f"파일 권한: {oct(os.stat(db_path).st_mode)[-3:]}")
-            print(f"쓰기 권한: {os.access(db_path, os.W_OK)}")
-        else:
-            print("경고: 데이터베이스 파일이 생성되지 않았습니다!")
+        print("MySQL 데이터베이스 초기화 완료!")
 
 # Flask 서버 실행
 if __name__ == '__main__':
