@@ -1,241 +1,262 @@
-# Integrated Test Platform
+# 🚀 Integrated Test Platform
 
-통합 테스트 플랫폼으로, 웹 애플리케이션 테스트와 성능 테스트를 위한 종합적인 솔루션입니다.
+완전한 클라우드 기반 테스트 관리 플랫폼입니다. 백엔드와 프론트엔드가 모두 Vercel에 배포되어 있으며, GitHub Actions를 통한 자동 CI/CD 파이프라인이 구축되어 있습니다.
 
-## 프로젝트 구조
+## 🌟 주요 기능
 
-```
-integrated-test-platform/
-├── backend/                 # Flask 백엔드
-│   ├── app.py              # 메인 Flask 애플리케이션
-│   ├── requirements.txt    # Python 의존성
-│   ├── test_management.db # SQLite 데이터베이스
-│   └── venv/              # Python 가상환경
-├── frontend/               # React 프론트엔드
-│   ├── src/               # React 소스 코드
-│   ├── public/            # 정적 파일
-│   ├── package.json       # Node.js 의존성
-│   └── build/             # 빌드 결과물
-├── test-scripts/          # 성능 테스트 스크립트
-│   └── performance/       # k6 성능 테스트
-│       ├── login/         # 로그인 테스트
-│       ├── clm/           # 계약 검토 테스트
-│       ├── advice/        # 법률 자문 테스트
-│       ├── litigation/    # 송무 테스트
-│       ├── dashboard/     # 대시보드 테스트
-│       ├── common/        # 공통 유틸리티
-│       └── url/           # URL 설정
-├── docs/                  # 문서
-│   ├── INTEGRATION_PLAN.md
-│   └── LFBZ_performance_README.md
-├── README.md              # 프로젝트 개요
-└── USAGE.md               # 사용법 가이드
-```
+### 📋 테스트 케이스 관리
+- **CRUD 작업**: 테스트 케이스 생성, 조회, 수정, 삭제
+- **카테고리 분류**: 메인/서브/상세 카테고리로 체계적 관리
+- **상태 관리**: N/T, Pass, Fail 등 테스트 결과 상태 관리
+- **결과 기록**: 테스트 실행 결과 및 노트 기록
 
-## 주요 기능
+### ⚡ 성능 테스트 관리
+- **K6 스크립트**: 성능 테스트 스크립트 관리
+- **실행 엔진**: K6 기반 성능 테스트 실행
+- **결과 분석**: 응답 시간, 처리량, 에러율 등 성능 지표 분석
+- **리포트 생성**: 성능 테스트 결과 리포트 생성
 
-### 1. 웹 애플리케이션 테스트 관리
-- **프로젝트 관리**: 테스트 프로젝트 생성 및 관리
-- **테스트 케이스 관리**: 체계적인 테스트 케이스 CRUD
-- **테스트 결과 관리**: Pass/Fail/N/T/N/A/Block 상태 관리
-- **스크린샷 관리**: 테스트 실행 시 자동 스크린샷 저장
+### 📊 통합 대시보드
+- **실시간 모니터링**: 테스트 실행 상태 실시간 확인
+- **통계 대시보드**: 테스트 결과 통계 및 차트
+- **프로젝트 관리**: 다중 프로젝트 지원
 
-### 2. 성능 테스트 자동화
-- **k6 기반 성능 테스트**: 브라우저 자동화 테스트
-- **다양한 시나리오**: 로그인, 계약 검토, 법률 자문, 송무 등
-- **환경별 설정**: 개발/스테이징/프로덕션 환경 지원
-- **결과 리포트**: HTML 형태의 상세한 테스트 결과
+## 🏗️ 기술 스택
 
-## 빠른 시작
+### Frontend
+- **React 19.1.1**: 최신 React 버전
+- **Axios**: HTTP 클라이언트
+- **CSS3**: 반응형 디자인
+- **Error Boundary**: 에러 처리
 
-### 1. 백엔드 실행
+### Backend
+- **Flask 2.3.3**: Python 웹 프레임워크
+- **SQLAlchemy 3.0.5**: ORM
+- **SQLite**: 데이터베이스 (프로덕션)
+- **Flask-CORS**: CORS 설정
+- **Flask-Migrate**: 데이터베이스 마이그레이션
+
+### DevOps
+- **Vercel**: 프론트엔드/백엔드 호스팅
+- **GitHub Actions**: CI/CD 파이프라인
+- **Git**: 버전 관리
+
+## 🌐 배포된 URL
+
+### 🎯 메인 애플리케이션
+- **프론트엔드**: https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app
+- **백엔드 API**: https://integrated-test-platform.vercel.app
+- **헬스체크**: https://integrated-test-platform.vercel.app/health
+
+### 📁 GitHub 저장소
+- **레포지토리**: https://github.com/GeyuongGongPark/integrated-test-platform
+
+## 🚀 빠른 시작
+
+### 1. 로컬 개발 환경 설정
+
 ```bash
-cd integrated-test-platform/backend
+# 저장소 클론
+git clone https://github.com/GeyuongGongPark/integrated-test-platform.git
+cd integrated-test-platform
 
-# 가상환경 활성화
-source venv/bin/activate  # macOS/Linux
-# 또는 venv\Scripts\activate  # Windows
-
-# 의존성 설치
+# 백엔드 설정
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-# 서버 실행
 python app.py
-```
 
-백엔드 서버는 `http://localhost:8000`에서 실행됩니다.
-
-### 2. 프론트엔드 실행
-```bash
-cd integrated-test-platform/frontend
-
-# 의존성 설치
+# 프론트엔드 설정 (새 터미널)
+cd frontend
 npm install
-
-# 개발 서버 실행
 npm start
 ```
 
-프론트엔드는 `http://localhost:3000`에서 실행됩니다.
+### 2. 환경 변수 설정
 
-### 3. 성능 테스트 실행
-```bash
-cd integrated-test-platform/test-scripts/performance
-
-# 로그인 테스트 실행
-k6 run login/login_to_dashboard.js
-
-# CLM 테스트 실행
-k6 run clm/nomerl/clm_draft.js
-
-# 법률 자문 테스트 실행
-k6 run advice/advice_draft.js
+#### 백엔드 (.env)
+```env
+DATABASE_URL=sqlite:///test_management.db
+FLASK_ENV=development
+FLASK_APP=app.py
+SECRET_KEY=your-secret-key-here
 ```
 
-## 성능 테스트 스크립트
-
-### 환경 설정
-- **환경 변수**: `url/env_data.json`에서 환경별 설정
-- **URL 설정**: `url/base.js`에서 API 엔드포인트 관리
-- **셀렉터**: `url/config.js`에서 UI 요소 셀렉터 관리
-
-### 테스트 시나리오
-
-#### 로그인 테스트
-```bash
-k6 run login/login_to_dashboard.js
-```
-- 사용자 로그인 프로세스 테스트
-- 대시보드 접근 확인
-- 스크린샷 자동 저장
-
-#### CLM (계약 검토) 테스트
-```bash
-# 신규 계약 테스트
-k6 run clm/nomerl/clm_draft.new.js
-
-# 변경 계약 테스트
-k6 run clm/nomerl/clm_draft.change.js
-
-# 해지 계약 테스트
-k6 run clm/nomerl/clm_draft.stop.js
+#### 프론트엔드 (.env)
+```env
+REACT_APP_API_URL=http://localhost:5000
 ```
 
-#### 법률 자문 테스트
-```bash
-k6 run advice/advice_draft.js
-```
-
-#### 송무 테스트
-```bash
-k6 run litigation/litigation_draft.js
-```
-
-### 환경 변수 설정
-
-테스트 실행 시 환경 변수를 통해 동작을 제어할 수 있습니다:
+### 3. 데이터베이스 초기화
 
 ```bash
-# 기본 환경
-k6 run -e DRAFT_TYPE=new -e EDITOR_USE=use clm/nomerl/clm_draft.js
-
-# 변경 계약 테스트
-k6 run -e DRAFT_TYPE=change -e CONTRACT_TYPE=file clm/nomerl/clm_draft.js
-
-# 편집기 사용 안함
-k6 run -e EDITOR_USE=no clm/nomerl/clm_draft.js
+cd backend
+flask db init
+flask db migrate
+flask db upgrade
 ```
 
-## API 엔드포인트
+## 📋 API 엔드포인트
+
+### 테스트 케이스 관리
+- `GET /testcases` - 테스트 케이스 목록 조회
+- `POST /testcases` - 테스트 케이스 생성
+- `GET /testcases/<id>` - 특정 테스트 케이스 조회
+- `PUT /testcases/<id>` - 테스트 케이스 수정
+- `DELETE /testcases/<id>` - 테스트 케이스 삭제
+
+### 성능 테스트 관리
+- `GET /performance-tests` - 성능 테스트 목록 조회
+- `POST /performance-tests` - 성능 테스트 생성
+- `POST /performance-tests/<id>/execute` - 성능 테스트 실행
+- `GET /performance-tests/<id>/results` - 성능 테스트 결과 조회
 
 ### 프로젝트 관리
 - `GET /projects` - 프로젝트 목록 조회
 - `POST /projects` - 프로젝트 생성
 
-### 테스트 케이스 관리
-- `GET /testcases` - 테스트 케이스 목록 조회
-- `POST /testcases` - 테스트 케이스 생성
-- `PUT /testcases/<id>/status` - 테스트 케이스 상태 업데이트
-- `DELETE /testcases/<id>` - 테스트 케이스 삭제
+### 헬스체크
+- `GET /health` - 서버 상태 확인
 
-### 테스트 결과 관리
-- `GET /testresults/<test_case_id>` - 테스트 결과 조회
-- `POST /testresults` - 테스트 결과 생성
+## 🔧 CI/CD 파이프라인
 
-## 데이터베이스
+### GitHub Actions 워크플로우
+- **트리거**: main 브랜치 푸시
+- **테스트**: 백엔드/프론트엔드 자동 테스트
+- **배포**: Vercel 자동 배포
 
-### SQLite 기반
-- **파일 위치**: `backend/test_management.db`
-- **데이터 지속성**: 서버 재시작 후에도 데이터 유지
-- **자동 백업**: 데이터베이스 파일 복사로 백업 가능
+### 자동화된 프로세스
+1. **코드 푸시** → GitHub 레포지토리
+2. **자동 테스트** → GitHub Actions
+3. **자동 배포** → Vercel
+4. **실시간 확인** → 배포된 URL
 
-### 주요 테이블
-- `projects`: 프로젝트 정보
-- `TestCases`: 테스트 케이스 정보
-- `TestResults`: 테스트 실행 결과
-- `Screenshots`: 스크린샷 파일 정보
-- `Folders`: 폴더 구조 관리
+## 🛠️ 개발 가이드
 
-## 개발 환경
-
-### 백엔드 (Flask)
-- **Python 3.13**
-- **Flask**: 웹 프레임워크
-- **SQLAlchemy**: ORM
-- **Flask-CORS**: CORS 지원
-
-### 프론트엔드 (React)
-- **Node.js 18+**
-- **React 18**
-- **Material-UI**: UI 컴포넌트
-
-### 성능 테스트 (k6)
-- **k6**: 브라우저 자동화 테스트
-- **Playwright**: 브라우저 제어
-- **HTML Reporter**: 테스트 결과 리포트
-
-## 문제 해결
-
-### 포트 충돌
-```bash
-# 백엔드 포트 확인
-lsof -i :8000
-
-# 프론트엔드 포트 확인
-lsof -i :3000
-
-# 프로세스 종료
-kill -9 [PID]
+### 프로젝트 구조
+```
+integrated-test-platform/
+├── backend/                 # Flask 백엔드
+│   ├── app.py              # 메인 애플리케이션
+│   ├── config.py           # 설정 관리
+│   ├── requirements.txt    # Python 의존성
+│   └── vercel.json        # Vercel 배포 설정
+├── frontend/               # React 프론트엔드
+│   ├── src/
+│   │   ├── App.js         # 메인 컴포넌트
+│   │   ├── TestCaseAPP.js # 테스트 케이스 관리
+│   │   ├── PerformanceTestManager.js # 성능 테스트 관리
+│   │   ├── UnifiedDashboard.js # 통합 대시보드
+│   │   ├── ErrorBoundary.js # 에러 처리
+│   │   └── config.js      # API 설정
+│   ├── package.json       # Node.js 의존성
+│   └── vercel.json       # Vercel 배포 설정
+├── .github/workflows/     # GitHub Actions
+│   └── deploy.yml        # CI/CD 워크플로우
+└── docs/                 # 문서
+    ├── DEPLOYMENT_SUCCESS.md
+    ├── VERCEL_FRONTEND_DEPLOY.md
+    └── WHITE_SCREEN_FIX.md
 ```
 
-### 가상환경 문제
-```bash
-cd backend
-rm -rf venv
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+### 에러 처리
+- **Error Boundary**: React 컴포넌트 에러 캐치
+- **CORS 설정**: 프론트엔드-백엔드 통신 허용
+- **환경 변수**: 개발/프로덕션 환경 분리
+
+## 📊 모니터링
+
+### Vercel 모니터링
+- **Analytics**: 사용자 접속 통계
+- **Functions**: 서버리스 함수 로그
+- **Performance**: 페이지 로딩 속도
+
+### GitHub 모니터링
+- **Actions**: CI/CD 파이프라인 상태
+- **Issues**: 버그 리포트 및 기능 요청
+- **Pull Requests**: 코드 리뷰 및 병합
+
+## 🔒 보안
+
+### 환경 변수
+- **백엔드**: `DATABASE_URL`, `SECRET_KEY`, `FLASK_ENV`
+- **프론트엔드**: `REACT_APP_API_URL`
+
+### CORS 설정
+```python
+CORS(app, origins=[
+    'http://localhost:3000',
+    'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app'
+])
 ```
 
-### 데이터베이스 초기화
-```bash
-cd backend
-rm -f test_management.db
-python app.py
-```
+## 🚀 배포 정보
 
-## 라이선스
+### 현재 상태
+- ✅ **백엔드**: Vercel 배포 성공
+- ✅ **프론트엔드**: Vercel 배포 성공
+- ✅ **화면**: 정상 동작 확인
+- ✅ **CI/CD**: GitHub Actions 자동화 완료
+
+### 배포 환경
+- **호스팅**: Vercel (무료 티어)
+- **데이터베이스**: SQLite (프로덕션)
+- **Node.js**: 18.x
+- **Python**: 3.12
+
+## 🤝 기여하기
+
+### 개발 환경 설정
+1. 저장소 포크
+2. 로컬 환경 설정
+3. 기능 개발
+4. 테스트 작성
+5. Pull Request 생성
+
+### 코드 컨벤션
+- **Python**: PEP 8
+- **JavaScript**: ESLint
+- **커밋 메시지**: Conventional Commits
+
+## 📝 라이선스
 
 이 프로젝트는 MIT 라이선스 하에 배포됩니다.
 
-## 기여하기
+## 📞 지원
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+### 문제 해결
+- **GitHub Issues**: 버그 리포트
+- **Vercel Support**: 배포 관련 문제
+- **팀 내부**: 기능 요청 및 개선사항
 
-## 연락처
+### 문서
+- [배포 성공 가이드](DEPLOYMENT_SUCCESS.md)
+- [Vercel 프론트엔드 배포 가이드](VERCEL_FRONTEND_DEPLOY.md)
+- [흰 화면 문제 해결 가이드](WHITE_SCREEN_FIX.md)
 
-프로젝트 관련 문의사항이 있으시면 이슈를 등록해 주세요.
+## 🎉 완료된 기능
+
+### ✅ 구현 완료
+- [x] 백엔드 API 개발
+- [x] 프론트엔드 UI 개발
+- [x] 데이터베이스 설계
+- [x] CI/CD 파이프라인 구축
+- [x] 클라우드 배포
+- [x] 에러 처리
+- [x] CORS 설정
+- [x] 환경 변수 관리
+
+### 🔄 향후 계획
+- [ ] 사용자 인증 시스템
+- [ ] 고급 권한 관리
+- [ ] PostgreSQL 마이그레이션
+- [ ] 실시간 알림 시스템
+- [ ] 모바일 앱 개발
+- [ ] 고급 분석 기능
+
+---
+
+**🚀 완전한 클라우드 기반 테스트 플랫폼 구축을 성공적으로 완료했습니다!**
+
+무료 호스팅과 자동 배포를 통해 팀 협업에 최적화된 테스트 관리 시스템을 제공합니다.
