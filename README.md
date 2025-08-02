@@ -32,7 +32,8 @@
 ### Backend
 - **Flask 2.3.3**: Python 웹 프레임워크
 - **SQLAlchemy 3.0.5**: ORM
-- **SQLite**: 데이터베이스 (프로덕션)
+- **Neon PostgreSQL**: 클라우드 데이터베이스 (팀 협업용)
+- **SQLite**: 로컬 개발용 데이터베이스
 - **Flask-CORS**: CORS 설정
 - **Flask-Migrate**: 데이터베이스 마이그레이션
 
@@ -77,7 +78,11 @@ npm start
 
 #### 백엔드 (.env)
 ```env
-DATABASE_URL=sqlite:///test_management.db
+# 클라우드 데이터베이스 (팀 협업용)
+DATABASE_URL=postgresql://neondb_owner:npg_jAtyhE2HW3pY@ep-flat-frog-a1tlnavw-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DEV_DATABASE_URL=postgresql://neondb_owner:npg_jAtyhE2HW3pY@ep-flat-frog-a1tlnavw-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+TEST_DATABASE_URL=sqlite:///:memory:
+
 FLASK_ENV=development
 FLASK_APP=app.py
 SECRET_KEY=your-secret-key-here
