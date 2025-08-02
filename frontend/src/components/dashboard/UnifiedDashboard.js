@@ -61,7 +61,7 @@ const UnifiedDashboard = () => {
 
     return (
         <div>
-            <h1>Unified Test Dashboard</h1>
+            <h1>Test Ruslet Dashboard</h1>
             
             {/* 통계 카드 */}
             <div style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
