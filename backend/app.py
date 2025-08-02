@@ -10,8 +10,10 @@ import json
 from dotenv import load_dotenv
 from config import config
 
-# .env 파일 로드
-load_dotenv()
+# .env 파일 로드 (절대 경로로 명시적 로드)
+import os.path
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path)
 
 def create_app(config_name=None):
     if config_name is None:
