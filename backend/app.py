@@ -7,7 +7,11 @@ import os
 import tempfile
 import subprocess
 import json
+from dotenv import load_dotenv
 from config import config
+
+# .env 파일 로드
+load_dotenv()
 
 def create_app(config_name=None):
     if config_name is None:
