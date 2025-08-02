@@ -241,6 +241,45 @@ def migrate_table_data(conn, table_name, data_sqls):
         print(f"❌ 테이블 '{table_name}' 데이터 마이그레이션 오류: {e}")
         conn.rollback()
 
+def verify_migration(conn):
+    """마이그레이션 검증"""
+    print("\n🔍 마이그레이션 검증 중...")
+    
+    try:
+        cursor = conn.cursor()
+        
+        # 각 테이블의 데이터 수 확인
+        tables = ['projects', 'TestCases', 'test_result', 'PerformanceTests', 'PerformanceTestResults', 'TestExecutions', 'Folders', 'Screenshots']
+        
+        for table in tables:
+            cursor.execute(f'SELECT COUNT(*) FROM "{table}"')
+            count = cursor.fetchone()[0]
+            print(f"📊 테이블 '{table}': {count}개 행")
+        
+        # 프로젝트 데이터 확인
+        cursor.execute('SELECT id, name, description FROM "projects"')
+        projects = cursor.fetchall()
+        print(f"\n📋 프로젝트 데이터:")
+        for project in projects:
+            print(f"  - ID: {project[0]}, 이름: {project[1]}, 설명: {project[2]}")
+        
+        # 테스트 케이스 데이터 확인
+        cursor.execute('SELECT id, project_id, main_category, sub_category, detail_category, description, result_status FROM "TestCases"')
+        test_cases = cursor.fetchall()
+        print(f"\n🧪 테스트 케이스 데이터:")
+        for tc in test_cases:
+            print(f"  - ID: {tc[0]}, 프로젝트: {tc[1]}, 카테고리: {tc[2]}/{tc[3]}/{tc[4]}, 상태: {tc[6]}")
+        
+        # 테스트 결과 데이터 확인
+        cursor.execute('SELECT id, test_case_id, result, executed_at FROM "test_result"')
+        test_results = cursor.fetchall()
+        print(f"\n📈 테스트 결과 데이터:")
+        for tr in test_results:
+            print(f"  - ID: {tr[0]}, 테스트케이스: {tr[1]}, 결과: {tr[2]}, 실행시간: {tr[3]}")
+        
+    except Exception as e:
+        print(f"❌ 검증 오류: {e}")
+
 def main():
     """메인 마이그레이션 함수"""
     print("🚀 MySQL 백업을 Neon PostgreSQL로 마이그레이션 시작...")
@@ -271,6 +310,9 @@ def main():
             
             # 테이블 데이터 마이그레이션
             migrate_table_data(conn, table_name, table_info['data'])
+        
+        # 마이그레이션 검증
+        verify_migration(conn)
         
         print("\n🎉 마이그레이션 완료!")
         print("✅ 모든 테이블과 데이터가 Neon PostgreSQL로 성공적으로 마이그레이션되었습니다.")

@@ -56,6 +56,7 @@ class TestCase(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class TestResult(db.Model):
+    __tablename__ = 'test_result'
     id = db.Column(db.Integer, primary_key=True)
     test_case_id = db.Column(db.Integer, db.ForeignKey('TestCases.id'))
     result = db.Column(db.String(10))
@@ -489,11 +490,21 @@ def create_folder():
 def init_db():
     """데이터베이스 초기화 및 기본 데이터 생성"""
     with app.app_context():
-        print("SQLite 데이터베이스 초기화 시작...")
-        
-        # 테이블 생성
-        db.create_all()
-        print("데이터베이스 테이블 생성 완료")
+        # 현재 사용 중인 데이터베이스 확인
+        db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+        if 'postgresql' in db_uri:
+            print("Neon PostgreSQL 데이터베이스 초기화 시작...")
+            # PostgreSQL의 경우 기존 테이블이 있으므로 테이블 생성 건너뛰기
+            print("기존 테이블 사용 (마이그레이션된 데이터 활용)")
+        elif 'sqlite' in db_uri:
+            print("SQLite 데이터베이스 초기화 시작...")
+            # SQLite의 경우 테이블 생성
+            db.create_all()
+            print("데이터베이스 테이블 생성 완료")
+        else:
+            print("데이터베이스 초기화 시작...")
+            db.create_all()
+            print("데이터베이스 테이블 생성 완료")
         
         # 기본 프로젝트가 없으면 생성
         if not Project.query.first():
@@ -522,7 +533,12 @@ def init_db():
             db.session.commit()
             print("기본 성능 테스트가 생성되었습니다.")
         
-        print("SQLite 데이터베이스 초기화 완료!")
+        if 'postgresql' in db_uri:
+            print("Neon PostgreSQL 데이터베이스 초기화 완료!")
+        elif 'sqlite' in db_uri:
+            print("SQLite 데이터베이스 초기화 완료!")
+        else:
+            print("데이터베이스 초기화 완료!")
 
 # Flask 서버 실행
 if __name__ == '__main__':
