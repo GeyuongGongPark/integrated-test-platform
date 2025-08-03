@@ -897,5 +897,5 @@ def health_check():
 # Flask 서버 실행
 if __name__ == '__main__':
     init_db()  # 데이터베이스 초기화
-    app.run(debug=True, port=8000)
+    app.run(host='0.0.0.0', port=8000, debug=True)
 

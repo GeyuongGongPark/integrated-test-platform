@@ -31,194 +31,182 @@ def create_sample_data():
             folder_type='environment',
             environment='dev'
         )
+        db.session.add(dev_folder)
+        
         alpha_folder = Folder(
             folder_name='ALPHA 환경',
             folder_type='environment',
             environment='alpha'
         )
+        db.session.add(alpha_folder)
+        
         prod_folder = Folder(
             folder_name='PRODUCTION 환경',
             folder_type='environment',
             environment='production'
         )
+        db.session.add(prod_folder)
         
-        db.session.add_all([dev_folder, alpha_folder, prod_folder])
         db.session.commit()
         
         # 배포일자별 폴더
-        dev_dep1 = Folder(
-            folder_name='2025-08-01 배포',
+        dev_deploy1 = Folder(
+            folder_name='2024-01-15',
             folder_type='deployment_date',
             environment='dev',
-            deployment_date=date(2025, 8, 1),
+            deployment_date=date(2024, 1, 15),
             parent_folder_id=dev_folder.id
         )
-        dev_dep2 = Folder(
-            folder_name='2025-08-03 배포',
-            folder_type='deployment_date',
-            environment='dev',
-            deployment_date=date(2025, 8, 3),
-            parent_folder_id=dev_folder.id
-        )
+        db.session.add(dev_deploy1)
         
-        alpha_dep1 = Folder(
-            folder_name='2025-08-02 배포',
+        alpha_deploy1 = Folder(
+            folder_name='2024-01-20',
             folder_type='deployment_date',
             environment='alpha',
-            deployment_date=date(2025, 8, 2),
+            deployment_date=date(2024, 1, 20),
             parent_folder_id=alpha_folder.id
         )
+        db.session.add(alpha_deploy1)
         
-        prod_dep1 = Folder(
-            folder_name='2025-08-01 배포',
+        prod_deploy1 = Folder(
+            folder_name='2024-01-25',
             folder_type='deployment_date',
             environment='production',
-            deployment_date=date(2025, 8, 1),
+            deployment_date=date(2024, 1, 25),
             parent_folder_id=prod_folder.id
         )
+        db.session.add(prod_deploy1)
         
-        db.session.add_all([dev_dep1, dev_dep2, alpha_dep1, prod_dep1])
         db.session.commit()
         
         # 3. 테스트 케이스 생성
         test_cases = [
-            # DEV 환경 테스트 케이스
             {
                 'project_id': project.id,
                 'main_category': 'CLM',
                 'sub_category': 'Draft',
-                'detail_category': 'Create',
+                'detail_category': '기안 작성',
                 'pre_condition': '로그인 완료',
-                'description': 'DEV - CLM Draft 생성 테스트',
+                'description': 'CLM 기안 작성 기능 테스트',
                 'result_status': 'Pass',
-                'remark': '정상 동작 확인',
                 'environment': 'dev',
-                'deployment_date': date(2025, 8, 1),
-                'folder_id': dev_dep1.id,
-                'automation_code_path': 'test-scripts/clm/dev_draft_create.js',
+                'deployment_date': date(2024, 1, 15),
+                'folder_id': dev_deploy1.id,
+                'automation_code_path': 'test-scripts/clm/draft.js',
                 'automation_code_type': 'playwright'
             },
             {
                 'project_id': project.id,
                 'main_category': 'CLM',
-                'sub_category': 'Draft',
-                'detail_category': 'Edit',
-                'pre_condition': 'Draft 생성 완료',
-                'description': 'DEV - CLM Draft 수정 테스트',
+                'sub_category': 'Review',
+                'detail_category': '검토',
+                'pre_condition': '기안 작성 완료',
+                'description': 'CLM 검토 기능 테스트',
                 'result_status': 'Fail',
-                'remark': '수정 버튼 클릭 시 오류 발생',
                 'environment': 'dev',
-                'deployment_date': date(2025, 8, 3),
-                'folder_id': dev_dep2.id,
-                'automation_code_path': 'test-scripts/clm/dev_draft_edit.js',
-                'automation_code_type': 'playwright'
+                'deployment_date': date(2024, 1, 15),
+                'folder_id': dev_deploy1.id,
+                'automation_code_path': 'test-scripts/clm/review.js',
+                'automation_code_type': 'selenium'
             },
             {
                 'project_id': project.id,
                 'main_category': 'CLM',
-                'sub_category': 'E-Sign',
-                'detail_category': 'Sign',
-                'pre_condition': 'Draft 완료',
-                'description': 'DEV - CLM E-Sign 테스트',
+                'sub_category': 'Sign',
+                'detail_category': '전자서명',
+                'pre_condition': '검토 완료',
+                'description': 'CLM 전자서명 기능 테스트',
                 'result_status': 'Pass',
-                'remark': '전자서명 정상 동작',
                 'environment': 'dev',
-                'deployment_date': date(2025, 8, 1),
-                'folder_id': dev_dep1.id,
-                'automation_code_path': 'test-scripts/clm/dev_esign.js',
-                'automation_code_type': 'playwright'
-            },
-            
-            # ALPHA 환경 테스트 케이스
-            {
-                'project_id': project.id,
-                'main_category': 'CLM',
-                'sub_category': 'Draft',
-                'detail_category': 'Create',
-                'pre_condition': '로그인 완료',
-                'description': 'ALPHA - CLM Draft 생성 테스트',
-                'result_status': 'Pass',
-                'remark': '정상 동작 확인',
-                'environment': 'alpha',
-                'deployment_date': date(2025, 8, 2),
-                'folder_id': alpha_dep1.id,
-                'automation_code_path': 'test-scripts/clm/alpha_draft_create.js',
+                'deployment_date': date(2024, 1, 15),
+                'folder_id': dev_deploy1.id,
+                'automation_code_path': 'test-scripts/clm/sign.js',
                 'automation_code_type': 'playwright'
             },
             {
                 'project_id': project.id,
                 'main_category': 'CLM',
                 'sub_category': 'Financial',
-                'detail_category': 'Review',
-                'pre_condition': 'Draft 생성 완료',
-                'description': 'ALPHA - CLM Financial Review 테스트',
+                'detail_category': '재무 검토',
+                'pre_condition': 'ALPHA 환경 접속',
+                'description': 'CLM 재무 검토 기능 테스트',
                 'result_status': 'Pass',
-                'remark': '재무 검토 정상 동작',
                 'environment': 'alpha',
-                'deployment_date': date(2025, 8, 2),
-                'folder_id': alpha_dep1.id,
-                'automation_code_path': 'test-scripts/clm/alpha_financial_review.js',
-                'automation_code_type': 'playwright'
+                'deployment_date': date(2024, 1, 20),
+                'folder_id': alpha_deploy1.id,
+                'automation_code_path': 'test-scripts/clm/financial.js',
+                'automation_code_type': 'k6'
             },
-            
-            # PRODUCTION 환경 테스트 케이스
             {
                 'project_id': project.id,
                 'main_category': 'CLM',
-                'sub_category': 'Draft',
-                'detail_category': 'Create',
-                'pre_condition': '로그인 완료',
-                'description': 'PRODUCTION - CLM Draft 생성 테스트',
+                'sub_category': 'Legal',
+                'detail_category': '법무 검토',
+                'pre_condition': 'ALPHA 환경 접속',
+                'description': 'CLM 법무 검토 기능 테스트',
                 'result_status': 'Pass',
-                'remark': '정상 동작 확인',
-                'environment': 'production',
-                'deployment_date': date(2025, 8, 1),
-                'folder_id': prod_dep1.id,
-                'automation_code_path': 'test-scripts/clm/prod_draft_create.js',
-                'automation_code_type': 'playwright'
+                'environment': 'alpha',
+                'deployment_date': date(2024, 1, 20),
+                'folder_id': alpha_deploy1.id,
+                'automation_code_path': 'test-scripts/clm/legal.js',
+                'automation_code_type': 'selenium'
             },
             {
                 'project_id': project.id,
                 'main_category': 'CLM',
                 'sub_category': 'Final',
-                'detail_category': 'Approve',
-                'pre_condition': '모든 검토 완료',
-                'description': 'PRODUCTION - CLM Final Approval 테스트',
+                'detail_category': '최종 승인',
+                'pre_condition': 'PRODUCTION 환경 접속',
+                'description': 'CLM 최종 승인 기능 테스트',
                 'result_status': 'Pass',
-                'remark': '최종 승인 정상 동작',
                 'environment': 'production',
-                'deployment_date': date(2025, 8, 1),
-                'folder_id': prod_dep1.id,
-                'automation_code_path': 'test-scripts/clm/prod_final_approve.js',
+                'deployment_date': date(2024, 1, 25),
+                'folder_id': prod_deploy1.id,
+                'automation_code_path': 'test-scripts/clm/final.js',
                 'automation_code_type': 'playwright'
+            },
+            {
+                'project_id': project.id,
+                'main_category': 'CLM',
+                'sub_category': 'Seal',
+                'detail_category': '도장 찍기',
+                'pre_condition': 'PRODUCTION 환경 접속',
+                'description': 'CLM 도장 찍기 기능 테스트',
+                'result_status': 'Pass',
+                'environment': 'production',
+                'deployment_date': date(2024, 1, 25),
+                'folder_id': prod_deploy1.id,
+                'automation_code_path': 'test-scripts/clm/seal.js',
+                'automation_code_type': 'selenium'
             }
         ]
         
+        created_test_cases = []
         for tc_data in test_cases:
             test_case = TestCase(**tc_data)
             db.session.add(test_case)
+            created_test_cases.append(test_case)
         
         db.session.commit()
         
-        # 4. 테스트 결과 생성
+        # 4. 테스트 결과 생성 (TestCase ID를 실제 생성된 ID로 사용)
         test_results = [
-            # DEV 환경 결과
             {
-                'test_case_id': 1,
+                'test_case_id': created_test_cases[0].id,
                 'result': 'Pass',
                 'environment': 'dev',
                 'execution_duration': 15.5,
                 'notes': 'DEV 환경에서 정상 동작 확인'
             },
             {
-                'test_case_id': 2,
+                'test_case_id': created_test_cases[1].id,
                 'result': 'Fail',
                 'environment': 'dev',
                 'execution_duration': 8.2,
                 'error_message': '수정 버튼 클릭 시 JavaScript 오류 발생'
             },
             {
-                'test_case_id': 3,
+                'test_case_id': created_test_cases[2].id,
                 'result': 'Pass',
                 'environment': 'dev',
                 'execution_duration': 12.1,
@@ -227,14 +215,14 @@ def create_sample_data():
             
             # ALPHA 환경 결과
             {
-                'test_case_id': 4,
+                'test_case_id': created_test_cases[3].id,
                 'result': 'Pass',
                 'environment': 'alpha',
                 'execution_duration': 14.3,
                 'notes': 'ALPHA 환경에서 정상 동작 확인'
             },
             {
-                'test_case_id': 5,
+                'test_case_id': created_test_cases[4].id,
                 'result': 'Pass',
                 'environment': 'alpha',
                 'execution_duration': 18.7,
@@ -243,14 +231,14 @@ def create_sample_data():
             
             # PRODUCTION 환경 결과
             {
-                'test_case_id': 6,
+                'test_case_id': created_test_cases[5].id,
                 'result': 'Pass',
                 'environment': 'production',
                 'execution_duration': 16.2,
                 'notes': 'PRODUCTION 환경에서 정상 동작 확인'
             },
             {
-                'test_case_id': 7,
+                'test_case_id': created_test_cases[6].id,
                 'result': 'Pass',
                 'environment': 'production',
                 'execution_duration': 22.1,
