@@ -9,7 +9,6 @@ axios.defaults.baseURL = config.apiUrl;
 
 const TestCaseAPP = () => {
   const [testCases, setTestCases] = useState([]);
-  const [folders, setFolders] = useState([]);
   const [folderTree, setFolderTree] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,14 +23,12 @@ const TestCaseAPP = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [testCasesRes, foldersRes, treeRes] = await Promise.all([
+      const [testCasesRes, treeRes] = await Promise.all([
         axios.get('/testcases'),
-        axios.get('/folders'),
         axios.get('/folders/tree')
       ]);
 
       setTestCases(testCasesRes.data);
-      setFolders(foldersRes.data);
       setFolderTree(treeRes.data);
     } catch (err) {
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
