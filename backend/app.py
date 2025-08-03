@@ -34,7 +34,8 @@ def create_app(config_name=None):
     cors_origins = [
         'http://localhost:3000',
         'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app',
-        'https://integrated-test-platform-frontend.vercel.app'
+        'https://integrated-test-platform-frontend.vercel.app',
+        'https://integrated-test-platform-fe.vercel.app'
     ]
     
     # 환경 변수에서 추가 CORS 설정 가져오기
@@ -779,81 +780,89 @@ def execute_automation_code(id):
 def init_db():
     """데이터베이스 초기화 및 기본 데이터 생성"""
     with app.app_context():
-        # 현재 사용 중인 데이터베이스 확인
-        db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-        if 'postgresql' in db_uri:
-            print("Neon PostgreSQL 데이터베이스 초기화 시작...")
-            # PostgreSQL의 경우 기존 테이블이 있으므로 테이블 생성 건너뛰기
-            print("기존 테이블 사용 (마이그레이션된 데이터 활용)")
-        elif 'sqlite' in db_uri:
-            print("SQLite 데이터베이스 초기화 시작...")
-            # SQLite의 경우 테이블 생성
-            db.create_all()
-            print("데이터베이스 테이블 생성 완료")
-        else:
-            print("데이터베이스 초기화 시작...")
-            db.create_all()
-            print("데이터베이스 테이블 생성 완료")
-        
-        # 기본 프로젝트가 없으면 생성
-        if not Project.query.first():
-            default_project = Project(
-                name="테스트 프로젝트",
-                description="테스트 케이스 관리 시스템"
-            )
-            db.session.add(default_project)
-            db.session.commit()
-            print("기본 프로젝트가 생성되었습니다.")
-        
-        # 기본 성능 테스트가 없으면 생성
-        if not PerformanceTest.query.first():
-            default_perf_test = PerformanceTest(
-                name="CLM 계약서 생성 테스트",
-                description="LFBZ CLM 시스템 계약서 생성 성능 테스트",
-                k6_script_path="clm_draft.js",
-                environment="prod",
-                parameters=json.dumps({
-                    "DRAFT_TYPE": "new",
-                    "SECURITY_TYPE": "all",
-                    "REVIEW_TYPE": "use"
-                })
-            )
-            db.session.add(default_perf_test)
-            db.session.commit()
-            print("기본 성능 테스트가 생성되었습니다.")
-        
-        # 기본 폴더가 없으면 생성
-        if not Folder.query.first():
-            default_folder = Folder(
-                folder_name="기본 폴더",
-                folder_type="environment",
-                environment="dev",
-                deployment_date=datetime.utcnow().date()
-            )
-            db.session.add(default_folder)
-            db.session.commit()
-            print("기본 폴더가 생성되었습니다.")
-        
-        # 기본 대시보드 요약이 없으면 생성
-        if not DashboardSummary.query.first():
-            default_summary = DashboardSummary(
-                environment="dev",
-                total_tests=0,
-                passed_tests=0,
-                failed_tests=0,
-                skipped_tests=0,
-                pass_rate=0.0
-            )
-            db.session.add(default_summary)
-            db.session.commit()
-            print("기본 대시보드 요약이 생성되었습니다.")
-        
-        if 'postgresql' in db_uri:
-            print("Neon PostgreSQL 데이터베이스 초기화 완료!")
-        elif 'sqlite' in db_uri:
-            print("SQLite 데이터베이스 초기화 완료!")
-        else:
-            print("데이터베이스 초기화 완료!")
+        try:
+            # 현재 사용 중인 데이터베이스 확인
+            db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+            print(f"Database URI: {db_uri}")
+            
+            if 'postgresql' in db_uri:
+                print("Neon PostgreSQL 데이터베이스 초기화 시작...")
+                # PostgreSQL의 경우 기존 테이블이 있으므로 테이블 생성 건너뛰기
+                print("기존 테이블 사용 (마이그레이션된 데이터 활용)")
+            elif 'sqlite' in db_uri:
+                print("SQLite 데이터베이스 초기화 시작...")
+                # SQLite의 경우 테이블 생성
+                db.create_all()
+                print("데이터베이스 테이블 생성 완료")
+            else:
+                print("데이터베이스 초기화 시작...")
+                db.create_all()
+                print("데이터베이스 테이블 생성 완료")
+            
+            # 기본 프로젝트가 없으면 생성
+            if not Project.query.first():
+                default_project = Project(
+                    name="테스트 프로젝트",
+                    description="테스트 케이스 관리 시스템"
+                )
+                db.session.add(default_project)
+                db.session.commit()
+                print("기본 프로젝트가 생성되었습니다.")
+            
+            # 기본 성능 테스트가 없으면 생성
+            if not PerformanceTest.query.first():
+                default_perf_test = PerformanceTest(
+                    name="CLM 계약서 생성 테스트",
+                    description="LFBZ CLM 시스템 계약서 생성 성능 테스트",
+                    k6_script_path="clm_draft.js",
+                    environment="prod",
+                    parameters=json.dumps({
+                        "DRAFT_TYPE": "new",
+                        "SECURITY_TYPE": "all",
+                        "REVIEW_TYPE": "use"
+                    })
+                )
+                db.session.add(default_perf_test)
+                db.session.commit()
+                print("기본 성능 테스트가 생성되었습니다.")
+            
+            # 기본 폴더가 없으면 생성
+            if not Folder.query.first():
+                default_folder = Folder(
+                    folder_name="기본 폴더",
+                    folder_type="environment",
+                    environment="dev",
+                    deployment_date=datetime.utcnow().date()
+                )
+                db.session.add(default_folder)
+                db.session.commit()
+                print("기본 폴더가 생성되었습니다.")
+            
+            # 기본 대시보드 요약이 없으면 생성
+            if not DashboardSummary.query.first():
+                default_summary = DashboardSummary(
+                    environment="dev",
+                    total_tests=0,
+                    passed_tests=0,
+                    failed_tests=0,
+                    skipped_tests=0,
+                    pass_rate=0.0
+                )
+                db.session.add(default_summary)
+                db.session.commit()
+                print("기본 대시보드 요약이 생성되었습니다.")
+            
+            if 'postgresql' in db_uri:
+                print("Neon PostgreSQL 데이터베이스 초기화 완료!")
+            elif 'sqlite' in db_uri:
+                print("SQLite 데이터베이스 초기화 완료!")
+            else:
+                print("데이터베이스 초기화 완료!")
+                
+        except Exception as e:
+            print(f"데이터베이스 초기화 중 오류 발생: {str(e)}")
+            # 오류가 발생해도 앱은 계속 실행
+            pass
 
 # 헬스체크 엔드포인트 추가
 @app.route('/health', methods=['GET'])
