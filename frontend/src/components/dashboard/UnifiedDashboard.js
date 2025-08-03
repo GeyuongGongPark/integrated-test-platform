@@ -5,6 +5,48 @@ import './UnifiedDashboard.css';
 
 // axios 기본 URL 설정
 axios.defaults.baseURL = config.apiUrl;
+axios.defaults.withCredentials = false;  // CORS 문제 해결을 위해 false로 설정
+
+// axios 인터셉터 설정 - CORS 및 인증 문제 해결
+axios.interceptors.request.use(
+  (config) => {
+    // 요청 헤더에 CORS 관련 설정 추가
+    config.headers['Content-Type'] = 'application/json';
+    config.headers['X-Requested-With'] = 'XMLHttpRequest';
+    
+    // 개발 환경에서만 로깅
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🌐 API Request:', config.method?.toUpperCase(), config.url);
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// 응답 인터셉터 설정
+axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    console.error('🚨 API Error:', error.response?.status, error.response?.data || error.message);
+    
+    // CORS 오류 처리
+    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      console.error('🌐 CORS 또는 네트워크 오류 발생');
+    }
+    
+    // 401 오류 처리
+    if (error.response?.status === 401) {
+      console.error('🔐 인증 오류 발생');
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 const UnifiedDashboard = () => {
   const [testCases, setTestCases] = useState([]);

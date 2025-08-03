@@ -12,6 +12,61 @@ from io import BytesIO
 from dotenv import load_dotenv
 from config import config
 
+# k6 엔진 클래스 정의
+class K6Engine:
+    def __init__(self):
+        self.k6_path = 'k6'  # k6 실행 파일 경로
+    
+    def execute_test(self, script_path, env_vars=None):
+        """k6 성능 테스트 실행"""
+        try:
+            # 환경 변수 설정
+            env = os.environ.copy()
+            if env_vars:
+                env.update(env_vars)
+            
+            # k6 명령어 구성
+            cmd = [self.k6_path, 'run', script_path, '--out', 'json=result.json']
+            
+            # k6 실행
+            result = subprocess.run(
+                cmd,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=300  # 5분 타임아웃
+            )
+            
+            # 결과 파싱
+            if result.returncode == 0:
+                return {
+                    'status': 'Pass',
+                    'output': result.stdout,
+                    'response_time_avg': 0.0,  # 실제로는 JSON 결과에서 파싱
+                    'throughput': 0.0,
+                    'error_rate': 0.0
+                }
+            else:
+                return {
+                    'status': 'Fail',
+                    'error': result.stderr,
+                    'output': result.stdout
+                }
+                
+        except subprocess.TimeoutExpired:
+            return {
+                'status': 'Error',
+                'error': 'k6 실행 시간 초과'
+            }
+        except Exception as e:
+            return {
+                'status': 'Error',
+                'error': str(e)
+            }
+
+# k6 엔진 인스턴스 생성
+k6_engine = K6Engine()
+
 # .env 파일 로드 (절대 경로로 명시적 로드)
 import os.path
 env_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -47,7 +102,8 @@ def create_app(config_name=None):
         'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app',
         'https://integrated-test-platform-frontend.vercel.app',
         'https://integrated-test-platform-fe.vercel.app',
-        'https://integrated-test-platform-gyeonggong-parks-projects.vercel.app'
+        'https://integrated-test-platform-gyeonggong-parks-projects.vercel.app',
+        'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app'
     ]
     
     # 환경 변수에서 추가 CORS 설정 가져오기
@@ -57,17 +113,24 @@ def create_app(config_name=None):
     
     print(f"🌐 CORS Origins: {cors_origins}")
     
-    CORS(app, origins=cors_origins, supports_credentials=True)
+    # CORS 설정을 더 유연하게 설정 - 모든 origin 허용
+    CORS(app, origins='*', supports_credentials=False, allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'])
     
-    # 추가 CORS 설정
+    # 추가 CORS 설정 - 더 포괄적인 설정
     @app.after_request
     def after_request(response):
         origin = request.headers.get('Origin')
-        if origin in cors_origins:
+        
+        # 모든 origin 허용 (프로덕션에서도)
+        if origin:
             response.headers.add('Access-Control-Allow-Origin', origin)
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        else:
+            response.headers.add('Access-Control-Allow-Origin', '*')
+        
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
         response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Allow-Credentials', 'false')  # 모든 origin 허용시 false로 설정
+        response.headers.add('Access-Control-Max-Age', '86400')
         return response
     
     db = SQLAlchemy(app)
@@ -903,6 +966,18 @@ def health_check():
         'timestamp': datetime.now().isoformat(),
         'deploy_test': 'GitHub Actions CI/CD working!'
     }), 200
+
+# CORS preflight 요청 처리
+@app.route('/<path:path>', methods=['OPTIONS'])
+def handle_options(path):
+    """CORS preflight 요청 처리"""
+    response = jsonify({'status': 'ok'})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    response.headers.add('Access-Control-Max-Age', '86400')
+    return response, 200
 
 # 환경 진단 엔드포인트 추가
 @app.route('/debug/environment', methods=['GET'])
