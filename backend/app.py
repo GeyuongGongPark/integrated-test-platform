@@ -30,16 +30,29 @@ def create_app(config_name=None):
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
     
-    # CORS 설정 개선
-    cors_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(',')
-    CORS(app, origins=cors_origins)
+    # CORS 설정 개선 - 실제 프론트엔드 URL 포함
+    cors_origins = [
+        'http://localhost:3000',
+        'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app',
+        'https://integrated-test-platform-frontend.vercel.app'
+    ]
+    
+    # 환경 변수에서 추가 CORS 설정 가져오기
+    env_cors = os.environ.get('CORS_ORIGINS', '')
+    if env_cors:
+        cors_origins.extend(env_cors.split(','))
+    
+    CORS(app, origins=cors_origins, supports_credentials=True)
     
     # 추가 CORS 설정
     @app.after_request
     def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', '*')
+        origin = request.headers.get('Origin')
+        if origin in cors_origins:
+            response.headers.add('Access-Control-Allow-Origin', origin)
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
         response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
     
     db = SQLAlchemy(app)
