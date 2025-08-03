@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
@@ -7,6 +7,8 @@ import os
 import tempfile
 import subprocess
 import json
+import pandas as pd
+from io import BytesIO
 from dotenv import load_dotenv
 from config import config
 
@@ -60,6 +62,12 @@ class TestCase(db.Model):
     remark = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # 새로운 필드들 추가
+    environment = db.Column(db.String(50), default='dev')  # dev, alpha, production
+    deployment_date = db.Column(db.Date)  # 배포일자
+    folder_id = db.Column(db.Integer, db.ForeignKey('Folders.id'), nullable=True)
+    automation_code_path = db.Column(db.String(512))  # 자동화 코드 경로
+    automation_code_type = db.Column(db.String(50))  # selenium, playwright, k6 등
 
 class TestResult(db.Model):
     __tablename__ = 'test_result'
@@ -69,12 +77,21 @@ class TestResult(db.Model):
     executed_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     notes = db.Column(db.Text)
     screenshot = db.Column(db.String(255))
+    # 새로운 필드들 추가
+    environment = db.Column(db.String(50), default='dev')  # dev, alpha, production
+    execution_duration = db.Column(db.Float)  # 실행 시간 (초)
+    error_message = db.Column(db.Text)  # 오류 메시지
 
 class Folder(db.Model):
     __tablename__ = 'Folders'
     id = db.Column(db.Integer, primary_key=True)
     folder_name = db.Column(db.String(255), nullable=False)
     parent_folder_id = db.Column(db.Integer, db.ForeignKey('Folders.id'), nullable=True)
+    # 새로운 필드들 추가
+    folder_type = db.Column(db.String(50), default='environment')  # environment, deployment_date
+    environment = db.Column(db.String(50))  # dev, alpha, production
+    deployment_date = db.Column(db.Date)  # 배포일자
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Screenshot(db.Model):
     __tablename__ = 'Screenshots'
@@ -119,6 +136,18 @@ class TestExecution(db.Model):
     status = db.Column(db.String(20))  # Running, Pass, Fail, Error
     result_data = db.Column(db.Text)  # JSON 문자열로 저장
     report_path = db.Column(db.String(512))
+
+# 새로운 대시보드 요약 모델
+class DashboardSummary(db.Model):
+    __tablename__ = 'DashboardSummaries'
+    id = db.Column(db.Integer, primary_key=True)
+    environment = db.Column(db.String(50), nullable=False)  # dev, alpha, production
+    total_tests = db.Column(db.Integer, default=0)
+    passed_tests = db.Column(db.Integer, default=0)
+    failed_tests = db.Column(db.Integer, default=0)
+    skipped_tests = db.Column(db.Integer, default=0)
+    pass_rate = db.Column(db.Float, default=0.0)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
 
 # k6 실행 엔진
 class K6ExecutionEngine:
@@ -493,6 +522,288 @@ def create_folder():
     db.session.commit()
     return jsonify({'message': '폴더 생성 완료', 'id': folder.id}), 201
 
+# 새로운 대시보드 요약 API
+@app.route('/dashboard-summaries', methods=['GET'])
+def get_dashboard_summaries():
+    summaries = DashboardSummary.query.all()
+    data = [{
+        'id': s.id,
+        'environment': s.environment,
+        'total_tests': s.total_tests,
+        'passed_tests': s.passed_tests,
+        'failed_tests': s.failed_tests,
+        'skipped_tests': s.skipped_tests,
+        'pass_rate': s.pass_rate,
+        'last_updated': s.last_updated
+    } for s in summaries]
+    return jsonify(data), 200
+
+@app.route('/dashboard-summaries', methods=['POST'])
+def create_dashboard_summary():
+    data = request.get_json()
+    summary = DashboardSummary(
+        environment=data.get('environment'),
+        total_tests=data.get('total_tests', 0),
+        passed_tests=data.get('passed_tests', 0),
+        failed_tests=data.get('failed_tests', 0),
+        skipped_tests=data.get('skipped_tests', 0),
+        pass_rate=data.get('pass_rate', 0.0)
+    )
+    db.session.add(summary)
+    db.session.commit()
+    return jsonify({'message': '대시보드 요약 생성 완료', 'id': summary.id}), 201
+
+@app.route('/dashboard-summaries/<int:id>', methods=['PUT'])
+def update_dashboard_summary(id):
+    summary = DashboardSummary.query.get_or_404(id)
+    data = request.get_json()
+    summary.environment = data.get('environment', summary.environment)
+    summary.total_tests = data.get('total_tests', summary.total_tests)
+    summary.passed_tests = data.get('passed_tests', summary.passed_tests)
+    summary.failed_tests = data.get('failed_tests', summary.failed_tests)
+    summary.skipped_tests = data.get('skipped_tests', summary.skipped_tests)
+    summary.pass_rate = data.get('pass_rate', summary.pass_rate)
+    db.session.commit()
+    return jsonify({'message': '대시보드 요약 업데이트 완료'}), 200
+
+@app.route('/dashboard-summaries/<int:id>', methods=['DELETE'])
+def delete_dashboard_summary(id):
+    summary = DashboardSummary.query.get_or_404(id)
+    db.session.delete(summary)
+    db.session.commit()
+    return jsonify({'message': '대시보드 요약 삭제 완료'}), 200
+
+# 폴더 트리 구조 API
+@app.route('/folders/tree', methods=['GET'])
+def get_folder_tree():
+    """환경별 → 배포일자별 폴더 트리 구조 반환"""
+    try:
+        # 환경별 폴더 조회
+        environment_folders = Folder.query.filter_by(
+            folder_type='environment'
+        ).all()
+        
+        tree = []
+        for env_folder in environment_folders:
+            env_node = {
+                'id': env_folder.id,
+                'name': env_folder.folder_name,
+                'type': 'environment',
+                'environment': env_folder.environment,
+                'children': []
+            }
+            
+            # 해당 환경의 배포일자별 폴더 조회
+            deployment_folders = Folder.query.filter_by(
+                folder_type='deployment_date',
+                parent_folder_id=env_folder.id
+            ).all()
+            
+            for dep_folder in deployment_folders:
+                dep_node = {
+                    'id': dep_folder.id,
+                    'name': dep_folder.folder_name,
+                    'type': 'deployment_date',
+                    'deployment_date': dep_folder.deployment_date.strftime('%Y-%m-%d'),
+                    'children': []
+                }
+                
+                # 해당 배포일자의 테스트 케이스 조회
+                test_cases = TestCase.query.filter_by(
+                    folder_id=dep_folder.id
+                ).all()
+                
+                for tc in test_cases:
+                    tc_node = {
+                        'id': tc.id,
+                        'name': tc.description[:50] + '...' if len(tc.description) > 50 else tc.description,
+                        'type': 'test_case',
+                        'status': tc.result_status,
+                        'automation_code_path': tc.automation_code_path
+                    }
+                    dep_node['children'].append(tc_node)
+                
+                env_node['children'].append(dep_node)
+            
+            tree.append(env_node)
+        
+        return jsonify(tree), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 환경별 테스트 결과 요약 API
+@app.route('/test-results/summary/<environment>', methods=['GET'])
+def get_test_results_summary(environment):
+    """특정 환경의 테스트 결과 요약"""
+    try:
+        # 해당 환경의 모든 테스트 결과 조회
+        results = TestResult.query.filter_by(environment=environment).all()
+        
+        total = len(results)
+        passed = len([r for r in results if r.result == 'Pass'])
+        failed = len([r for r in results if r.result == 'Fail'])
+        skipped = len([r for r in results if r.result == 'Skip'])
+        
+        pass_rate = (passed / total * 100) if total > 0 else 0
+        
+        summary = {
+            'environment': environment,
+            'total_tests': total,
+            'passed_tests': passed,
+            'failed_tests': failed,
+            'skipped_tests': skipped,
+            'pass_rate': round(pass_rate, 2),
+            'last_updated': datetime.utcnow().isoformat()
+        }
+        
+        return jsonify(summary), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 엑셀 업로드 API
+@app.route('/testcases/upload', methods=['POST'])
+def upload_testcases_excel():
+    """엑셀 파일에서 테스트 케이스 업로드"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': '파일이 없습니다'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': '파일이 선택되지 않았습니다'}), 400
+        
+        if not file.filename.endswith('.xlsx'):
+            return jsonify({'error': '엑셀 파일(.xlsx)만 업로드 가능합니다'}), 400
+        
+        # 엑셀 파일 읽기
+        df = pd.read_excel(file)
+        
+        created_count = 0
+        for _, row in df.iterrows():
+            test_case = TestCase(
+                project_id=row.get('project_id', 1),
+                main_category=row.get('main_category', ''),
+                sub_category=row.get('sub_category', ''),
+                detail_category=row.get('detail_category', ''),
+                pre_condition=row.get('pre_condition', ''),
+                description=row.get('description', ''),
+                result_status=row.get('result_status', 'N/T'),
+                remark=row.get('remark', ''),
+                environment=row.get('environment', 'dev'),
+                automation_code_path=row.get('automation_code_path', ''),
+                automation_code_type=row.get('automation_code_type', '')
+            )
+            db.session.add(test_case)
+            created_count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'{created_count}개의 테스트 케이스가 업로드되었습니다',
+            'created_count': created_count
+        }), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 엑셀 다운로드 API
+@app.route('/testcases/download', methods=['GET'])
+def download_testcases_excel():
+    """테스트 케이스를 엑셀 파일로 다운로드"""
+    try:
+        # 모든 테스트 케이스 조회
+        test_cases = TestCase.query.all()
+        
+        # DataFrame 생성
+        data = []
+        for tc in test_cases:
+            data.append({
+                'id': tc.id,
+                'project_id': tc.project_id,
+                'main_category': tc.main_category,
+                'sub_category': tc.sub_category,
+                'detail_category': tc.detail_category,
+                'pre_condition': tc.pre_condition,
+                'description': tc.description,
+                'result_status': tc.result_status,
+                'remark': tc.remark,
+                'environment': tc.environment,
+                'automation_code_path': tc.automation_code_path,
+                'automation_code_type': tc.automation_code_type,
+                'created_at': tc.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        df = pd.DataFrame(data)
+        
+        # 엑셀 파일 생성
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='TestCases')
+        
+        output.seek(0)
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'testcases_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        )
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 자동화 코드 실행 API
+@app.route('/testcases/<int:id>/execute', methods=['POST'])
+def execute_automation_code(id):
+    """테스트 케이스의 자동화 코드 실행"""
+    try:
+        test_case = TestCase.query.get_or_404(id)
+        
+        if not test_case.automation_code_path:
+            return jsonify({'error': '자동화 코드 경로가 설정되지 않았습니다'}), 400
+        
+        # 자동화 코드 실행
+        script_path = test_case.automation_code_path
+        script_type = test_case.automation_code_type
+        
+        if script_type == 'k6':
+            # k6 성능 테스트 실행
+            engine = K6ExecutionEngine()
+            result = engine.execute_test(script_path, {})
+        elif script_type in ['selenium', 'playwright']:
+            # UI 테스트 실행
+            result = subprocess.run(
+                ['python', script_path],
+                capture_output=True,
+                text=True,
+                timeout=300  # 5분 타임아웃
+            )
+        else:
+            return jsonify({'error': '지원하지 않는 자동화 코드 타입입니다'}), 400
+        
+        # 실행 결과 저장
+        test_result = TestResult(
+            test_case_id=id,
+            result='Pass' if result.returncode == 0 else 'Fail',
+            environment=test_case.environment,
+            execution_duration=0.0,  # 실제 실행 시간 계산 필요
+            error_message=result.stderr if result.returncode != 0 else None
+        )
+        db.session.add(test_result)
+        db.session.commit()
+        
+        return jsonify({
+            'message': '자동화 코드 실행 완료',
+            'result': 'Pass' if result.returncode == 0 else 'Fail',
+            'output': result.stdout,
+            'error': result.stderr
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 def init_db():
     """데이터베이스 초기화 및 기본 데이터 생성"""
     with app.app_context():
@@ -538,6 +849,32 @@ def init_db():
             db.session.add(default_perf_test)
             db.session.commit()
             print("기본 성능 테스트가 생성되었습니다.")
+        
+        # 기본 폴더가 없으면 생성
+        if not Folder.query.first():
+            default_folder = Folder(
+                folder_name="기본 폴더",
+                folder_type="environment",
+                environment="dev",
+                deployment_date=datetime.utcnow().date()
+            )
+            db.session.add(default_folder)
+            db.session.commit()
+            print("기본 폴더가 생성되었습니다.")
+        
+        # 기본 대시보드 요약이 없으면 생성
+        if not DashboardSummary.query.first():
+            default_summary = DashboardSummary(
+                environment="dev",
+                total_tests=0,
+                passed_tests=0,
+                failed_tests=0,
+                skipped_tests=0,
+                pass_rate=0.0
+            )
+            db.session.add(default_summary)
+            db.session.commit()
+            print("기본 대시보드 요약이 생성되었습니다.")
         
         if 'postgresql' in db_uri:
             print("Neon PostgreSQL 데이터베이스 초기화 완료!")
