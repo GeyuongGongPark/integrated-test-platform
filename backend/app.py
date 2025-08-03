@@ -103,10 +103,12 @@ def create_app(config_name=None):
         'https://integrated-test-platform-frontend.vercel.app',
         'https://integrated-test-platform-fe.vercel.app',
         'https://integrated-test-platform-gyeonggong-parks-projects.vercel.app',
-        'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app',
         'https://integrated-test-platform.vercel.app',
         'https://integrated-test-platform-fe.vercel.app',
-        'https://integrated-test-platform-frontend.vercel.app'
+        'https://integrated-test-platform-frontend.vercel.app',
+        # 추가 Vercel URL 패턴들
+        'https://*.vercel.app',
+        'https://*.vercel.app/*'
     ]
     
     # 환경 변수에서 추가 CORS 설정 가져오기
@@ -130,7 +132,7 @@ def create_app(config_name=None):
     def after_request(response):
         origin = request.headers.get('Origin')
         
-        # Vercel 환경에서 더 안정적인 CORS 설정
+        # 모든 Origin 허용 (개발 및 프로덕션 환경)
         if origin:
             response.headers.add('Access-Control-Allow-Origin', origin)
         else:
@@ -145,6 +147,9 @@ def create_app(config_name=None):
         # Vercel 환경에서 추가 헤더
         if os.environ.get('VERCEL'):
             response.headers.add('Access-Control-Expose-Headers', 'Content-Length,Content-Range,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Access-Control-Allow-Methods')
+        
+        # 디버깅을 위한 로그
+        print(f"🌐 CORS Request - Origin: {origin}, Method: {request.method}, Path: {request.path}")
         
         return response
     
@@ -1033,7 +1038,7 @@ def handle_options(path):
     
     response = jsonify({'status': 'ok'})
     
-    # Origin 헤더가 있으면 해당 origin 허용, 없으면 모든 origin 허용
+    # 모든 Origin 허용 (개발 및 프로덕션 환경)
     if origin:
         response.headers.add('Access-Control-Allow-Origin', origin)
     else:
@@ -1047,6 +1052,9 @@ def handle_options(path):
     # Vercel 환경에서 추가 헤더
     if os.environ.get('VERCEL'):
         response.headers.add('Access-Control-Expose-Headers', 'Content-Length,Content-Range,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Access-Control-Allow-Methods')
+    
+    # 디버깅을 위한 로그
+    print(f"🌐 CORS Preflight - Origin: {origin}, Path: {path}")
     
     return response, 200
 
