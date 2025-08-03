@@ -20,15 +20,26 @@ if os.path.exists(env_path):
 
 def create_app(config_name=None):
     if config_name is None:
-        # Vercel 환경 감지
+        # 환경 감지 개선
         if os.environ.get('VERCEL'):
             config_name = 'production'
+            print("🌐 Vercel 환경 감지됨 - Production 설정 사용")
+        elif os.environ.get('FLASK_ENV') == 'production':
+            config_name = 'production'
+            print("🏭 Production 환경 감지됨")
         else:
-            config_name = os.environ.get('FLASK_ENV', 'development')
+            config_name = 'development'
+            print("💻 Development 환경 감지됨")
     
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
+    
+    # 데이터베이스 URI 로깅 (민감한 정보는 마스킹)
+    db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if db_uri:
+        masked_uri = db_uri.split('@')[0].split('://')[0] + '://***@' + db_uri.split('@')[1] if '@' in db_uri else db_uri
+        print(f"🗄️ Database URI: {masked_uri}")
     
     # CORS 설정 개선 - 실제 프론트엔드 URL 포함
     cors_origins = [
@@ -42,6 +53,8 @@ def create_app(config_name=None):
     env_cors = os.environ.get('CORS_ORIGINS', '')
     if env_cors:
         cors_origins.extend(env_cors.split(','))
+    
+    print(f"🌐 CORS Origins: {cors_origins}")
     
     CORS(app, origins=cors_origins, supports_credentials=True)
     
@@ -783,30 +796,34 @@ def init_db():
         try:
             # 현재 사용 중인 데이터베이스 확인
             db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-            print(f"Database URI: {db_uri}")
+            print(f"🗄️ Database URI: {db_uri}")
             
-            # Vercel 환경에서는 항상 테이블 생성 시도
+            # 환경별 데이터베이스 초기화 전략
             if os.environ.get('VERCEL'):
-                print("Vercel 환경에서 데이터베이스 초기화 시작...")
+                print("🌐 Vercel 환경에서 데이터베이스 초기화 시작...")
                 try:
                     db.create_all()
-                    print("Vercel 환경에서 데이터베이스 테이블 생성 완료")
+                    print("✅ Vercel 환경에서 데이터베이스 테이블 생성 완료")
                 except Exception as e:
-                    print(f"Vercel 환경에서 테이블 생성 실패: {str(e)}")
+                    print(f"⚠️ Vercel 환경에서 테이블 생성 실패: {str(e)}")
+                    print("🔄 기존 테이블 사용 시도...")
                     # 테이블 생성 실패해도 계속 진행
             elif 'postgresql' in db_uri:
-                print("Neon PostgreSQL 데이터베이스 초기화 시작...")
-                # PostgreSQL의 경우 기존 테이블이 있으므로 테이블 생성 건너뛰기
-                print("기존 테이블 사용 (마이그레이션된 데이터 활용)")
+                print("🗄️ Neon PostgreSQL 데이터베이스 초기화 시작...")
+                try:
+                    db.create_all()
+                    print("✅ PostgreSQL 테이블 생성 완료")
+                except Exception as e:
+                    print(f"⚠️ PostgreSQL 테이블 생성 실패: {str(e)}")
+                    print("🔄 기존 테이블 사용...")
             elif 'sqlite' in db_uri:
-                print("SQLite 데이터베이스 초기화 시작...")
-                # SQLite의 경우 테이블 생성
+                print("💾 SQLite 데이터베이스 초기화 시작...")
                 db.create_all()
-                print("데이터베이스 테이블 생성 완료")
+                print("✅ SQLite 테이블 생성 완료")
             else:
-                print("데이터베이스 초기화 시작...")
+                print("🔧 기본 데이터베이스 초기화 시작...")
                 db.create_all()
-                print("데이터베이스 테이블 생성 완료")
+                print("✅ 기본 테이블 생성 완료")
             
             # 기본 프로젝트가 없으면 생성
             if not Project.query.first():
@@ -885,6 +902,46 @@ def health_check():
         'timestamp': datetime.now().isoformat(),
         'deploy_test': 'GitHub Actions CI/CD working!'
     }), 200
+
+# 환경 진단 엔드포인트 추가
+@app.route('/debug/environment', methods=['GET'])
+def debug_environment():
+    """환경 설정 진단 엔드포인트"""
+    try:
+        # 데이터베이스 연결 테스트
+        db_status = "unknown"
+        try:
+            db.session.execute('SELECT 1')
+            db_status = "connected"
+        except Exception as e:
+            db_status = f"error: {str(e)}"
+        
+        return jsonify({
+            'environment': {
+                'vercel': bool(os.environ.get('VERCEL')),
+                'flask_env': os.environ.get('FLASK_ENV'),
+                'node_env': os.environ.get('NODE_ENV'),
+                'database_uri_type': 'postgresql' if 'postgresql' in app.config.get('SQLALCHEMY_DATABASE_URI', '') else 'sqlite' if 'sqlite' in app.config.get('SQLALCHEMY_DATABASE_URI', '') else 'unknown'
+            },
+            'database': {
+                'status': db_status,
+                'uri_masked': app.config.get('SQLALCHEMY_DATABASE_URI', '').split('@')[0].split('://')[0] + '://***@' + app.config.get('SQLALCHEMY_DATABASE_URI', '').split('@')[1] if '@' in app.config.get('SQLALCHEMY_DATABASE_URI', '') else app.config.get('SQLALCHEMY_DATABASE_URI', '')
+            },
+            'cors': {
+                'origins': [
+                    'http://localhost:3000',
+                    'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app',
+                    'https://integrated-test-platform-frontend.vercel.app',
+                    'https://integrated-test-platform-fe.vercel.app'
+                ]
+            },
+            'timestamp': datetime.now().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
 
 # Flask 서버 실행
 if __name__ == '__main__':
