@@ -3,6 +3,8 @@ import axios from 'axios';
 import config from '../../config';
 import './UnifiedDashboard.css';
 
+// GitHub Secrets 설정 완료 후 배포 테스트
+
 // axios 기본 URL 설정
 axios.defaults.baseURL = config.apiUrl;
 axios.defaults.withCredentials = false;  // CORS 문제 해결을 위해 false로 설정
