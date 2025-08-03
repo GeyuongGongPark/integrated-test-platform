@@ -546,11 +546,6 @@ def init_db():
         else:
             print("데이터베이스 초기화 완료!")
 
-# Flask 서버 실행
-if __name__ == '__main__':
-    init_db()  # 데이터베이스 초기화
-    app.run(debug=True, port=8000)
-
 # 헬스체크 엔드포인트 추가
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -561,4 +556,9 @@ def health_check():
         'timestamp': datetime.now().isoformat(),
         'deploy_test': 'GitHub Actions CI/CD working!'
     }), 200
+
+# Flask 서버 실행
+if __name__ == '__main__':
+    init_db()  # 데이터베이스 초기화
+    app.run(debug=True, port=8000)
 
