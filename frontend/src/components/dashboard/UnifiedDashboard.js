@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
 import './UnifiedDashboard.css';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Doughnut } from 'react-chartjs-2';
+
+// Chart.js 등록
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 // GitHub Secrets 설정 완료 후 배포 테스트
 
@@ -144,6 +149,61 @@ const UnifiedDashboard = () => {
     return '#F44336'; // Red
   };
 
+  const createChartData = (environment) => {
+    const summary = getEnvironmentSummary(environment);
+    const passed = summary.passed_tests;
+    const failed = summary.failed_tests;
+    const skipped = summary.skipped_tests;
+    
+    return {
+      labels: ['성공', '실패', '건너뜀'],
+      datasets: [
+        {
+          data: [passed, failed, skipped],
+          backgroundColor: [
+            '#28a745', // 성공 - 녹색
+            '#dc3545', // 실패 - 빨간색
+            '#ffc107'  // 건너뜀 - 노란색
+          ],
+          borderColor: [
+            '#1e7e34',
+            '#c82333',
+            '#e0a800'
+          ],
+          borderWidth: 2,
+        },
+      ],
+    };
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 20,
+          usePointStyle: true,
+          font: {
+            size: 12
+          }
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const label = context.label || '';
+            const value = context.parsed;
+            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+            const percentage = ((value / total) * 100).toFixed(1);
+            return `${label}: ${value} (${percentage}%)`;
+          }
+        }
+      }
+    }
+  };
+
   if (loading) {
     return <div className="dashboard-loading">로딩 중...</div>;
   }
@@ -165,31 +225,28 @@ const UnifiedDashboard = () => {
             return (
               <div key={env} className="environment-card">
                 <h3>{env.toUpperCase()} 환경</h3>
-                <div className="summary-stats">
-                  <div className="stat-item">
-                    <span className="stat-label">전체 테스트:</span>
-                    <span className="stat-value">{summary.total_tests}</span>
+                <div className="chart-container">
+                  <div className="chart-wrapper">
+                    <Doughnut 
+                      data={createChartData(env)} 
+                      options={chartOptions}
+                      height={200}
+                    />
                   </div>
-                  <div className="stat-item">
-                    <span className="stat-label">성공:</span>
-                    <span className="stat-value success">{summary.passed_tests}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">실패:</span>
-                    <span className="stat-value failed">{summary.failed_tests}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">건너뜀:</span>
-                    <span className="stat-value skipped">{summary.skipped_tests}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">성공률:</span>
-                    <span 
-                      className="stat-value pass-rate"
-                      style={{ color: getStatusColor(summary.pass_rate) }}
-                    >
-                      {summary.pass_rate}%
-                    </span>
+                  <div className="chart-summary">
+                    <div className="summary-stat">
+                      <span className="stat-label">전체 테스트:</span>
+                      <span className="stat-value">{summary.total_tests}</span>
+                    </div>
+                    <div className="summary-stat">
+                      <span className="stat-label">성공률:</span>
+                      <span 
+                        className="stat-value pass-rate"
+                        style={{ color: getStatusColor(summary.pass_rate) }}
+                      >
+                        {summary.pass_rate}%
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

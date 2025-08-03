@@ -106,6 +106,7 @@ def create_app(config_name=None):
         'https://integrated-test-platform.vercel.app',
         'https://integrated-test-platform-fe.vercel.app',
         'https://integrated-test-platform-frontend.vercel.app',
+        'https://frontend-alpha-jade-15.vercel.app',  # 현재 프론트엔드 URL 추가
         # 추가 Vercel URL 패턴들
         'https://*.vercel.app',
         'https://*.vercel.app/*'
@@ -122,9 +123,9 @@ def create_app(config_name=None):
     CORS(app, 
          origins=['*'], 
          supports_credentials=False, 
-         allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Request-Method', 'Access-Control-Request-Headers'],
+         allow_headers=['*'],
          methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
-         expose_headers=['Content-Length', 'Content-Range', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Headers', 'Access-Control-Allow-Methods'],
+         expose_headers=['*'],
          max_age=86400)
     
     # 추가 CORS 설정 - 더 포괄적인 설정
@@ -136,14 +137,14 @@ def create_app(config_name=None):
         response.headers.add('Access-Control-Allow-Origin', '*')
         
         # 더 포괄적인 헤더 설정
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers')
+        response.headers.add('Access-Control-Allow-Headers', '*')
         response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH,HEAD')
         response.headers.add('Access-Control-Allow-Credentials', 'false')
         response.headers.add('Access-Control-Max-Age', '86400')
         
         # Vercel 환경에서 추가 헤더
         if os.environ.get('VERCEL'):
-            response.headers.add('Access-Control-Expose-Headers', 'Content-Length,Content-Range,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Access-Control-Allow-Methods')
+            response.headers.add('Access-Control-Expose-Headers', '*')
         
         # 디버깅을 위한 로그
         print(f"🌐 CORS Request - Origin: {origin}, Method: {request.method}, Path: {request.path}")
@@ -1034,14 +1035,14 @@ def handle_options(path):
     # 모든 Origin 허용 (개발 및 프로덕션 환경)
     response.headers.add('Access-Control-Allow-Origin', '*')
     
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers')
+    response.headers.add('Access-Control-Allow-Headers', '*')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH,HEAD')
     response.headers.add('Access-Control-Allow-Credentials', 'false')
     response.headers.add('Access-Control-Max-Age', '86400')
     
     # Vercel 환경에서 추가 헤더
     if os.environ.get('VERCEL'):
-        response.headers.add('Access-Control-Expose-Headers', 'Content-Length,Content-Range,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Access-Control-Allow-Methods')
+        response.headers.add('Access-Control-Expose-Headers', '*')
     
     # 디버깅을 위한 로그
     print(f"🌐 CORS Preflight - Origin: {origin}, Path: {path}")
