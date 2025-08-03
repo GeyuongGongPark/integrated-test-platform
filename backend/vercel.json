@@ -15,5 +15,10 @@
   "env": {
     "FLASK_ENV": "production",
     "FLASK_APP": "app.py"
+  },
+  "functions": {
+    "app.py": {
+      "runtime": "python3.12"
+    }
   }
 } 
