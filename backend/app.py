@@ -114,23 +114,34 @@ def create_app(config_name=None):
     print(f"🌐 CORS Origins: {cors_origins}")
     
     # CORS 설정을 더 유연하게 설정 - 모든 origin 허용
-    CORS(app, origins='*', supports_credentials=False, allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'])
+    CORS(app, 
+         origins='*', 
+         supports_credentials=False, 
+         allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+         expose_headers=['Content-Length', 'Content-Range'])
     
     # 추가 CORS 설정 - 더 포괄적인 설정
     @app.after_request
     def after_request(response):
         origin = request.headers.get('Origin')
         
-        # 모든 origin 허용 (프로덕션에서도)
+        # Vercel 환경에서 더 안정적인 CORS 설정
         if origin:
             response.headers.add('Access-Control-Allow-Origin', origin)
         else:
             response.headers.add('Access-Control-Allow-Origin', '*')
         
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'false')  # 모든 origin 허용시 false로 설정
+        # 더 포괄적인 헤더 설정
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
+        response.headers.add('Access-Control-Allow-Credentials', 'false')
         response.headers.add('Access-Control-Max-Age', '86400')
+        
+        # Vercel 환경에서 추가 헤더
+        if os.environ.get('VERCEL'):
+            response.headers.add('Access-Control-Expose-Headers', 'Content-Length,Content-Range')
+        
         return response
     
     db = SQLAlchemy(app)
@@ -964,19 +975,43 @@ def health_check():
         'message': 'Test Platform Backend is running - Auto Deploy Test',
         'version': '1.0.1',
         'timestamp': datetime.now().isoformat(),
-        'deploy_test': 'GitHub Actions CI/CD working!'
+        'deploy_test': 'GitHub Actions CI/CD working!',
+        'cors_enabled': True,
+        'environment': 'production' if os.environ.get('VERCEL') else 'development'
+    }), 200
+
+# 간단한 테스트 엔드포인트 추가
+@app.route('/test', methods=['GET'])
+def test_endpoint():
+    return jsonify({
+        'message': 'CORS test successful',
+        'timestamp': datetime.now().isoformat(),
+        'origin': request.headers.get('Origin', 'unknown')
     }), 200
 
 # CORS preflight 요청 처리
 @app.route('/<path:path>', methods=['OPTIONS'])
 def handle_options(path):
     """CORS preflight 요청 처리"""
+    origin = request.headers.get('Origin')
+    
     response = jsonify({'status': 'ok'})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    
+    # Origin 헤더가 있으면 해당 origin 허용, 없으면 모든 origin 허용
+    if origin:
+        response.headers.add('Access-Control-Allow-Origin', origin)
+    else:
+        response.headers.add('Access-Control-Allow-Origin', '*')
+    
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
+    response.headers.add('Access-Control-Allow-Credentials', 'false')
     response.headers.add('Access-Control-Max-Age', '86400')
+    
+    # Vercel 환경에서 추가 헤더
+    if os.environ.get('VERCEL'):
+        response.headers.add('Access-Control-Expose-Headers', 'Content-Length,Content-Range')
+    
     return response, 200
 
 # 환경 진단 엔드포인트 추가

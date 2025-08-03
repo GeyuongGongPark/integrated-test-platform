@@ -13,6 +13,13 @@ axios.interceptors.request.use(
     // 요청 헤더에 CORS 관련 설정 추가
     config.headers['Content-Type'] = 'application/json';
     config.headers['X-Requested-With'] = 'XMLHttpRequest';
+    config.headers['Accept'] = 'application/json';
+    config.headers['Origin'] = window.location.origin;
+    
+    // Vercel 환경에서 추가 설정
+    if (process.env.NODE_ENV === 'production') {
+      config.timeout = 10000; // 10초 타임아웃
+    }
     
     // 개발 환경에서만 로깅
     if (process.env.NODE_ENV === 'development') {
@@ -63,6 +70,27 @@ const UnifiedDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      
+      // API URL 로깅
+      console.log('🔗 Current API URL:', config.apiUrl);
+      console.log('🌐 Current Origin:', window.location.origin);
+      
+      // 먼저 간단한 테스트 요청
+      try {
+        const testRes = await axios.get('/test');
+        console.log('✅ Test endpoint successful:', testRes.data);
+      } catch (testErr) {
+        console.error('❌ Test endpoint failed:', testErr);
+      }
+      
+      // 헬스체크 요청
+      try {
+        const healthRes = await axios.get('/health');
+        console.log('✅ Health check successful:', healthRes.data);
+      } catch (healthErr) {
+        console.error('❌ Health check failed:', healthErr);
+      }
+      
       const [testCasesRes, performanceTestsRes, testExecutionsRes, summariesRes] = await Promise.all([
         axios.get('/testcases'),
         axios.get('/performance-tests'),
@@ -74,9 +102,17 @@ const UnifiedDashboard = () => {
       setPerformanceTests(performanceTestsRes.data);
       setTestExecutions(testExecutionsRes.data);
       setDashboardSummaries(summariesRes.data);
+      
+      console.log('✅ Dashboard data loaded successfully');
     } catch (err) {
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
       console.error('Dashboard data fetch error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        code: err.code,
+        response: err.response,
+        request: err.request
+      });
     } finally {
       setLoading(false);
     }
