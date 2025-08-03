@@ -83,6 +83,14 @@ const UnifiedDashboard = () => {
         console.error('❌ Test endpoint failed:', testErr);
       }
       
+      // CORS 전용 테스트 요청
+      try {
+        const corsTestRes = await axios.get('/cors-test');
+        console.log('✅ CORS test successful:', corsTestRes.data);
+      } catch (corsTestErr) {
+        console.error('❌ CORS test failed:', corsTestErr);
+      }
+      
       // 헬스체크 요청
       try {
         const healthRes = await axios.get('/health');
