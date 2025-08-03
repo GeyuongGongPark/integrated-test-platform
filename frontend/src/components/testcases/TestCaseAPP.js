@@ -111,7 +111,7 @@ const TestCaseAPP = () => {
           </span>
           <span className="folder-name">{node.name}</span>
           {node.type === 'test_case' && (
-            <span className={`test-status ${node.status.toLowerCase()}`}>
+            <span className={`test-status ${node.status.toLowerCase().replace('/', '-')}`}>
               {node.status}
             </span>
           )}
@@ -174,7 +174,7 @@ const TestCaseAPP = () => {
               <div key={testCase.id} className="testcase-card">
                 <div className="testcase-header">
                   <h4>{testCase.description}</h4>
-                  <span className={`status-badge ${testCase.result_status.toLowerCase()}`}>
+                  <span className={`status-badge ${testCase.result_status.toLowerCase().replace('/', '-')}`}>
                     {testCase.result_status}
                   </span>
                 </div>

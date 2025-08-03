@@ -119,7 +119,7 @@ const UnifiedDashboard = () => {
             {testCases.slice(0, 5).map(testCase => (
               <div key={testCase.id} className="test-item">
                 <span className="test-name">{testCase.description}</span>
-                <span className={`test-status ${testCase.result_status.toLowerCase()}`}>
+                <span className={`test-status ${testCase.result_status.toLowerCase().replace('/', '-')}`}>
                   {testCase.result_status}
                 </span>
               </div>
@@ -151,7 +151,7 @@ const UnifiedDashboard = () => {
             {testExecutions.slice(0, 5).map(execution => (
               <div key={execution.id} className="test-item">
                 <span className="test-name">Test #{execution.id}</span>
-                <span className={`test-status ${execution.status.toLowerCase()}`}>
+                <span className={`test-status ${execution.status.toLowerCase().replace('/', '-')}`}>
                   {execution.status}
                 </span>
               </div>
