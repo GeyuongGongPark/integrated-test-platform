@@ -16,7 +16,6 @@ axios.interceptors.request.use(
     config.headers['Content-Type'] = 'application/json';
     config.headers['X-Requested-With'] = 'XMLHttpRequest';
     config.headers['Accept'] = 'application/json';
-    config.headers['Origin'] = window.location.origin;
     
     // Vercel 환경에서 추가 설정
     if (process.env.NODE_ENV === 'production') {

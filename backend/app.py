@@ -120,7 +120,7 @@ def create_app(config_name=None):
     
     # CORS 설정을 더 강화 - 모든 origin 허용하되 더 포괄적인 설정
     CORS(app, 
-         origins='*', 
+         origins=['*'], 
          supports_credentials=False, 
          allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Request-Method', 'Access-Control-Request-Headers'],
          methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
@@ -133,10 +133,7 @@ def create_app(config_name=None):
         origin = request.headers.get('Origin')
         
         # 모든 Origin 허용 (개발 및 프로덕션 환경)
-        if origin:
-            response.headers.add('Access-Control-Allow-Origin', origin)
-        else:
-            response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Origin', '*')
         
         # 더 포괄적인 헤더 설정
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers')
@@ -1011,11 +1008,7 @@ def cors_test():
     if request.method == 'OPTIONS':
         # Preflight 요청 처리
         response = jsonify({'status': 'preflight_ok'})
-        origin = request.headers.get('Origin')
-        if origin:
-            response.headers.add('Access-Control-Allow-Origin', origin)
-        else:
-            response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers')
         response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
         response.headers.add('Access-Control-Allow-Credentials', 'false')
@@ -1039,10 +1032,7 @@ def handle_options(path):
     response = jsonify({'status': 'ok'})
     
     # 모든 Origin 허용 (개발 및 프로덕션 환경)
-    if origin:
-        response.headers.add('Access-Control-Allow-Origin', origin)
-    else:
-        response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Origin', '*')
     
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH,HEAD')
