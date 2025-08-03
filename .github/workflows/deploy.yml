@@ -60,7 +60,7 @@ jobs:
         with:
           node-version: '20'
       
-      - name: Install Vercel CLI
+      - name: Install Vercel CLI globally
         run: npm install -g vercel@latest
       
       - name: Deploy Backend to Vercel
@@ -70,7 +70,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
           working-directory: ./backend
-          vercel-args: '--prod --yes'
+          vercel-args: '--prod --yes --force'
 
   deploy-frontend:
     needs: test
@@ -84,7 +84,7 @@ jobs:
         with:
           node-version: '20'
       
-      - name: Install Vercel CLI
+      - name: Install Vercel CLI globally
         run: npm install -g vercel@latest
       
       - name: Deploy Frontend to Vercel
@@ -94,11 +94,11 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
           working-directory: ./frontend
-          vercel-args: '--prod --yes'
+          vercel-args: '--prod --yes --force'
       
       - name: Deploy Status
         run: |
           echo "✅ All tests passed!"
           echo "🚀 Backend and Frontend deployed to Vercel"
-          echo "📋 Backend URL: https://integrated-test-platform-backend.vercel.app"
-          echo "📋 Frontend URL: https://integrated-test-platform-frontend.vercel.app" 
+          echo "📋 Backend URL: https://integrated-test-platform-gyeonggong-parks-projects.vercel.app"
+          echo "📋 Frontend URL: https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app" 
