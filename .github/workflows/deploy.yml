@@ -55,14 +55,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Deploy Backend to Vercel
-        uses: amondnet/vercel-action@v25
+      - name: Setup Node.js for Vercel CLI
+        uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
-          working-directory: ./backend
-          vercel-args: '--prod'
+          node-version: '20'
+      
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+      
+      - name: Deploy Backend to Vercel
+        run: |
+          cd backend
+          vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
 
   deploy-frontend:
     needs: test
@@ -71,14 +78,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Deploy Frontend to Vercel
-        uses: amondnet/vercel-action@v25
+      - name: Setup Node.js for Vercel CLI
+        uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
-          working-directory: ./frontend
-          vercel-args: '--prod'
+          node-version: '20'
+      
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+      
+      - name: Deploy Frontend to Vercel
+        run: |
+          cd frontend
+          vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
       
       - name: Deploy Status
         run: |
