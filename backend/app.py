@@ -103,7 +103,10 @@ def create_app(config_name=None):
         'https://integrated-test-platform-frontend.vercel.app',
         'https://integrated-test-platform-fe.vercel.app',
         'https://integrated-test-platform-gyeonggong-parks-projects.vercel.app',
-        'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app'
+        'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app',
+        'https://integrated-test-platform.vercel.app',
+        'https://integrated-test-platform-fe.vercel.app',
+        'https://integrated-test-platform-frontend.vercel.app'
     ]
     
     # 환경 변수에서 추가 CORS 설정 가져오기
@@ -113,13 +116,14 @@ def create_app(config_name=None):
     
     print(f"🌐 CORS Origins: {cors_origins}")
     
-    # CORS 설정을 더 유연하게 설정 - 모든 origin 허용
+    # CORS 설정을 더 강화 - 모든 origin 허용하되 더 포괄적인 설정
     CORS(app, 
          origins='*', 
          supports_credentials=False, 
-         allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-         expose_headers=['Content-Length', 'Content-Range'])
+         allow_headers=['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Request-Method', 'Access-Control-Request-Headers'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+         expose_headers=['Content-Length', 'Content-Range', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Headers', 'Access-Control-Allow-Methods'],
+         max_age=86400)
     
     # 추가 CORS 설정 - 더 포괄적인 설정
     @app.after_request
@@ -133,14 +137,14 @@ def create_app(config_name=None):
             response.headers.add('Access-Control-Allow-Origin', '*')
         
         # 더 포괄적인 헤더 설정
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH,HEAD')
         response.headers.add('Access-Control-Allow-Credentials', 'false')
         response.headers.add('Access-Control-Max-Age', '86400')
         
         # Vercel 환경에서 추가 헤더
         if os.environ.get('VERCEL'):
-            response.headers.add('Access-Control-Expose-Headers', 'Content-Length,Content-Range')
+            response.headers.add('Access-Control-Expose-Headers', 'Content-Length,Content-Range,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Access-Control-Allow-Methods')
         
         return response
     
@@ -986,7 +990,39 @@ def test_endpoint():
     return jsonify({
         'message': 'CORS test successful',
         'timestamp': datetime.now().isoformat(),
-        'origin': request.headers.get('Origin', 'unknown')
+        'origin': request.headers.get('Origin', 'unknown'),
+        'headers': {
+            'origin': request.headers.get('Origin'),
+            'host': request.headers.get('Host'),
+            'user_agent': request.headers.get('User-Agent'),
+            'referer': request.headers.get('Referer')
+        }
+    }), 200
+
+# CORS 전용 테스트 엔드포인트
+@app.route('/cors-test', methods=['GET', 'POST', 'OPTIONS'])
+def cors_test():
+    """CORS 전용 테스트 엔드포인트"""
+    if request.method == 'OPTIONS':
+        # Preflight 요청 처리
+        response = jsonify({'status': 'preflight_ok'})
+        origin = request.headers.get('Origin')
+        if origin:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+        else:
+            response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'false')
+        response.headers.add('Access-Control-Max-Age', '86400')
+        return response, 200
+    
+    return jsonify({
+        'message': 'CORS test endpoint working',
+        'method': request.method,
+        'timestamp': datetime.now().isoformat(),
+        'origin': request.headers.get('Origin', 'unknown'),
+        'headers': dict(request.headers)
     }), 200
 
 # CORS preflight 요청 처리
@@ -1003,14 +1039,14 @@ def handle_options(path):
     else:
         response.headers.add('Access-Control-Allow-Origin', '*')
     
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH,HEAD')
     response.headers.add('Access-Control-Allow-Credentials', 'false')
     response.headers.add('Access-Control-Max-Age', '86400')
     
     # Vercel 환경에서 추가 헤더
     if os.environ.get('VERCEL'):
-        response.headers.add('Access-Control-Expose-Headers', 'Content-Length,Content-Range')
+        response.headers.add('Access-Control-Expose-Headers', 'Content-Length,Content-Range,Access-Control-Allow-Origin,Access-Control-Allow-Headers,Access-Control-Allow-Methods')
     
     return response, 200
 
@@ -1026,6 +1062,14 @@ def debug_environment():
             db_status = "connected"
         except Exception as e:
             db_status = f"error: {str(e)}"
+        
+        # CORS 헤더 정보 수집
+        cors_headers = {
+            'origin': request.headers.get('Origin'),
+            'host': request.headers.get('Host'),
+            'user_agent': request.headers.get('User-Agent'),
+            'referer': request.headers.get('Referer')
+        }
         
         return jsonify({
             'environment': {
@@ -1043,8 +1087,12 @@ def debug_environment():
                     'http://localhost:3000',
                     'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app',
                     'https://integrated-test-platform-frontend.vercel.app',
-                    'https://integrated-test-platform-fe.vercel.app'
-                ]
+                    'https://integrated-test-platform-fe.vercel.app',
+                    'https://integrated-test-platform.vercel.app'
+                ],
+                'request_headers': cors_headers,
+                'allowed_methods': ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+                'allowed_headers': ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Request-Method', 'Access-Control-Request-Headers']
             },
             'timestamp': datetime.now().isoformat()
         }), 200
