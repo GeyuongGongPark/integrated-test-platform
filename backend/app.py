@@ -785,7 +785,16 @@ def init_db():
             db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
             print(f"Database URI: {db_uri}")
             
-            if 'postgresql' in db_uri:
+            # Vercel 환경에서는 항상 테이블 생성 시도
+            if os.environ.get('VERCEL'):
+                print("Vercel 환경에서 데이터베이스 초기화 시작...")
+                try:
+                    db.create_all()
+                    print("Vercel 환경에서 데이터베이스 테이블 생성 완료")
+                except Exception as e:
+                    print(f"Vercel 환경에서 테이블 생성 실패: {str(e)}")
+                    # 테이블 생성 실패해도 계속 진행
+            elif 'postgresql' in db_uri:
                 print("Neon PostgreSQL 데이터베이스 초기화 시작...")
                 # PostgreSQL의 경우 기존 테이블이 있으므로 테이블 생성 건너뛰기
                 print("기존 테이블 사용 (마이그레이션된 데이터 활용)")
@@ -852,7 +861,9 @@ def init_db():
                 db.session.commit()
                 print("기본 대시보드 요약이 생성되었습니다.")
             
-            if 'postgresql' in db_uri:
+            if os.environ.get('VERCEL'):
+                print("Vercel 환경에서 데이터베이스 초기화 완료!")
+            elif 'postgresql' in db_uri:
                 print("Neon PostgreSQL 데이터베이스 초기화 완료!")
             elif 'sqlite' in db_uri:
                 print("SQLite 데이터베이스 초기화 완료!")
