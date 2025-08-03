@@ -149,55 +149,7 @@ class DashboardSummary(db.Model):
     pass_rate = db.Column(db.Float, default=0.0)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
 
-# k6 실행 엔진
-class K6ExecutionEngine:
-    def __init__(self, k6_script_dir="test-scripts/performance/clm/nomerl"):
-        self.k6_script_dir = k6_script_dir
-    
-    def execute_test(self, script_name, environment_vars):
-        """k6 성능 테스트 실행"""
-        script_path = os.path.join(self.k6_script_dir, script_name)
-        
-        if not os.path.exists(script_path):
-            return {"error": f"스크립트 파일을 찾을 수 없습니다: {script_path}"}
-        
-        env_vars = " ".join([f"-e {k}={v}" for k, v in environment_vars.items()])
-        cmd = f"k6 run {env_vars} {script_path}"
-        
-        try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
-            return self.parse_k6_output(result.stdout, result.stderr, result.returncode)
-        except subprocess.TimeoutExpired:
-            return {"error": "테스트 실행 시간 초과"}
-        except Exception as e:
-            return {"error": f"테스트 실행 오류: {str(e)}"}
-    
-    def parse_k6_output(self, stdout, stderr, returncode):
-        """k6 출력 결과 파싱"""
-        if returncode != 0:
-            return {"error": f"k6 실행 실패: {stderr}"}
-        
-        # 간단한 결과 파싱 (실제로는 더 정교한 파싱 필요)
-        lines = stdout.split('\n')
-        result = {
-            "status": "Pass" if returncode == 0 else "Fail",
-            "output": stdout,
-            "error": stderr if stderr else None
-        }
-        
-        # 응답 시간, 처리량 등 추출 시도
-        for line in lines:
-            if "http_req_duration" in line and "avg=" in line:
-                try:
-                    avg_part = line.split("avg=")[1].split()[0]
-                    result["response_time_avg"] = float(avg_part)
-                except:
-                    pass
-        
-        return result
 
-# k6 실행 엔진 인스턴스
-k6_engine = K6ExecutionEngine()
 
 # 기존 TCM API 엔드포인트들
 @app.route('/projects', methods=['GET'])
