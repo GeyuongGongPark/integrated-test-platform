@@ -20,5 +20,6 @@
     "app.py": {
       "runtime": "python3.12"
     }
-  }
+  },
+  "regions": ["icn1"]
 } 

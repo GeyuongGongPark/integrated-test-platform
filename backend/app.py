@@ -15,17 +15,24 @@ from config import config
 # .env 파일 로드 (절대 경로로 명시적 로드)
 import os.path
 env_path = os.path.join(os.path.dirname(__file__), '.env')
-load_dotenv(env_path)
+if os.path.exists(env_path):
+    load_dotenv(env_path)
 
 def create_app(config_name=None):
     if config_name is None:
-        config_name = os.environ.get('FLASK_ENV', 'development')
+        # Vercel 환경 감지
+        if os.environ.get('VERCEL'):
+            config_name = 'production'
+        else:
+            config_name = os.environ.get('FLASK_ENV', 'development')
     
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
     
-    CORS(app, origins=os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(','))
+    # CORS 설정 개선
+    cors_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(',')
+    CORS(app, origins=cors_origins)
     
     # 추가 CORS 설정
     @app.after_request
