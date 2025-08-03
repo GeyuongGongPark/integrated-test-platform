@@ -46,7 +46,8 @@ def create_app(config_name=None):
         'http://localhost:3000',
         'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app',
         'https://integrated-test-platform-frontend.vercel.app',
-        'https://integrated-test-platform-fe.vercel.app'
+        'https://integrated-test-platform-fe.vercel.app',
+        'https://integrated-test-platform-gyeonggong-parks-projects.vercel.app'
     ]
     
     # 환경 변수에서 추가 CORS 설정 가져오기
