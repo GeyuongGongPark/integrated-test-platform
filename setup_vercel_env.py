@@ -2,9 +2,9 @@
 """
 Vercel 환경변수 설정 스크립트
 """
-
 import subprocess
 import json
+import sys
 
 # 환경변수 설정
 env_vars = {
@@ -12,7 +12,7 @@ env_vars = {
     "PROD_DATABASE_URL": "postgresql://neondb_owner:npg_jAtyhE2HW3pY@ep-flat-frog-a1tlnavw-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
     "FLASK_ENV": "production",
     "SECRET_KEY": "your-production-secret-key-here-2025",
-    "CORS_ORIGINS": "https://integrated-test-platform-4v4m90qr3-gyeonggong-parks-projects.vercel.app"
+    "CORS_ORIGINS": "https://integrated-test-platform-h9hfx7fij-gyeonggong-parks-projects.vercel.app"
 }
 
 def set_vercel_env_vars():
@@ -21,16 +21,14 @@ def set_vercel_env_vars():
     
     for key, value in env_vars.items():
         try:
-            cmd = f'vercel env add {key} production'
             print(f"설정 중: {key}")
             
             # 환경변수 설정 명령어 실행
             result = subprocess.run(
-                cmd, 
-                shell=True, 
-                capture_output=True, 
-                text=True,
-                input=value
+                ['vercel', 'env', 'add', key, 'production'],
+                input=value.encode('utf-8'),
+                capture_output=True,
+                text=True
             )
             
             if result.returncode == 0:
