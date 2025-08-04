@@ -325,11 +325,17 @@ def create_testcase():
     data = request.get_json()
     print("Received data:", data)
     
-    if not data.get('project_id'):
-        return jsonify({'error': 'project_id는 필수입니다'}), 400
+    # project_id가 없으면 기본 프로젝트 사용
+    project_id = data.get('project_id')
+    if not project_id:
+        default_project = Project.query.filter_by(name='Test Management System').first()
+        if default_project:
+            project_id = default_project.id
+        else:
+            return jsonify({'error': '기본 프로젝트가 없습니다. 먼저 프로젝트를 생성해주세요.'}), 400
     
     tc = TestCase(
-        project_id=data.get('project_id'),
+        project_id=project_id,
         main_category=data.get('main_category', ''),
         sub_category=data.get('sub_category', ''),
         detail_category=data.get('detail_category', ''),
@@ -872,103 +878,89 @@ def init_db():
     """데이터베이스 초기화 및 기본 데이터 생성"""
     with app.app_context():
         try:
-            # 현재 사용 중인 데이터베이스 확인
-            db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-            print(f"🗄️ Database URI: {db_uri}")
-            
-            # 환경별 데이터베이스 초기화 전략
-            if os.environ.get('VERCEL'):
-                print("🌐 Vercel 환경에서 데이터베이스 초기화 시작...")
-                try:
-                    db.create_all()
-                    print("✅ Vercel 환경에서 데이터베이스 테이블 생성 완료")
-                except Exception as e:
-                    print(f"⚠️ Vercel 환경에서 테이블 생성 실패: {str(e)}")
-                    print("🔄 기존 테이블 사용 시도...")
-                    # 테이블 생성 실패해도 계속 진행
-            elif 'postgresql' in db_uri:
-                print("🗄️ Neon PostgreSQL 데이터베이스 초기화 시작...")
-                try:
-                    db.create_all()
-                    print("✅ PostgreSQL 테이블 생성 완료")
-                except Exception as e:
-                    print(f"⚠️ PostgreSQL 테이블 생성 실패: {str(e)}")
-                    print("🔄 기존 테이블 사용...")
-            elif 'sqlite' in db_uri:
-                print("💾 SQLite 데이터베이스 초기화 시작...")
-                db.create_all()
-                print("✅ SQLite 테이블 생성 완료")
-            else:
-                print("🔧 기본 데이터베이스 초기화 시작...")
-                db.create_all()
-                print("✅ 기본 테이블 생성 완료")
+            # 테이블 생성
+            db.create_all()
+            print("✅ PostgreSQL 테이블 생성 완료")
             
             # 기본 프로젝트가 없으면 생성
-            if not Project.query.first():
+            default_project = Project.query.filter_by(name='Test Management System').first()
+            if not default_project:
                 default_project = Project(
-                    name="테스트 프로젝트",
-                    description="테스트 케이스 관리 시스템"
+                    name='Test Management System',
+                    description='통합 테스트 관리 시스템'
                 )
                 db.session.add(default_project)
                 db.session.commit()
-                print("기본 프로젝트가 생성되었습니다.")
+                print("✅ 기본 프로젝트 생성 완료")
             
-            # 기본 성능 테스트가 없으면 생성
-            if not PerformanceTest.query.first():
-                default_perf_test = PerformanceTest(
-                    name="CLM 계약서 생성 테스트",
-                    description="LFBZ CLM 시스템 계약서 생성 성능 테스트",
-                    k6_script_path="clm_draft.js",
-                    environment="prod",
-                    parameters=json.dumps({
-                        "DRAFT_TYPE": "new",
-                        "SECURITY_TYPE": "all",
-                        "REVIEW_TYPE": "use"
-                    })
-                )
-                db.session.add(default_perf_test)
-                db.session.commit()
-                print("기본 성능 테스트가 생성되었습니다.")
-            
-            # 기본 폴더가 없으면 생성
+            # 기본 폴더 구조가 없으면 생성
             if not Folder.query.first():
-                default_folder = Folder(
-                    folder_name="기본 폴더",
-                    folder_type="environment",
-                    environment="dev",
-                    deployment_date=datetime.utcnow().date()
+                # DEV 환경 폴더
+                dev_folder = Folder(
+                    folder_name='DEV 환경',
+                    folder_type='environment',
+                    environment='dev'
                 )
-                db.session.add(default_folder)
-                db.session.commit()
-                print("기본 폴더가 생성되었습니다.")
-            
-            # 기본 대시보드 요약이 없으면 생성
-            if not DashboardSummary.query.first():
-                default_summary = DashboardSummary(
-                    environment="dev",
-                    total_tests=0,
-                    passed_tests=0,
-                    failed_tests=0,
-                    skipped_tests=0,
-                    pass_rate=0.0
-                )
-                db.session.add(default_summary)
-                db.session.commit()
-                print("기본 대시보드 요약이 생성되었습니다.")
-            
-            if os.environ.get('VERCEL'):
-                print("Vercel 환경에서 데이터베이스 초기화 완료!")
-            elif 'postgresql' in db_uri:
-                print("Neon PostgreSQL 데이터베이스 초기화 완료!")
-            elif 'sqlite' in db_uri:
-                print("SQLite 데이터베이스 초기화 완료!")
-            else:
-                print("데이터베이스 초기화 완료!")
+                db.session.add(dev_folder)
+                db.session.flush()  # ID 생성
                 
+                # DEV 환경의 배포일자 폴더
+                dev_deployment = Folder(
+                    folder_name='2024-01-15',
+                    folder_type='deployment_date',
+                    parent_folder_id=dev_folder.id,
+                    environment='dev',
+                    deployment_date=datetime.strptime('2024-01-15', '%Y-%m-%d').date()
+                )
+                db.session.add(dev_deployment)
+                
+                # ALPHA 환경 폴더
+                alpha_folder = Folder(
+                    folder_name='ALPHA 환경',
+                    folder_type='environment',
+                    environment='alpha'
+                )
+                db.session.add(alpha_folder)
+                db.session.flush()
+                
+                # ALPHA 환경의 배포일자 폴더
+                alpha_deployment = Folder(
+                    folder_name='2024-01-20',
+                    folder_type='deployment_date',
+                    parent_folder_id=alpha_folder.id,
+                    environment='alpha',
+                    deployment_date=datetime.strptime('2024-01-20', '%Y-%m-%d').date()
+                )
+                db.session.add(alpha_deployment)
+                
+                # PRODUCTION 환경 폴더
+                prod_folder = Folder(
+                    folder_name='PRODUCTION 환경',
+                    folder_type='environment',
+                    environment='production'
+                )
+                db.session.add(prod_folder)
+                db.session.flush()
+                
+                # PRODUCTION 환경의 배포일자 폴더
+                prod_deployment = Folder(
+                    folder_name='2024-01-25',
+                    folder_type='deployment_date',
+                    parent_folder_id=prod_folder.id,
+                    environment='production',
+                    deployment_date=datetime.strptime('2024-01-25', '%Y-%m-%d').date()
+                )
+                db.session.add(prod_deployment)
+                
+                db.session.commit()
+                print("✅ 기본 폴더 구조 생성 완료")
+            
+            print("Neon PostgreSQL 데이터베이스 초기화 완료!")
+            
         except Exception as e:
-            print(f"데이터베이스 초기화 중 오류 발생: {str(e)}")
-            # 오류가 발생해도 앱은 계속 실행
-            pass
+            print(f"❌ 데이터베이스 초기화 중 오류: {str(e)}")
+            db.session.rollback()
+            raise
 
 # 헬스체크 엔드포인트 추가
 @app.route('/health', methods=['GET'])
