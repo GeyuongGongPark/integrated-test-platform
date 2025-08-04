@@ -111,7 +111,7 @@ def create_app(config_name=None):
     
     print(f"🌐 CORS Origins: {cors_origins}")
     
-    # CORS 설정을 더 강화 - 모든 origin 허용하되 더 포괄적인 설정
+    # CORS 설정 - 단일 설정으로 통합
     CORS(app, 
          origins=['*'], 
          supports_credentials=False, 
@@ -120,27 +120,11 @@ def create_app(config_name=None):
          expose_headers=['*'],
          max_age=86400)
     
-    # 추가 CORS 설정 - 더 포괄적인 설정
+    # CORS 디버깅을 위한 로그
     @app.after_request
     def after_request(response):
         origin = request.headers.get('Origin')
-        
-        # 모든 Origin 허용 (개발 및 프로덕션 환경)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        
-        # 더 포괄적인 헤더 설정
-        response.headers.add('Access-Control-Allow-Headers', '*')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH,HEAD')
-        response.headers.add('Access-Control-Allow-Credentials', 'false')
-        response.headers.add('Access-Control-Max-Age', '86400')
-        
-        # Vercel 환경에서 추가 헤더
-        if os.environ.get('VERCEL'):
-            response.headers.add('Access-Control-Expose-Headers', '*')
-        
-        # 디버깅을 위한 로그
         print(f"🌐 CORS Request - Origin: {origin}, Method: {request.method}, Path: {request.path}")
-        
         return response
     
     db = SQLAlchemy(app)
@@ -283,21 +267,29 @@ def create_project():
 
 @app.route('/testcases', methods=['GET'])
 def get_testcases():
-    testcases = TestCase.query.all()
-    data = [{
-        'id': tc.id,
-        'project_id': tc.project_id,
-        'main_category': tc.main_category,
-        'sub_category': tc.sub_category,
-        'detail_category': tc.detail_category,
-        'pre_condition': tc.pre_condition,
-        'expected_result': tc.expected_result,
-        'result_status': tc.result_status,
-        'remark': tc.remark,
-        'created_at': tc.created_at,
-        'updated_at': tc.updated_at
-    } for tc in testcases]
-    return jsonify(data), 200
+    try:
+        testcases = TestCase.query.all()
+        data = [{
+            'id': tc.id,
+            'project_id': tc.project_id,
+            'main_category': tc.main_category,
+            'sub_category': tc.sub_category,
+            'detail_category': tc.detail_category,
+            'pre_condition': tc.pre_condition,
+            'expected_result': tc.expected_result,
+            'result_status': tc.result_status,
+            'remark': tc.remark,
+            'created_at': tc.created_at,
+            'updated_at': tc.updated_at
+        } for tc in testcases]
+        return jsonify(data), 200
+    except Exception as e:
+        print(f"❌ TestCases 조회 오류: {str(e)}")
+        return jsonify({
+            'error': '데이터베이스 연결 오류',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
 
 @app.route('/testcases/<int:id>', methods=['GET'])
 def get_testcase(id):
@@ -878,6 +870,10 @@ def init_db():
     """데이터베이스 초기화 및 기본 데이터 생성"""
     with app.app_context():
         try:
+            # 데이터베이스 연결 테스트
+            db.session.execute('SELECT 1')
+            print("✅ 데이터베이스 연결 성공")
+            
             # 테이블 생성
             db.create_all()
             print("✅ PostgreSQL 테이블 생성 완료")
@@ -960,7 +956,8 @@ def init_db():
         except Exception as e:
             print(f"❌ 데이터베이스 초기화 중 오류: {str(e)}")
             db.session.rollback()
-            raise
+            # 오류가 있어도 앱은 계속 실행
+            print("⚠️ 데이터베이스 초기화 실패했지만 앱은 계속 실행됩니다.")
 
 # 헬스체크 엔드포인트 추가
 @app.route('/health', methods=['GET'])
@@ -994,16 +991,6 @@ def test_endpoint():
 @app.route('/cors-test', methods=['GET', 'POST', 'OPTIONS'])
 def cors_test():
     """CORS 전용 테스트 엔드포인트"""
-    if request.method == 'OPTIONS':
-        # Preflight 요청 처리
-        response = jsonify({'status': 'preflight_ok'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'false')
-        response.headers.add('Access-Control-Max-Age', '86400')
-        return response, 200
-    
     return jsonify({
         'message': 'CORS test endpoint working',
         'method': request.method,
@@ -1018,19 +1005,8 @@ def handle_options(path):
     """CORS preflight 요청 처리"""
     origin = request.headers.get('Origin')
     
+    # Flask-CORS가 자동으로 처리하도록 빈 응답 반환
     response = jsonify({'status': 'ok'})
-    
-    # 모든 Origin 허용 (개발 및 프로덕션 환경)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    
-    response.headers.add('Access-Control-Allow-Headers', '*')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH,HEAD')
-    response.headers.add('Access-Control-Allow-Credentials', 'false')
-    response.headers.add('Access-Control-Max-Age', '86400')
-    
-    # Vercel 환경에서 추가 헤더
-    if os.environ.get('VERCEL'):
-        response.headers.add('Access-Control-Expose-Headers', '*')
     
     # 디버깅을 위한 로그
     print(f"🌐 CORS Preflight - Origin: {origin}, Path: {path}")
