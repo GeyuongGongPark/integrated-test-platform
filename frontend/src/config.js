@@ -4,12 +4,12 @@ const config = {
     uploadUrl: 'http://localhost:8000/uploads'
   },
   production: {
-    apiUrl: process.env.REACT_APP_API_URL || 'https://backend-51kyjh1r0-gyeonggong-parks-projects.vercel.app',
-    uploadUrl: process.env.REACT_APP_UPLOAD_URL || 'https://backend-51kyjh1r0-gyeonggong-parks-projects.vercel.app/uploads'
+    apiUrl: process.env.REACT_APP_API_URL || 'backend-alpha-amber-90.vercel.app',
+    uploadUrl: process.env.REACT_APP_UPLOAD_URL || 'backend-alpha-amber-90.vercel.app/uploads'
   }
 };
 
-const environment = process.env.NODE_ENV || 'development';
+const environment = process.env.NODE_ENV || 'production';
 const currentConfig = config[environment];
 
 // 환경 정보 로깅 (개발 환경에서만)

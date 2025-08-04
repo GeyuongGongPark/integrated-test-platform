@@ -161,16 +161,16 @@ class TestCase(db.Model):
     __tablename__ = 'TestCases'
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
-    main_category = db.Column(db.String(255), nullable=False)
-    sub_category = db.Column(db.String(255), nullable=False)
-    detail_category = db.Column(db.String(255), nullable=False)
-    pre_condition = db.Column(db.Text)
-    description = db.Column(db.Text)
+    main_category = db.Column(db.String(255), nullable=False)  # 대분류
+    sub_category = db.Column(db.String(255), nullable=False)   # 중분류
+    detail_category = db.Column(db.String(255), nullable=False) # 소분류
+    pre_condition = db.Column(db.Text)                         # 사전조건
+    expected_result = db.Column(db.Text)                       # 기대결과 (새로 추가)
+    remark = db.Column(db.Text)                               # 비고
     result_status = db.Column(db.String(10), default='N/T')
-    remark = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    # 새로운 필드들 추가
+    # 기존 필드들 (선택사항)
     environment = db.Column(db.String(50), default='dev')  # dev, alpha, production
     deployment_date = db.Column(db.Date)  # 배포일자
     folder_id = db.Column(db.Integer, db.ForeignKey('Folders.id'), nullable=True)
@@ -291,7 +291,7 @@ def get_testcases():
         'sub_category': tc.sub_category,
         'detail_category': tc.detail_category,
         'pre_condition': tc.pre_condition,
-        'description': tc.description,
+        'expected_result': tc.expected_result,
         'result_status': tc.result_status,
         'remark': tc.remark,
         'created_at': tc.created_at,
@@ -311,7 +311,7 @@ def get_testcase(id):
         'sub_category': tc.sub_category,
         'detail_category': tc.detail_category,
         'pre_condition': tc.pre_condition,
-        'description': tc.description,
+        'expected_result': tc.expected_result,
         'result_status': tc.result_status,
         'remark': tc.remark,
         'screenshots': screenshot_data,
@@ -334,9 +334,11 @@ def create_testcase():
         sub_category=data.get('sub_category', ''),
         detail_category=data.get('detail_category', ''),
         pre_condition=data.get('pre_condition', ''),
-        description=data.get('description', ''),
+        expected_result=data.get('expected_result', ''),
         result_status=data.get('result_status', 'N/T'),
-        remark=data.get('remark', '')
+        remark=data.get('remark', ''),
+        environment=data.get('environment', 'dev'),
+        folder_id=data.get('folder_id')
     )
 
     try:
@@ -364,9 +366,11 @@ def update_testcase(id):
     tc.sub_category = data.get('sub_category', tc.sub_category)
     tc.detail_category = data.get('detail_category', tc.detail_category)
     tc.pre_condition = data.get('pre_condition', tc.pre_condition)
-    tc.description = data.get('description', tc.description)
+    tc.expected_result = data.get('expected_result', tc.expected_result)
     tc.result_status = data.get('result_status', tc.result_status)
     tc.remark = data.get('remark', tc.remark)
+    tc.environment = data.get('environment', tc.environment)
+    tc.folder_id = data.get('folder_id', tc.folder_id)
     db.session.commit()
     return jsonify({'message': '테스트 케이스 업데이트 완료'}), 200
 
@@ -676,7 +680,7 @@ def get_folder_tree():
                 for tc in test_cases:
                     tc_node = {
                         'id': tc.id,
-                        'name': tc.description[:50] + '...' if len(tc.description) > 50 else tc.description,
+                        'name': tc.expected_result[:50] + '...' if tc.expected_result and len(tc.expected_result) > 50 else (tc.expected_result or f"{tc.main_category} - {tc.sub_category}"),
                         'type': 'test_case',
                         'status': tc.result_status,
                         'automation_code_path': tc.automation_code_path

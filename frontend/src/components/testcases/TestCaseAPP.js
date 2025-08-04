@@ -15,6 +15,16 @@ const TestCaseAPP = () => {
   const [error, setError] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newTestCase, setNewTestCase] = useState({
+    main_category: '',
+    sub_category: '',
+    detail_category: '',
+    pre_condition: '',
+    expected_result: '',
+    remark: '',
+    folder_id: null
+  });
 
   useEffect(() => {
     fetchData();
@@ -64,6 +74,31 @@ const TestCaseAPP = () => {
       fetchData(); // 데이터 새로고침
     } catch (err) {
       alert('파일 업로드 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleAddTestCase = async () => {
+    if (!newTestCase.main_category || !newTestCase.sub_category || !newTestCase.detail_category) {
+      alert('필수 항목을 입력해주세요.');
+      return;
+    }
+
+    try {
+      const response = await axios.post('/testcases', newTestCase);
+      alert('테스트 케이스가 성공적으로 추가되었습니다.');
+      setShowAddModal(false);
+      setNewTestCase({
+        main_category: '',
+        sub_category: '',
+        detail_category: '',
+        pre_condition: '',
+        expected_result: '',
+        remark: '',
+        folder_id: null
+      });
+      fetchData(); // 데이터 새로고침
+    } catch (err) {
+      alert('테스트 케이스 추가 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
     }
   };
 
@@ -140,6 +175,12 @@ const TestCaseAPP = () => {
         <h1>테스트 케이스 관리</h1>
         <div className="header-actions">
           <button 
+            className="btn btn-add"
+            onClick={() => setShowAddModal(true)}
+          >
+            ➕ 테스트 케이스 추가
+          </button>
+          <button 
             className="btn btn-upload"
             onClick={() => setShowUploadModal(true)}
           >
@@ -170,16 +211,18 @@ const TestCaseAPP = () => {
             {filteredTestCases.map(testCase => (
               <div key={testCase.id} className="testcase-card">
                 <div className="testcase-header">
-                  <h4>{testCase.description}</h4>
+                  <h4>{testCase.expected_result || testCase.main_category + ' - ' + testCase.sub_category}</h4>
                   <span className={`status-badge ${testCase.result_status.toLowerCase().replace('/', '-')}`}>
                     {testCase.result_status}
                   </span>
                 </div>
                 <div className="testcase-details">
-                  <p><strong>환경:</strong> {testCase.environment}</p>
-                                     <p><strong>카테고리:</strong> {testCase.main_category} &gt; {testCase.sub_category}</p>
-                  <p><strong>전제조건:</strong> {testCase.pre_condition}</p>
-                  <p><strong>비고:</strong> {testCase.remark}</p>
+                  <p><strong>대분류:</strong> {testCase.main_category}</p>
+                  <p><strong>중분류:</strong> {testCase.sub_category}</p>
+                  <p><strong>소분류:</strong> {testCase.detail_category}</p>
+                  <p><strong>사전조건:</strong> {testCase.pre_condition}</p>
+                  <p><strong>기대결과:</strong> {testCase.expected_result}</p>
+                  <p><strong>비고:</strong> {testCase.remark || '없음'}</p>
                   {testCase.automation_code_path && (
                     <p><strong>자동화 코드:</strong> {testCase.automation_code_path}</p>
                   )}
@@ -201,6 +244,94 @@ const TestCaseAPP = () => {
           </div>
         </div>
       </div>
+
+      {/* 테스트 케이스 추가 모달 */}
+      {showAddModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>새 테스트 케이스 추가</h3>
+            <div className="form-group">
+              <label>대분류</label>
+              <input 
+                type="text" 
+                value={newTestCase.main_category}
+                onChange={(e) => setNewTestCase({...newTestCase, main_category: e.target.value})}
+                placeholder="대분류를 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>중분류</label>
+              <input 
+                type="text" 
+                value={newTestCase.sub_category}
+                onChange={(e) => setNewTestCase({...newTestCase, sub_category: e.target.value})}
+                placeholder="중분류를 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>소분류</label>
+              <input 
+                type="text" 
+                value={newTestCase.detail_category}
+                onChange={(e) => setNewTestCase({...newTestCase, detail_category: e.target.value})}
+                placeholder="소분류를 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>사전조건</label>
+              <input 
+                type="text" 
+                value={newTestCase.pre_condition}
+                onChange={(e) => setNewTestCase({...newTestCase, pre_condition: e.target.value})}
+                placeholder="사전조건을 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>기대결과</label>
+              <input 
+                type="text" 
+                value={newTestCase.expected_result}
+                onChange={(e) => setNewTestCase({...newTestCase, expected_result: e.target.value})}
+                placeholder="기대결과를 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>비고</label>
+              <input 
+                type="text" 
+                value={newTestCase.remark}
+                onChange={(e) => setNewTestCase({...newTestCase, remark: e.target.value})}
+                placeholder="비고를 입력하세요"
+              />
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="btn btn-primary"
+                onClick={handleAddTestCase}
+              >
+                추가
+              </button>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowAddModal(false);
+                  setNewTestCase({
+                    main_category: '',
+                    sub_category: '',
+                    detail_category: '',
+                    pre_condition: '',
+                    expected_result: '',
+                    remark: '',
+                    folder_id: null
+                  });
+                }}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 업로드 모달 */}
       {showUploadModal && (
