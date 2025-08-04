@@ -84,7 +84,7 @@ const TestCaseAPP = () => {
     }
 
     try {
-      const response = await axios.post('/testcases', newTestCase);
+      await axios.post('/testcases', newTestCase);
       alert('테스트 케이스가 성공적으로 추가되었습니다.');
       setShowAddModal(false);
       setNewTestCase({
