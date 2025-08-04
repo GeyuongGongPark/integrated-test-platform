@@ -10,6 +10,13 @@ const FolderManager = () => {
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingFolder, setEditingFolder] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    folder_name: '',
+    parent_folder_id: null,
+    folder_type: 'environment',
+    environment: 'dev',
+    deployment_date: ''
+  });
   const [formData, setFormData] = useState({
     folder_name: '',
     parent_folder_id: null,
@@ -69,9 +76,16 @@ const FolderManager = () => {
 
   const handleUpdateFolder = async (id) => {
     try {
-      await axios.put(`/folders/${id}`, editingFolder);
+      await axios.put(`/folders/${id}`, editFormData);
       console.log('폴더 수정 완료');
       setEditingFolder(null);
+      setEditFormData({
+        folder_name: '',
+        parent_folder_id: null,
+        folder_type: 'environment',
+        environment: 'dev',
+        deployment_date: ''
+      });
       fetchFolders();
       fetchFolderTree();
     } catch (err) {
@@ -106,22 +120,31 @@ const FolderManager = () => {
           </span>
           <span className="folder-name">{node.name}</span>
           <div className="folder-actions">
-            {node.type !== 'test_case' && (
-              <>
-                <button 
-                  className="btn-edit"
-                  onClick={() => setEditingFolder(node)}
-                >
-                  수정
-                </button>
-                <button 
-                  className="btn-delete"
-                  onClick={() => handleDeleteFolder(node.id)}
-                >
-                  삭제
-                </button>
-              </>
-            )}
+                         {node.type !== 'test_case' && (
+               <>
+                 <button 
+                   className="btn-edit"
+                   onClick={() => {
+                     setEditingFolder(node);
+                     setEditFormData({
+                       folder_name: node.name,
+                       parent_folder_id: node.parent_folder_id || null,
+                       folder_type: node.type,
+                       environment: node.environment || 'dev',
+                       deployment_date: node.deployment_date || ''
+                     });
+                   }}
+                 >
+                   수정
+                 </button>
+                 <button 
+                   className="btn-delete"
+                   onClick={() => handleDeleteFolder(node.id)}
+                 >
+                   삭제
+                 </button>
+               </>
+             )}
           </div>
         </div>
         {node.children && node.children.length > 0 && (
@@ -238,13 +261,62 @@ const FolderManager = () => {
           <h3>폴더 수정</h3>
           <form onSubmit={(e) => { e.preventDefault(); handleUpdateFolder(editingFolder.id); }}>
             <div className="form-group">
-              <label>폴더명</label>
+              <label>폴더명 *</label>
               <input
                 type="text"
-                value={editingFolder.name}
-                onChange={(e) => setEditingFolder({...editingFolder, name: e.target.value})}
+                value={editFormData.folder_name}
+                onChange={(e) => setEditFormData({...editFormData, folder_name: e.target.value})}
                 required
               />
+            </div>
+            
+            <div className="form-group">
+              <label>폴더 타입</label>
+              <select
+                value={editFormData.folder_type}
+                onChange={(e) => setEditFormData({...editFormData, folder_type: e.target.value})}
+              >
+                <option value="environment">환경 (Environment)</option>
+                <option value="deployment_date">배포일자 (Deployment Date)</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label>환경</label>
+              <select
+                value={editFormData.environment}
+                onChange={(e) => setEditFormData({...editFormData, environment: e.target.value})}
+              >
+                <option value="dev">DEV</option>
+                <option value="alpha">ALPHA</option>
+                <option value="production">PRODUCTION</option>
+              </select>
+            </div>
+            
+            {editFormData.folder_type === 'deployment_date' && (
+              <div className="form-group">
+                <label>배포일자</label>
+                <input
+                  type="date"
+                  value={editFormData.deployment_date}
+                  onChange={(e) => setEditFormData({...editFormData, deployment_date: e.target.value})}
+                />
+              </div>
+            )}
+            
+            <div className="form-group">
+              <label>상위 폴더</label>
+              <select
+                value={editFormData.parent_folder_id || ''}
+                onChange={(e) => setEditFormData({...editFormData, parent_folder_id: e.target.value ? parseInt(e.target.value) : null})}
+              >
+                <option value="">없음 (최상위)</option>
+                {folders.filter(f => f.id !== editingFolder.id).map(folder => (
+                  <option key={folder.id} value={folder.id}>
+                    {folder.folder_name}
+                  </option>
+                ))}
+              </select>
             </div>
             
             <div className="form-actions">
@@ -252,7 +324,16 @@ const FolderManager = () => {
               <button 
                 type="button" 
                 className="btn-cancel"
-                onClick={() => setEditingFolder(null)}
+                onClick={() => {
+                  setEditingFolder(null);
+                  setEditFormData({
+                    folder_name: '',
+                    parent_folder_id: null,
+                    folder_type: 'environment',
+                    environment: 'dev',
+                    deployment_date: ''
+                  });
+                }}
               >
                 취소
               </button>
@@ -293,12 +374,21 @@ const FolderManager = () => {
                   <td>{folder.environment}</td>
                   <td>{folder.deployment_date || '-'}</td>
                   <td>
-                    <button 
-                      className="btn-edit-small"
-                      onClick={() => setEditingFolder(folder)}
-                    >
-                      수정
-                    </button>
+                                       <button 
+                     className="btn-edit-small"
+                     onClick={() => {
+                       setEditingFolder(folder);
+                       setEditFormData({
+                         folder_name: folder.folder_name,
+                         parent_folder_id: folder.parent_folder_id,
+                         folder_type: folder.folder_type,
+                         environment: folder.environment,
+                         deployment_date: folder.deployment_date || ''
+                       });
+                     }}
+                   >
+                     수정
+                   </button>
                     <button 
                       className="btn-delete-small"
                       onClick={() => handleDeleteFolder(folder.id)}
