@@ -96,20 +96,12 @@ def create_app(config_name=None):
         masked_uri = db_uri.split('@')[0].split('://')[0] + '://***@' + db_uri.split('@')[1] if '@' in db_uri else db_uri
         print(f"🗄️ Database URI: {masked_uri}")
     
-    # CORS 설정 개선 - 실제 프론트엔드 URL 포함
+    # CORS 설정 - 필요한 URL만 포함
     cors_origins = [
-        'http://localhost:3000',
-        'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app',
-        'https://integrated-test-platform-frontend.vercel.app',
-        'https://integrated-test-platform-fe.vercel.app',
-        'https://integrated-test-platform-gyeonggong-parks-projects.vercel.app',
-        'https://integrated-test-platform.vercel.app',
-        'https://integrated-test-platform-fe.vercel.app',
-        'https://integrated-test-platform-frontend.vercel.app',
-        'https://frontend-alpha-jade-15.vercel.app',  # 현재 프론트엔드 URL 추가
-        # 추가 Vercel URL 패턴들
-        'https://*.vercel.app',
-        'https://*.vercel.app/*'
+        'http://localhost:3000',  # 개발 환경
+        'https://frontend-alpha-jade-15.vercel.app',  # 현재 프론트엔드 URL
+        # Vercel URL 패턴 (와일드카드로 대체)
+        'https://*.vercel.app'
     ]
     
     # 환경 변수에서 추가 CORS 설정 가져오기
@@ -1084,14 +1076,12 @@ def debug_environment():
             'cors': {
                 'origins': [
                     'http://localhost:3000',
-                    'https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app',
-                    'https://integrated-test-platform-frontend.vercel.app',
-                    'https://integrated-test-platform-fe.vercel.app',
-                    'https://integrated-test-platform.vercel.app'
+                    'https://frontend-alpha-jade-15.vercel.app',
+                    'https://*.vercel.app'
                 ],
                 'request_headers': cors_headers,
                 'allowed_methods': ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
-                'allowed_headers': ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Request-Method', 'Access-Control-Request-Headers']
+                'allowed_headers': ['*']
             },
             'timestamp': datetime.now().isoformat()
         }), 200
