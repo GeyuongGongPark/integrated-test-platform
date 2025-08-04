@@ -16,6 +16,8 @@ const TestCaseAPP = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTestCase, setEditingTestCase] = useState(null);
   const [newTestCase, setNewTestCase] = useState({
     main_category: '',
     sub_category: '',
@@ -99,6 +101,37 @@ const TestCaseAPP = () => {
       fetchData(); // 데이터 새로고침
     } catch (err) {
       alert('테스트 케이스 추가 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleEditTestCase = async () => {
+    if (!editingTestCase.main_category || !editingTestCase.sub_category || !editingTestCase.detail_category) {
+      alert('필수 항목을 입력해주세요.');
+      return;
+    }
+
+    try {
+      await axios.put(`/testcases/${editingTestCase.id}`, editingTestCase);
+      alert('테스트 케이스가 성공적으로 수정되었습니다.');
+      setShowEditModal(false);
+      setEditingTestCase(null);
+      fetchData(); // 데이터 새로고침
+    } catch (err) {
+      alert('테스트 케이스 수정 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleDeleteTestCase = async (testCaseId) => {
+    if (!window.confirm('정말로 이 테스트 케이스를 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/testcases/${testCaseId}`);
+      alert('테스트 케이스가 성공적으로 삭제되었습니다.');
+      fetchData(); // 데이터 새로고침
+    } catch (err) {
+      alert('테스트 케이스 삭제 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
     }
   };
 
@@ -236,8 +269,21 @@ const TestCaseAPP = () => {
                       ▶ 실행
                     </button>
                   )}
-                  <button className="btn btn-edit">✏️ 편집</button>
-                  <button className="btn btn-delete">🗑️ 삭제</button>
+                  <button 
+                    className="btn btn-edit"
+                    onClick={() => {
+                      setEditingTestCase(testCase);
+                      setShowEditModal(true);
+                    }}
+                  >
+                    ✏️ 편집
+                  </button>
+                  <button 
+                    className="btn btn-delete"
+                    onClick={() => handleDeleteTestCase(testCase.id)}
+                  >
+                    🗑️ 삭제
+                  </button>
                 </div>
               </div>
             ))}
@@ -324,6 +370,86 @@ const TestCaseAPP = () => {
                     remark: '',
                     folder_id: null
                   });
+                }}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 테스트 케이스 편집 모달 */}
+      {showEditModal && editingTestCase && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>테스트 케이스 편집</h3>
+            <div className="form-group">
+              <label>대분류</label>
+              <input 
+                type="text" 
+                value={editingTestCase.main_category}
+                onChange={(e) => setEditingTestCase({...editingTestCase, main_category: e.target.value})}
+                placeholder="대분류를 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>중분류</label>
+              <input 
+                type="text" 
+                value={editingTestCase.sub_category}
+                onChange={(e) => setEditingTestCase({...editingTestCase, sub_category: e.target.value})}
+                placeholder="중분류를 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>소분류</label>
+              <input 
+                type="text" 
+                value={editingTestCase.detail_category}
+                onChange={(e) => setEditingTestCase({...editingTestCase, detail_category: e.target.value})}
+                placeholder="소분류를 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>사전조건</label>
+              <input 
+                type="text" 
+                value={editingTestCase.pre_condition}
+                onChange={(e) => setEditingTestCase({...editingTestCase, pre_condition: e.target.value})}
+                placeholder="사전조건을 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>기대결과</label>
+              <input 
+                type="text" 
+                value={editingTestCase.expected_result}
+                onChange={(e) => setEditingTestCase({...editingTestCase, expected_result: e.target.value})}
+                placeholder="기대결과를 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>비고</label>
+              <input 
+                type="text" 
+                value={editingTestCase.remark}
+                onChange={(e) => setEditingTestCase({...editingTestCase, remark: e.target.value})}
+                placeholder="비고를 입력하세요"
+              />
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="btn btn-primary"
+                onClick={handleEditTestCase}
+              >
+                수정
+              </button>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingTestCase(null);
                 }}
               >
                 취소
