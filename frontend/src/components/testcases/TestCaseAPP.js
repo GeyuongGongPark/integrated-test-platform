@@ -135,6 +135,16 @@ const TestCaseAPP = () => {
     }
   };
 
+  const handleStatusChange = async (testCaseId, newStatus) => {
+    try {
+      await axios.put(`/testcases/${testCaseId}/status`, { status: newStatus });
+      console.log('테스트 케이스 상태 변경 완료:', newStatus);
+      fetchData(); // 데이터 새로고침
+    } catch (err) {
+      alert('테스트 케이스 상태 변경 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+    }
+  };
+
   const handleDownload = async () => {
     try {
       const response = await axios.get('/testcases/download', {
@@ -245,9 +255,22 @@ const TestCaseAPP = () => {
               <div key={testCase.id} className="testcase-card">
                 <div className="testcase-header">
                   <h4>{testCase.expected_result || testCase.main_category + ' - ' + testCase.sub_category}</h4>
-                  <span className={`status-badge ${testCase.result_status.toLowerCase().replace('/', '-')}`}>
-                    {testCase.result_status}
-                  </span>
+                  <div className="status-section">
+                    <span className={`status-badge ${testCase.result_status.toLowerCase().replace('/', '-')}`}>
+                      {testCase.result_status}
+                    </span>
+                    <select
+                      className="status-select"
+                      value={testCase.result_status}
+                      onChange={(e) => handleStatusChange(testCase.id, e.target.value)}
+                    >
+                      <option value="N/T">N/T</option>
+                      <option value="Pass">Pass</option>
+                      <option value="Fail">Fail</option>
+                      <option value="N/A">N/A</option>
+                      <option value="Block">Block</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="testcase-details">
                   <p><strong>대분류:</strong> {testCase.main_category}</p>
