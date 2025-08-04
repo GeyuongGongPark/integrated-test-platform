@@ -4,6 +4,7 @@ import './App.css';
 import TestCaseApp from './components/testcases';
 import PerformanceTestManager from './components/performance';
 import UnifiedDashboard from './components/dashboard';
+import FolderManager from './components/dashboard/FolderManager';
 import { ErrorBoundary } from './components/utils';
 
 function App() {
@@ -27,6 +28,12 @@ function App() {
         return (
           <ErrorBoundary>
             <PerformanceTestManager />
+          </ErrorBoundary>
+        );
+      case 'folders':
+        return (
+          <ErrorBoundary>
+            <FolderManager />
           </ErrorBoundary>
         );
       default:
@@ -69,6 +76,12 @@ function App() {
               onClick={() => setActiveTab('performance')}
             >
               ⚡ 성능 테스트
+            </button>
+            <button 
+              className={`nav-link ${activeTab === 'folders' ? 'active' : ''}`}
+              onClick={() => setActiveTab('folders')}
+            >
+              📁 폴더 관리
             </button>
           </div>
         </nav>
