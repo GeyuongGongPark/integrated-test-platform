@@ -98,5 +98,6 @@ jobs:
         run: |
           echo "✅ All tests passed!"
           echo "🚀 Backend and Frontend deployed to Vercel"
-          echo "📋 Backend URL: https://integrated-test-platform-gyeonggong-parks-projects.vercel.app"
-          echo "📋 Frontend URL: https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app" 
+          echo "📋 Backend URL: https://backend-alpha-amber-90.vercel.app"
+          echo "📋 Frontend URL: https://frontend-alpha-jade-15.vercel.app"
+          echo "📋 Integrated Platform URL: https://integrated-test-platform-m1mrr7don-gyeonggong-parks-projects.vercel.app" 
