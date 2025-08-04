@@ -111,7 +111,7 @@ def create_app(config_name=None):
     
     print(f"🌐 CORS Origins: {cors_origins}")
     
-    # CORS 설정 - 단일 설정으로 통합
+    # CORS 설정 - 명시적 헤더 설정
     CORS(app, 
          origins=['*'], 
          supports_credentials=False, 
@@ -120,11 +120,27 @@ def create_app(config_name=None):
          expose_headers=['*'],
          max_age=86400)
     
-    # CORS 디버깅을 위한 로그
+    # 명시적 CORS 헤더 설정
     @app.after_request
     def after_request(response):
         origin = request.headers.get('Origin')
+        
+        # 모든 Origin 허용
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        
+        # CORS 헤더 설정
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        response.headers['Access-Control-Max-Age'] = '86400'
+        
+        # Vercel 환경에서 추가 헤더
+        if os.environ.get('VERCEL'):
+            response.headers['Access-Control-Expose-Headers'] = '*'
+        
         print(f"🌐 CORS Request - Origin: {origin}, Method: {request.method}, Path: {request.path}")
+        print(f"🔧 CORS Headers set: {dict(response.headers)}")
+        
         return response
     
     db = SQLAlchemy(app)
@@ -282,14 +298,30 @@ def get_testcases():
             'created_at': tc.created_at,
             'updated_at': tc.updated_at
         } for tc in testcases]
-        return jsonify(data), 200
+        response = jsonify(data)
+        
+        # 명시적 CORS 헤더 설정
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        
+        return response, 200
     except Exception as e:
         print(f"❌ TestCases 조회 오류: {str(e)}")
-        return jsonify({
+        response = jsonify({
             'error': '데이터베이스 연결 오류',
             'message': str(e),
             'timestamp': datetime.now().isoformat()
-        }), 500
+        })
+        
+        # 오류 응답에도 CORS 헤더 설정
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        
+        return response, 500
 
 @app.route('/testcases/<int:id>', methods=['GET'])
 def get_testcase(id):
@@ -962,7 +994,7 @@ def init_db():
 # 헬스체크 엔드포인트 추가
 @app.route('/health', methods=['GET'])
 def health_check():
-    return jsonify({
+    response = jsonify({
         'status': 'healthy', 
         'message': 'Test Platform Backend is running - Auto Deploy Test',
         'version': '1.0.1',
@@ -970,12 +1002,20 @@ def health_check():
         'deploy_test': 'GitHub Actions CI/CD working!',
         'cors_enabled': True,
         'environment': 'production' if os.environ.get('VERCEL') else 'development'
-    }), 200
+    })
+    
+    # 명시적 CORS 헤더 설정
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+    response.headers['Access-Control-Allow-Credentials'] = 'false'
+    
+    return response, 200
 
 # 간단한 테스트 엔드포인트 추가
 @app.route('/test', methods=['GET'])
 def test_endpoint():
-    return jsonify({
+    response = jsonify({
         'message': 'CORS test successful',
         'timestamp': datetime.now().isoformat(),
         'origin': request.headers.get('Origin', 'unknown'),
@@ -985,19 +1025,35 @@ def test_endpoint():
             'user_agent': request.headers.get('User-Agent'),
             'referer': request.headers.get('Referer')
         }
-    }), 200
+    })
+    
+    # 명시적 CORS 헤더 설정
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+    response.headers['Access-Control-Allow-Credentials'] = 'false'
+    
+    return response, 200
 
 # CORS 전용 테스트 엔드포인트
 @app.route('/cors-test', methods=['GET', 'POST', 'OPTIONS'])
 def cors_test():
     """CORS 전용 테스트 엔드포인트"""
-    return jsonify({
+    response = jsonify({
         'message': 'CORS test endpoint working',
         'method': request.method,
         'timestamp': datetime.now().isoformat(),
         'origin': request.headers.get('Origin', 'unknown'),
         'headers': dict(request.headers)
-    }), 200
+    })
+    
+    # 명시적 CORS 헤더 설정
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+    response.headers['Access-Control-Allow-Credentials'] = 'false'
+    
+    return response, 200
 
 # CORS preflight 요청 처리
 @app.route('/<path:path>', methods=['OPTIONS'])
@@ -1005,11 +1061,22 @@ def handle_options(path):
     """CORS preflight 요청 처리"""
     origin = request.headers.get('Origin')
     
-    # Flask-CORS가 자동으로 처리하도록 빈 응답 반환
-    response = jsonify({'status': 'ok'})
+    response = jsonify({'status': 'preflight_ok'})
+    
+    # 명시적 CORS 헤더 설정
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+    response.headers['Access-Control-Allow-Credentials'] = 'false'
+    response.headers['Access-Control-Max-Age'] = '86400'
+    
+    # Vercel 환경에서 추가 헤더
+    if os.environ.get('VERCEL'):
+        response.headers['Access-Control-Expose-Headers'] = '*'
     
     # 디버깅을 위한 로그
     print(f"🌐 CORS Preflight - Origin: {origin}, Path: {path}")
+    print(f"🔧 Preflight Headers set: {dict(response.headers)}")
     
     return response, 200
 
