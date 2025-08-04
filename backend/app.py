@@ -598,23 +598,177 @@ def create_test_execution():
     
     return jsonify({'message': '테스트 실행 생성 완료', 'id': execution.id}), 201
 
-# 기존 폴더 관리 API
+# 폴더 관리 API
 @app.route('/folders', methods=['GET'])
 def get_folders():
-    folders = Folder.query.all()
-    data = [{'id': f.id, 'folder_name': f.folder_name, 'parent_folder_id': f.parent_folder_id} for f in folders]
-    return jsonify(data), 200
+    try:
+        folders = Folder.query.all()
+        data = [{
+            'id': f.id, 
+            'folder_name': f.folder_name, 
+            'parent_folder_id': f.parent_folder_id,
+            'folder_type': f.folder_type,
+            'environment': f.environment,
+            'deployment_date': f.deployment_date.strftime('%Y-%m-%d') if f.deployment_date else None,
+            'created_at': f.created_at.strftime('%Y-%m-%d %H:%M:%S') if f.created_at else None
+        } for f in folders]
+        
+        response = jsonify(data)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        
+        return response, 200
+    except Exception as e:
+        print(f"❌ 폴더 조회 오류: {str(e)}")
+        response = jsonify({'error': '폴더 조회 오류', 'message': str(e)})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        return response, 500
 
 @app.route('/folders', methods=['POST'])
 def create_folder():
-    data = request.get_json()
-    folder = Folder(
-        folder_name=data.get('folder_name'),
-        parent_folder_id=data.get('parent_folder_id')
-    )
-    db.session.add(folder)
-    db.session.commit()
-    return jsonify({'message': '폴더 생성 완료', 'id': folder.id}), 201
+    try:
+        data = request.get_json()
+        
+        # 필수 필드 검증
+        if not data.get('folder_name'):
+            return jsonify({'error': '폴더명은 필수입니다'}), 400
+        
+        folder = Folder(
+            folder_name=data.get('folder_name'),
+            parent_folder_id=data.get('parent_folder_id'),
+            folder_type=data.get('folder_type', 'environment'),
+            environment=data.get('environment'),
+            deployment_date=datetime.strptime(data.get('deployment_date'), '%Y-%m-%d').date() if data.get('deployment_date') else None
+        )
+        
+        db.session.add(folder)
+        db.session.commit()
+        
+        response = jsonify({
+            'message': '폴더 생성 완료', 
+            'id': folder.id,
+            'folder_name': folder.folder_name,
+            'folder_type': folder.folder_type,
+            'environment': folder.environment
+        })
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        
+        return response, 201
+    except Exception as e:
+        print(f"❌ 폴더 생성 오류: {str(e)}")
+        db.session.rollback()
+        response = jsonify({'error': '폴더 생성 오류', 'message': str(e)})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        return response, 500
+
+@app.route('/folders/<int:id>', methods=['GET'])
+def get_folder(id):
+    try:
+        folder = Folder.query.get_or_404(id)
+        data = {
+            'id': folder.id,
+            'folder_name': folder.folder_name,
+            'parent_folder_id': folder.parent_folder_id,
+            'folder_type': folder.folder_type,
+            'environment': folder.environment,
+            'deployment_date': folder.deployment_date.strftime('%Y-%m-%d') if folder.deployment_date else None,
+            'created_at': folder.created_at.strftime('%Y-%m-%d %H:%M:%S') if folder.created_at else None
+        }
+        
+        response = jsonify(data)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        
+        return response, 200
+    except Exception as e:
+        print(f"❌ 폴더 조회 오류: {str(e)}")
+        response = jsonify({'error': '폴더 조회 오류', 'message': str(e)})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        return response, 500
+
+@app.route('/folders/<int:id>', methods=['PUT'])
+def update_folder(id):
+    try:
+        folder = Folder.query.get_or_404(id)
+        data = request.get_json()
+        
+        folder.folder_name = data.get('folder_name', folder.folder_name)
+        folder.parent_folder_id = data.get('parent_folder_id', folder.parent_folder_id)
+        folder.folder_type = data.get('folder_type', folder.folder_type)
+        folder.environment = data.get('environment', folder.environment)
+        
+        if data.get('deployment_date'):
+            folder.deployment_date = datetime.strptime(data.get('deployment_date'), '%Y-%m-%d').date()
+        
+        db.session.commit()
+        
+        response = jsonify({'message': '폴더 업데이트 완료'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        
+        return response, 200
+    except Exception as e:
+        print(f"❌ 폴더 업데이트 오류: {str(e)}")
+        db.session.rollback()
+        response = jsonify({'error': '폴더 업데이트 오류', 'message': str(e)})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        return response, 500
+
+@app.route('/folders/<int:id>', methods=['DELETE'])
+def delete_folder(id):
+    try:
+        folder = Folder.query.get_or_404(id)
+        
+        # 하위 폴더가 있는지 확인
+        child_folders = Folder.query.filter_by(parent_folder_id=id).all()
+        if child_folders:
+            return jsonify({'error': '하위 폴더가 있어서 삭제할 수 없습니다. 먼저 하위 폴더를 삭제해주세요.'}), 400
+        
+        # 해당 폴더에 속한 테스트 케이스가 있는지 확인
+        test_cases = TestCase.query.filter_by(folder_id=id).all()
+        if test_cases:
+            return jsonify({'error': '테스트 케이스가 있어서 삭제할 수 없습니다. 먼저 테스트 케이스를 이동하거나 삭제해주세요.'}), 400
+        
+        db.session.delete(folder)
+        db.session.commit()
+        
+        response = jsonify({'message': '폴더 삭제 완료'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        
+        return response, 200
+    except Exception as e:
+        print(f"❌ 폴더 삭제 오류: {str(e)}")
+        db.session.rollback()
+        response = jsonify({'error': '폴더 삭제 오류', 'message': str(e)})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        return response, 500
 
 # 새로운 대시보드 요약 API
 @app.route('/dashboard-summaries', methods=['GET'])
@@ -721,10 +875,22 @@ def get_folder_tree():
             
             tree.append(env_node)
         
-        return jsonify(tree), 200
+        response = jsonify(tree)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        
+        return response, 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"❌ 폴더 트리 조회 오류: {str(e)}")
+        response = jsonify({'error': '폴더 트리 조회 오류', 'message': str(e)})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Credentials'] = 'false'
+        return response, 500
 
 # 환경별 테스트 결과 요약 API
 @app.route('/test-results/summary/<environment>', methods=['GET'])
