@@ -125,21 +125,34 @@ def create_app(config_name=None):
     def after_request(response):
         origin = request.headers.get('Origin')
         
-        # 모든 Origin 허용
-        response.headers['Access-Control-Allow-Origin'] = '*'
+        # 모든 Origin 허용 (더 구체적으로 설정)
+        if origin:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        else:
+            response.headers['Access-Control-Allow-Origin'] = '*'
         
         # CORS 헤더 설정
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin'
         response.headers['Access-Control-Allow-Credentials'] = 'false'
         response.headers['Access-Control-Max-Age'] = '86400'
+        response.headers['Access-Control-Expose-Headers'] = '*'
         
         # Vercel 환경에서 추가 헤더
         if os.environ.get('VERCEL'):
-            response.headers['Access-Control-Expose-Headers'] = '*'
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+            response.headers['X-Content-Type-Options'] = 'nosniff'
+            response.headers['X-Frame-Options'] = 'DENY'
+            response.headers['X-XSS-Protection'] = '1; mode=block'
         
-        print(f"🌐 CORS Request - Origin: {origin}, Method: {request.method}, Path: {request.path}")
-        print(f"🔧 CORS Headers set: {dict(response.headers)}")
+        # 디버깅을 위한 로깅
+        if request.method == 'OPTIONS':
+            print(f"🌐 CORS Preflight Request - Origin: {origin}, Method: {request.method}")
+            print(f"🔧 Preflight Response Headers: {dict(response.headers)}")
+        else:
+            print(f"🌐 CORS Request - Origin: {origin}, Method: {request.method}, Path: {request.path}")
         
         return response
     
@@ -1701,15 +1714,25 @@ def handle_options(path):
     response = jsonify({'status': 'preflight_ok'})
     
     # 명시적 CORS 헤더 설정
-    response.headers['Access-Control-Allow-Origin'] = '*'
+    if origin:
+        response.headers['Access-Control-Allow-Origin'] = origin
+    else:
+        response.headers['Access-Control-Allow-Origin'] = '*'
+    
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin'
     response.headers['Access-Control-Allow-Credentials'] = 'false'
     response.headers['Access-Control-Max-Age'] = '86400'
+    response.headers['Access-Control-Expose-Headers'] = '*'
     
     # Vercel 환경에서 추가 헤더
     if os.environ.get('VERCEL'):
-        response.headers['Access-Control-Expose-Headers'] = '*'
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
     
     # 디버깅을 위한 로그
     print(f"🌐 CORS Preflight - Origin: {origin}, Path: {path}")
