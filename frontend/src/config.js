@@ -4,8 +4,8 @@ const config = {
     uploadUrl: 'http://localhost:8000/uploads'
   },
   production: {
-    apiUrl: process.env.REACT_APP_API_URL || 'https://backend-alpha-amber-90.vercel.app',
-    uploadUrl: process.env.REACT_APP_UPLOAD_URL || 'https://backend-alpha-amber-90.vercel.app/uploads'
+    apiUrl: process.env.REACT_APP_API_URL || 'https://backend-alpha-qzwq22qj3-gyeonggong-parks-projects.vercel.app',
+    uploadUrl: process.env.REACT_APP_UPLOAD_URL || 'https://backend-alpha-qzwq22qj3-gyeonggong-parks-projects.vercel.app/uploads'
   }
 };
 
