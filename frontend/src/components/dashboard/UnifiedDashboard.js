@@ -21,10 +21,11 @@ axios.interceptors.request.use(
     config.headers['Content-Type'] = 'application/json';
     config.headers['X-Requested-With'] = 'XMLHttpRequest';
     config.headers['Accept'] = 'application/json';
+    config.headers['Origin'] = window.location.origin;
     
     // Vercel 환경에서 추가 설정
     if (process.env.NODE_ENV === 'production') {
-      config.timeout = 10000; // 10초 타임아웃
+      config.timeout = 15000; // 15초 타임아웃으로 증가
     }
     
     // 개발 환경에서만 로깅
