@@ -1740,6 +1740,65 @@ def handle_options(path):
     
     return response, 200
 
+# Alpha 환경 전용 헬스 체크 엔드포인트
+@app.route('/alpha-health', methods=['GET'])
+def alpha_health_check():
+    """Alpha 환경 전용 헬스 체크 엔드포인트"""
+    response = jsonify({
+        'status': 'alpha-healthy',
+        'timestamp': datetime.now().isoformat(),
+        'environment': 'alpha',
+        'message': 'Alpha backend is running',
+        'cors_enabled': True
+    })
+    
+    # 명시적 CORS 헤더 설정
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+    response.headers['Access-Control-Allow-Credentials'] = 'false'
+    
+    return response, 200
+
+# Alpha 환경 데이터베이스 초기화 엔드포인트
+@app.route('/alpha/init-db', methods=['POST'])
+def alpha_init_db():
+    """Alpha 환경 데이터베이스 초기화 - 스키마만 유지하고 데이터 초기화"""
+    try:
+        # 데이터베이스 테이블 생성 (스키마 유지)
+        db.create_all()
+        
+        # 기존 데이터 삭제 (스키마는 유지)
+        db.session.query(DashboardSummary).delete()
+        db.session.query(AutomationTestResult).delete()
+        db.session.query(AutomationTest).delete()
+        db.session.query(PerformanceTestResult).delete()
+        db.session.query(PerformanceTest).delete()
+        db.session.query(TestExecution).delete()
+        db.session.query(TestResult).delete()
+        db.session.query(Screenshot).delete()
+        db.session.query(TestCase).delete()
+        db.session.query(Folder).delete()
+        db.session.query(Project).delete()
+        
+        # 변경사항 커밋
+        db.session.commit()
+        
+        # 기본 데이터만 초기화 (최소한의 테스트 데이터)
+        init_db()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Alpha database initialized - schema preserved, data cleared',
+            'timestamp': datetime.now().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Database initialization failed: {str(e)}',
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
 # 환경 진단 엔드포인트 추가
 @app.route('/debug/environment', methods=['GET'])
 def debug_environment():
