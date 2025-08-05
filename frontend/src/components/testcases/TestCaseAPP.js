@@ -1,5 +1,5 @@
 // src/TestCaseApp.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import config from '../../config';
 import './TestCaseAPP.css';
@@ -13,9 +13,9 @@ const TestCaseScreenshots = ({ testCaseId }) => {
     if (testCaseId) {
       fetchScreenshots();
     }
-  }, [testCaseId]);
+  }, [testCaseId, fetchScreenshots]);
 
-  const fetchScreenshots = async () => {
+  const fetchScreenshots = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/testcases/${testCaseId}/screenshots`);
@@ -25,7 +25,7 @@ const TestCaseScreenshots = ({ testCaseId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [testCaseId]);
 
   if (loading) {
     return <div className="screenshots-loading">스크린샷 로딩 중...</div>;
@@ -64,9 +64,9 @@ const TestCaseExecutionResults = ({ testCaseId }) => {
     if (testCaseId) {
       fetchResults();
     }
-  }, [testCaseId]);
+  }, [testCaseId, fetchResults]);
 
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/testresults/${testCaseId}`);
@@ -76,7 +76,7 @@ const TestCaseExecutionResults = ({ testCaseId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [testCaseId]);
 
   if (loading) {
     return <div className="results-loading">실행 결과 로딩 중...</div>;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import config from '../../config';
 import './AutomationTestDetail.css';
@@ -12,9 +12,9 @@ const AutomationTestResults = ({ testId }) => {
     if (testId) {
       fetchResults();
     }
-  }, [testId]);
+  }, [testId, fetchResults]);
 
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/automation-tests/${testId}/results`);
@@ -24,7 +24,7 @@ const AutomationTestResults = ({ testId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [testId]);
 
   if (loading) {
     return <div className="results-loading">실행 결과 로딩 중...</div>;
@@ -92,7 +92,7 @@ const AutomationTestDetail = ({ test, onClose, onRefresh }) => {
 
     try {
       setExecuting(true);
-      const response = await axios.post(`/automation-tests/${test.id}/execute`);
+      await axios.post(`/automation-tests/${test.id}/execute`);
       alert('자동화 테스트 실행이 완료되었습니다.');
       onRefresh(); // 목록 새로고침
     } catch (err) {

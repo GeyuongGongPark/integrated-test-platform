@@ -98,7 +98,7 @@ const AutomationTestManager = () => {
 
   const handleExecuteTest = async (testId) => {
     try {
-      const response = await axios.post(`/automation-tests/${testId}/execute`);
+      await axios.post(`/automation-tests/${testId}/execute`);
       alert('자동화 테스트 실행이 완료되었습니다.');
       fetchAutomationTests();
     } catch (err) {
