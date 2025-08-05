@@ -9,7 +9,15 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "app.py"
+      "dest": "app.py",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin",
+        "Access-Control-Allow-Credentials": "false",
+        "Access-Control-Max-Age": "86400",
+        "Access-Control-Expose-Headers": "*"
+      }
     }
   ]
 } 
