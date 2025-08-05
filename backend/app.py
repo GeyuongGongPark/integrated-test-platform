@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
 from datetime import datetime
+from functools import wraps
 import os
 import tempfile
 import subprocess
@@ -163,6 +164,41 @@ def create_app(config_name=None):
 
 app, db, migrate = create_app()
 
+# 사용자 모델
+class User(db.Model):
+    __tablename__ = 'Users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), default='User')  # Administrator, User
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
+    
+    def has_permission(self, permission):
+        """사용자의 권한을 확인하는 메서드"""
+        if self.role == 'Administrator':
+            return True  # Administrator는 모든 권한을 가짐
+        elif self.role == 'User':
+            # User는 삭제 권한을 제외한 모든 권한을 가짐
+            return permission != 'delete'
+        return False
+
+# 권한 데코레이터 함수
+def require_permission(permission):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # 실제 구현에서는 현재 로그인한 사용자 정보를 가져와야 함
+            # 여기서는 임시로 Administrator 권한을 가진 사용자로 가정
+            current_user = User.query.filter_by(username='admin').first()
+            if not current_user or not current_user.has_permission(permission):
+                return jsonify({'error': '권한이 없습니다.'}), 403
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
 # 기존 TCM 모델들
 class Project(db.Model):
     __tablename__ = 'projects'
@@ -298,6 +334,137 @@ class AutomationTestResult(db.Model):
     notes = db.Column(db.Text)  # 추가 메모
 
 
+
+# 사용자 관리 API
+@app.route('/users', methods=['GET'])
+def get_users():
+    """사용자 목록 조회"""
+    try:
+        users = User.query.all()
+        return jsonify([{
+            'id': u.id,
+            'username': u.username,
+            'email': u.email,
+            'role': u.role,
+            'is_active': u.is_active,
+            'created_at': u.created_at.isoformat() if u.created_at else None,
+            'last_login': u.last_login.isoformat() if u.last_login else None
+        } for u in users]), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/users', methods=['POST'])
+def create_user():
+    """새 사용자 생성"""
+    try:
+        data = request.get_json()
+        
+        # 필수 필드 검증
+        if not data.get('username') or not data.get('email') or not data.get('password'):
+            return jsonify({'error': '사용자명, 이메일, 비밀번호는 필수입니다.'}), 400
+        
+        # 중복 사용자명 검증
+        if User.query.filter_by(username=data['username']).first():
+            return jsonify({'error': '이미 존재하는 사용자명입니다.'}), 400
+        
+        # 중복 이메일 검증
+        if User.query.filter_by(email=data['email']).first():
+            return jsonify({'error': '이미 존재하는 이메일입니다.'}), 400
+        
+        # 비밀번호 해시화 (실제 구현에서는 bcrypt 등을 사용)
+        password_hash = data['password']  # 임시로 평문 저장
+        
+        user = User(
+            username=data['username'],
+            email=data['email'],
+            password_hash=password_hash,
+            role=data.get('role', 'User')
+        )
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        return jsonify({
+            'message': '사용자가 성공적으로 생성되었습니다.',
+            'user_id': user.id
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/users/<int:user_id>', methods=['PUT'])
+@require_permission('update')
+def update_user(user_id):
+    """사용자 정보 수정"""
+    try:
+        user = User.query.get_or_404(user_id)
+        data = request.get_json()
+        
+        if 'username' in data:
+            # 중복 사용자명 검증
+            existing_user = User.query.filter_by(username=data['username']).first()
+            if existing_user and existing_user.id != user_id:
+                return jsonify({'error': '이미 존재하는 사용자명입니다.'}), 400
+            user.username = data['username']
+        
+        if 'email' in data:
+            # 중복 이메일 검증
+            existing_user = User.query.filter_by(email=data['email']).first()
+            if existing_user and existing_user.id != user_id:
+                return jsonify({'error': '이미 존재하는 이메일입니다.'}), 400
+            user.email = data['email']
+        
+        if 'role' in data:
+            user.role = data['role']
+        
+        if 'is_active' in data:
+            user.is_active = data['is_active']
+        
+        db.session.commit()
+        
+        return jsonify({'message': '사용자 정보가 성공적으로 수정되었습니다.'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/users/<int:user_id>', methods=['DELETE'])
+@require_permission('delete')
+def delete_user(user_id):
+    """사용자 삭제"""
+    try:
+        user = User.query.get_or_404(user_id)
+        db.session.delete(user)
+        db.session.commit()
+        
+        return jsonify({'message': '사용자가 성공적으로 삭제되었습니다.'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/users/current', methods=['GET'])
+def get_current_user():
+    """현재 로그인한 사용자 정보 조회"""
+    try:
+        # 임시로 admin 사용자 정보 반환
+        user = User.query.filter_by(username='admin').first()
+        if not user:
+            return jsonify({'error': '사용자를 찾을 수 없습니다.'}), 404
+        
+        return jsonify({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'role': user.role,
+            'is_active': user.is_active,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'last_login': user.last_login.isoformat() if user.last_login else None
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # 기존 TCM API 엔드포인트들
 @app.route('/projects', methods=['GET'])
@@ -1242,6 +1409,80 @@ def get_test_results_summary(environment):
         }
         
         return jsonify(summary), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/testcases/summary/<environment>', methods=['GET'])
+def get_testcases_summary(environment):
+    """특정 환경의 테스트 케이스 상태 요약 (Pass, Fail, N/T, N/A, Block)"""
+    try:
+        # 해당 환경의 모든 테스트 케이스 조회
+        testcases = TestCase.query.filter_by(environment=environment).all()
+        
+        total = len(testcases)
+        passed = len([tc for tc in testcases if tc.result_status == 'Pass'])
+        failed = len([tc for tc in testcases if tc.result_status == 'Fail'])
+        nt = len([tc for tc in testcases if tc.result_status == 'N/T'])
+        na = len([tc for tc in testcases if tc.result_status == 'N/A'])
+        blocked = len([tc for tc in testcases if tc.result_status == 'Block'])
+        
+        # 통과율 계산 (Pass / Total)
+        pass_rate = (passed / total * 100) if total > 0 else 0
+        
+        summary = {
+            'environment': environment,
+            'total_testcases': total,
+            'passed': passed,
+            'failed': failed,
+            'nt': nt,
+            'na': na,
+            'blocked': blocked,
+            'pass_rate': round(pass_rate, 2),
+            'last_updated': datetime.utcnow().isoformat()
+        }
+        
+        return jsonify(summary), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/testcases/summary/all', methods=['GET'])
+def get_all_testcases_summary():
+    """모든 환경의 테스트 케이스 상태 요약"""
+    try:
+        # 모든 환경의 테스트 케이스 조회
+        environments = ['dev', 'alpha', 'production']
+        summaries = []
+        
+        for env in environments:
+            testcases = TestCase.query.filter_by(environment=env).all()
+            
+            total = len(testcases)
+            passed = len([tc for tc in testcases if tc.result_status == 'Pass'])
+            failed = len([tc for tc in testcases if tc.result_status == 'Fail'])
+            nt = len([tc for tc in testcases if tc.result_status == 'N/T'])
+            na = len([tc for tc in testcases if tc.result_status == 'N/A'])
+            blocked = len([tc for tc in testcases if tc.result_status == 'Block'])
+            
+            # 통과율 계산 (Pass / Total)
+            pass_rate = (passed / total * 100) if total > 0 else 0
+            
+            summary = {
+                'environment': env,
+                'total_testcases': total,
+                'passed': passed,
+                'failed': failed,
+                'nt': nt,
+                'na': na,
+                'blocked': blocked,
+                'pass_rate': round(pass_rate, 2),
+                'last_updated': datetime.utcnow().isoformat()
+            }
+            
+            summaries.append(summary)
+        
+        return jsonify(summaries), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

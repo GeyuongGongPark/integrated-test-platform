@@ -66,6 +66,7 @@ const UnifiedDashboard = ({ setActiveTab }) => {
   const [performanceTests, setPerformanceTests] = useState([]);
   const [testExecutions, setTestExecutions] = useState([]);
   const [dashboardSummaries, setDashboardSummaries] = useState([]);
+  const [testcaseSummaries, setTestcaseSummaries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -105,17 +106,23 @@ const UnifiedDashboard = ({ setActiveTab }) => {
         console.error('❌ Health check failed:', healthErr);
       }
       
-      const [testCasesRes, performanceTestsRes, testExecutionsRes, summariesRes] = await Promise.all([
+      const [testCasesRes, performanceTestsRes, testExecutionsRes, summariesRes, testcaseSummariesRes] = await Promise.all([
         axios.get('/testcases'),
         axios.get('/performance-tests'),
         axios.get('/test-executions'),
-        axios.get('/dashboard-summaries')
+        axios.get('/dashboard-summaries'),
+        axios.get('/testcases/summary/all')
       ]);
 
       setTestCases(testCasesRes.data);
       setPerformanceTests(performanceTestsRes.data);
       setTestExecutions(testExecutionsRes.data);
       setDashboardSummaries(summariesRes.data);
+      setTestcaseSummaries(testcaseSummariesRes.data);
+      
+      // 테스트 케이스 요약 데이터 디버깅
+      console.log('📊 Testcase summaries loaded:', testcaseSummariesRes.data);
+      console.log('📊 Testcases loaded:', testCasesRes.data);
       
       console.log('✅ Dashboard data loaded successfully');
     } catch (err) {
@@ -139,6 +146,19 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       passed_tests: 0,
       failed_tests: 0,
       skipped_tests: 0,
+      pass_rate: 0
+    };
+  };
+
+  const getTestcaseEnvironmentSummary = (environment) => {
+    const summary = testcaseSummaries.find(s => s.environment === environment);
+    return summary || {
+      total_testcases: 0,
+      passed: 0,
+      failed: 0,
+      nt: 0,
+      na: 0,
+      blocked: 0,
       pass_rate: 0
     };
   };
@@ -169,6 +189,39 @@ const UnifiedDashboard = ({ setActiveTab }) => {
             '#1e7e34',
             '#c82333',
             '#e0a800'
+          ],
+          borderWidth: 2,
+        },
+      ],
+    };
+  };
+
+  const createTestcaseChartData = (environment) => {
+    const summary = getTestcaseEnvironmentSummary(environment);
+    const passed = summary.passed;
+    const failed = summary.failed;
+    const nt = summary.nt;
+    const na = summary.na;
+    const blocked = summary.blocked;
+
+    return {
+      labels: ['Pass', 'Fail', 'N/T', 'N/A', 'Block'],
+      datasets: [
+        {
+          data: [passed, failed, nt, na, blocked],
+          backgroundColor: [
+            '#28a745', // Pass - 초록색
+            '#dc3545', // Fail - 빨간색
+            '#d3d3d3', // N/T - 연한 회색
+            '#6c757d', // N/A - 진한 회색
+            '#000000'  // Block - 검은색
+          ],
+          borderColor: [
+            '#1e7e34',
+            '#c82333',
+            '#b8b8b8',
+            '#545b62',
+            '#333333'
           ],
           borderWidth: 2,
         },
@@ -216,37 +269,63 @@ const UnifiedDashboard = ({ setActiveTab }) => {
     <div className="unified-dashboard">
       <h1>통합 테스트 플랫폼 대시보드</h1>
       
-      {/* 환경별 테스트 결과 요약 */}
+      {/* 환경별 테스트 케이스 상태 요약 */}
       <div className="environment-summary-section">
-        <h2>환경별 테스트 결과 요약</h2>
+        <h2>환경별 테스트 케이스 상태 요약</h2>
         <div className="environment-cards">
           {['dev', 'alpha', 'production'].map(env => {
-            const summary = getEnvironmentSummary(env);
+            const summary = getTestcaseEnvironmentSummary(env);
+            const total = summary.total_testcases;
+            const passed = summary.passed;
+            const failed = summary.failed;
+            const nt = summary.nt;
+            const na = summary.na;
+            const blocked = summary.blocked;
+            
+            // 성공률: Pass / 전체 테스트 케이스 * 100
+            const successRate = total > 0 ? (passed / total * 100) : 0;
+            
+            // 수행률: (전체 테스트 케이스 - N/T) / 전체 테스트 케이스 * 100
+            const executionRate = total > 0 ? ((total - nt) / total * 100) : 0;
+            
             return (
               <div key={env} className="environment-card">
                 <h3>{env.toUpperCase()} 환경</h3>
                 <div className="chart-container">
                   <div className="chart-wrapper">
                     <Doughnut 
-                      data={createChartData(env)} 
+                      data={createTestcaseChartData(env)} 
                       options={chartOptions}
                       height={200}
                     />
                   </div>
-                  <div className="chart-summary">
-                    <div className="summary-stat">
-                      <span className="stat-label">전체 테스트:</span>
-                      <span className="stat-value">{summary.total_tests}</span>
-                    </div>
-                    <div className="summary-stat">
-                      <span className="stat-label">성공률:</span>
-                      <span 
-                        className="stat-value pass-rate"
-                        style={{ color: getStatusColor(summary.pass_rate) }}
-                      >
-                        {summary.pass_rate}%
-                      </span>
-                    </div>
+                  <div className="summary-table-container">
+                    <table className="summary-table">
+                      <thead>
+                        <tr>
+                          <th>Total</th>
+                          <th>Pass</th>
+                          <th>Fail</th>
+                          <th>N/T</th>
+                          <th>N/A</th>
+                          <th>Block</th>
+                          <th>성공률</th>
+                          <th>수행률</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>{total}</td>
+                          <td className="status-pass">{passed}</td>
+                          <td className="status-fail">{failed}</td>
+                          <td className="status-nt">{nt}</td>
+                          <td className="status-na">{na}</td>
+                          <td className="status-block">{blocked}</td>
+                          <td className="success-rate">{successRate.toFixed(1)}%</td>
+                          <td className="execution-rate">{executionRate.toFixed(1)}%</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>

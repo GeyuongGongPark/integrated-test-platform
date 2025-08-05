@@ -657,71 +657,80 @@ const TestCaseAPP = () => {
           <div className="testcase-list">
             {filteredTestCases.map(testCase => (
               <div key={testCase.id} className="testcase-list-item">
-                                  <div className="testcase-header">
-                    <div className="testcase-checkbox">
-                      <input 
-                        type="checkbox"
-                        checked={selectedTestCases.includes(testCase.id)}
-                        onChange={() => handleSelectTestCase(testCase.id)}
-                      />
-                    </div>
-                    <h4>{testCase.expected_result || testCase.main_category + ' - ' + testCase.sub_category}</h4>
-                    <div className="status-section">
-                      <span className={`status-badge ${testCase.result_status.toLowerCase().replace('/', '-')}`}>
-                        {testCase.result_status}
-                      </span>
-                      <select
-                        className="status-select"
-                        value={testCase.result_status}
-                        onChange={(e) => handleStatusChange(testCase.id, e.target.value)}
-                      >
-                        <option value="N/T">N/T</option>
-                        <option value="Pass">Pass</option>
-                        <option value="Fail">Fail</option>
-                        <option value="N/A">N/A</option>
-                        <option value="Block">Block</option>
-                      </select>
-                    </div>
-                    {/* 자동화 실행 버튼 */}
-                    {testCase.automation_code_path && (
-                      <button 
-                        className="btn btn-automation"
-                        onClick={() => executeAutomationCode(testCase.id)}
-                        title="자동화 실행"
-                      >
-                        🤖
-                      </button>
-                    )}
-                    {/* 디버깅용: 자동화 경로 표시 */}
-                    {!testCase.automation_code_path && (
-                      <span style={{fontSize: '10px', color: '#999'}}>자동화 없음</span>
-                    )}
-                    {/* 아코디언 버튼 (아이콘 변경) */}
-                    <button 
-                      className="btn btn-details"
-                      onClick={() => toggleTestCaseDetails(testCase.id)}
-                      title="상세보기"
-                    >
-                      {expandedTestCases.has(testCase.id) ? '📋' : '📄'}
-                    </button>
-                    <button 
-                      className="btn btn-edit-icon"
-                      onClick={() => {
-                        setEditingTestCase(testCase);
-                        setShowEditModal(true);
-                      }}
-                      title="수정"
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      className="btn btn-delete-icon"
-                      onClick={() => handleDeleteTestCase(testCase.id)}
-                      title="삭제"
-                    >
-                      ✕
-                    </button>
+                <div className="testcase-header">
+                  <div className="testcase-checkbox">
+                    <input 
+                      type="checkbox"
+                      checked={selectedTestCases.includes(testCase.id)}
+                      onChange={() => handleSelectTestCase(testCase.id)}
+                    />
                   </div>
+                  <div className="testcase-info">
+                    <h4>
+                      {testCase.main_category && testCase.sub_category && testCase.detail_category 
+                        ? `${testCase.main_category} > ${testCase.sub_category} > ${testCase.detail_category}`
+                        : testCase.expected_result || '제목 없음'
+                      }
+                    </h4>
+                    <div className="testcase-meta">
+                      <span className="environment-badge">{testCase.environment || 'dev'}</span>
+                      {testCase.automation_code_path && (
+                        <span className="automation-badge">🤖 자동화</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="status-section">
+                    <span className={`status-badge ${testCase.result_status.toLowerCase().replace('/', '-')}`}>
+                      {testCase.result_status}
+                    </span>
+                    <select
+                      className="status-select"
+                      value={testCase.result_status}
+                      onChange={(e) => handleStatusChange(testCase.id, e.target.value)}
+                    >
+                      <option value="N/T">N/T</option>
+                      <option value="Pass">Pass</option>
+                      <option value="Fail">Fail</option>
+                      <option value="N/A">N/A</option>
+                      <option value="Block">Block</option>
+                    </select>
+                  </div>
+                  {/* 자동화 실행 버튼 */}
+                  {testCase.automation_code_path && (
+                    <button 
+                      className="btn btn-automation"
+                      onClick={() => executeAutomationCode(testCase.id)}
+                      title="자동화 실행"
+                    >
+                      🤖
+                    </button>
+                  )}
+                  {/* 아코디언 버튼 */}
+                  <button 
+                    className="btn btn-details"
+                    onClick={() => toggleTestCaseDetails(testCase.id)}
+                    title="상세보기"
+                  >
+                    {expandedTestCases.has(testCase.id) ? '📋' : '📄'}
+                  </button>
+                  <button 
+                    className="btn btn-edit-icon"
+                    onClick={() => {
+                      setEditingTestCase(testCase);
+                      setShowEditModal(true);
+                    }}
+                    title="수정"
+                  >
+                    ✏️
+                  </button>
+                  <button 
+                    className="btn btn-delete-icon"
+                    onClick={() => handleDeleteTestCase(testCase.id)}
+                    title="삭제"
+                  >
+                    ✕
+                  </button>
+                </div>
                 {expandedTestCases.has(testCase.id) && (
                   <div className="testcase-details">
                     <div className="testcase-info">

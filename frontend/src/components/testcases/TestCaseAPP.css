@@ -335,16 +335,17 @@
 .testcase-list-item .testcase-header {
   display: flex;
   align-items: center;
-  padding: 15px 20px;
-  background: white;
-  border-bottom: 1px solid #e9ecef;
   gap: 15px;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .testcase-checkbox {
-  order: -1;
-  display: flex;
-  align-items: center;
+  flex-shrink: 0;
   margin-right: 10px;
 }
 
@@ -352,31 +353,64 @@
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: #007bff;
 }
 
-.testcase-list-item h4 {
-  margin: 0;
-  color: #333;
-  font-size: 1.1em;
+.testcase-info {
   flex: 1;
+  min-width: 0;
+}
+
+.testcase-info h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
   line-height: 1.4;
+  word-break: break-word;
+}
+
+.testcase-meta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.environment-badge {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.automation-badge {
+  background: #f3e5f5;
+  color: #7b1fa2;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .status-section {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-right: 15px;
+  flex-shrink: 0;
 }
 
 .status-badge {
   padding: 6px 12px;
   border-radius: 20px;
-  font-size: 0.75em;
-  font-weight: bold;
+  font-size: 12px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  min-width: 60px;
+  text-align: center;
 }
 
 .status-badge.pass {
@@ -390,13 +424,18 @@
 }
 
 .status-badge.n-t {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-badge.n-a {
   background: #e2e3e5;
-  color: #6c757d;
+  color: #383d41;
 }
 
 .status-badge.block {
-  background: #000000;
-  color: #ffff00;
+  background: #fff3cd;
+  color: #856404;
 }
 
 /* 아이콘 버튼들 */
@@ -404,57 +443,39 @@
 .btn-edit-icon,
 .btn-delete-icon,
 .btn-automation {
-  padding: 8px 12px;
+  padding: 8px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
+  background: transparent;
+  color: #666;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  height: 40px;
-}
-
-.btn-details {
-  background: #6c757d;
-  color: white;
+  min-width: 36px;
+  height: 36px;
 }
 
 .btn-details:hover {
-  background: #5a6268;
-  transform: translateY(-1px);
-}
-
-.btn-edit-icon {
-  background: #17a2b8;
-  color: white;
+  background: #f8f9fa;
+  color: #333;
 }
 
 .btn-edit-icon:hover {
-  background: #138496;
-  transform: translateY(-1px);
-}
-
-.btn-delete-icon {
-  background: #dc3545;
-  color: white;
+  background: #e3f2fd;
+  color: #1976d2;
 }
 
 .btn-delete-icon:hover {
-  background: #c82333;
-  transform: translateY(-1px);
-}
-
-.btn-automation {
-  background: #17a2b8;
-  color: white;
+  background: #ffebee;
+  color: #d32f2f;
 }
 
 .btn-automation:hover {
-  background: #138496;
-  transform: scale(1.05);
+  background: #f3e5f5;
+  color: #7b1fa2;
 }
 
 
@@ -865,7 +886,7 @@
 }
 
 .status-select {
-  padding: 4px 8px;
+  padding: 6px 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 12px;
@@ -881,7 +902,8 @@
 }
 
 .status-select option {
-  padding: 4px;
+  padding: 8px;
+  font-size: 12px;
 }
 
 /* 자동화 버튼 스타일 */

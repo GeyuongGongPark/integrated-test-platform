@@ -290,3 +290,72 @@
 .card-content::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 } 
+
+/* 환경별 테스트 케이스 상태 요약 테이블 스타일 */
+.summary-table-container {
+  margin-top: 20px;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-size: 14px;
+}
+
+.summary-table th {
+  background: #f8f9fa;
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.summary-table td {
+  padding: 12px 8px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  font-weight: 500;
+  background: white;
+}
+
+/* 상태별 색상 - 글자색만 유지 */
+.status-pass {
+  color: #007bff; /* 파란색 */
+  font-weight: 600;
+}
+
+.status-fail {
+  color: #dc3545; /* 빨간색 */
+  font-weight: 600;
+}
+
+.status-nt {
+  color: #000000; /* 검은색 */
+  font-weight: 600;
+}
+
+.status-na {
+  color: #000000; /* 검은색 */
+  font-weight: 600;
+}
+
+.status-block {
+  color: #000000; /* 검은색 */
+  font-weight: 600;
+}
+
+.success-rate {
+  color: #000000; /* 검은색 */
+  font-weight: 600;
+}
+
+.execution-rate {
+  color: #000000; /* 검은색 */
+  font-weight: 600;
+  text-decoration: underline dotted #dc3545; /* 빨간색 점선 밑줄 */
+} 
