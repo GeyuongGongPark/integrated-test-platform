@@ -4,8 +4,8 @@ const config = {
     uploadUrl: 'http://localhost:8000/uploads'
   },
   production: {
-    apiUrl: process.env.REACT_APP_API_URL || 'https://backend-alpha-amber-90.vercel.app',
-    uploadUrl: process.env.REACT_APP_UPLOAD_URL || 'https://backend-alpha-amber-90.vercel.app/uploads'
+    apiUrl: process.env.REACT_APP_API_URL || 'https://backend-alpha-liard.vercel.app',
+    uploadUrl: process.env.REACT_APP_UPLOAD_URL || 'https://backend-alpha-liard.vercel.app/uploads'
   }
 };
 
@@ -19,4 +19,4 @@ if (environment === 'development') {
   console.log('📤 Upload URL:', currentConfig.uploadUrl);
 }
 
-export default currentConfig; 
+export default currentConfig;

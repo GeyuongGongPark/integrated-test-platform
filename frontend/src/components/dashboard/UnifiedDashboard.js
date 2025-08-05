@@ -17,11 +17,10 @@ axios.defaults.withCredentials = false;  // CORS 문제 해결을 위해 false�
 // axios 인터셉터 설정 - CORS 및 인증 문제 해결
 axios.interceptors.request.use(
   (config) => {
-    // 요청 헤더에 CORS 관련 설정 추가
-    config.headers['Content-Type'] = 'application/json';
-    config.headers['X-Requested-With'] = 'XMLHttpRequest';
-    config.headers['Accept'] = 'application/json';
-    config.headers['Origin'] = window.location.origin;
+            // 요청 헤더에 CORS 관련 설정 추가
+        config.headers['Content-Type'] = 'application/json';
+        config.headers['X-Requested-With'] = 'XMLHttpRequest';
+        config.headers['Accept'] = 'application/json';
     
     // Vercel 환경에서 추가 설정
     if (process.env.NODE_ENV === 'production') {
