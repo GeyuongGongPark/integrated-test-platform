@@ -59,7 +59,7 @@ Vercel 대시보드 → Settings → Environment Variables:
 | Variable | Value | Environment |
 |----------|-------|-------------|
 | `REACT_APP_API_URL` | `https://integrated-test-platform.vercel.app` | Production |
-| `REACT_APP_API_URL` | `http://localhost:5000` | Preview |
+| `REACT_APP_API_URL` | `http://localhost:8000` | Preview |
 
 ## 5단계: vercel.json 설정
 

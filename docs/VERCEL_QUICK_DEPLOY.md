@@ -45,7 +45,7 @@ vercel env add REACT_APP_API_URL
 Value: https://your-backend-domain.vercel.app
 
 # Preview 환경
-Value: http://localhost:5000
+Value: http://localhost:8000
 ```
 
 ## 5단계: 배포 확인

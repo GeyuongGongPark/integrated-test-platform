@@ -8,8 +8,6 @@
 - **[DEPLOYMENT_SUCCESS.md](DEPLOYMENT_SUCCESS.md)** - 배포 성공 완료 가이드
 - **[VERCEL_FRONTEND_DEPLOY.md](VERCEL_FRONTEND_DEPLOY.md)** - Vercel 프론트엔드 배포 가이드
 - **[VERCEL_QUICK_DEPLOY.md](VERCEL_QUICK_DEPLOY.md)** - Vercel CLI 빠른 배포 가이드
-- **[VERCEL_SETUP_GUIDE.md](VERCEL_SETUP_GUIDE.md)** - Vercel 설정 가이드
-- **[VERCEL_CLI_SETUP.md](VERCEL_CLI_SETUP.md)** - Vercel CLI 설정 가이드
 
 ### 문제 해결 가이드
 - **[WHITE_SCREEN_FIX.md](WHITE_SCREEN_FIX.md)** - 흰 화면 문제 해결 가이드
@@ -18,20 +16,15 @@
 ## 🔧 설정 가이드
 
 ### 데이터베이스 설정
-- **[NEON_SETUP.md](NEON_SETUP.md)** - Neon PostgreSQL 설정 가이드
-- **[PLANETSCALE_SETUP.md](PLANETSCALE_SETUP.md)** - PlanetScale MySQL 설정 가이드
+- **[NEON_SETUP.md](NEON_SETUP.md)** - Neon PostgreSQL 설정 가이드 (현재 사용 중)
 
 ### 호스팅 옵션
 - **[FREE_HOSTING_OPTIONS.md](FREE_HOSTING_OPTIONS.md)** - 무료 호스팅 옵션 비교
-- **[RAILWAY_SETUP.md](RAILWAY_SETUP.md)** - Railway 설정 가이드
-- **[RENDER_SETUP.md](RENDER_SETUP.md)** - Render 설정 가이드
 
 ## 📋 사용법 및 계획
 
 ### 사용법
 - **[USAGE.md](USAGE.md)** - 프로젝트 사용법 가이드
-- **[MANUAL_DEPLOYMENT.md](MANUAL_DEPLOYMENT.md)** - 수동 배포 가이드
-- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - 종합 배포 가이드
 
 ### 프로젝트 계획
 - **[INTEGRATION_PLAN.md](INTEGRATION_PLAN.md)** - 통합 계획 문서
@@ -40,18 +33,30 @@
 ## 📖 문서 사용법
 
 ### 배포 시 참고할 문서
-1. **처음 배포**: `DEPLOYMENT_GUIDE.md` → `VERCEL_FRONTEND_DEPLOY.md`
+1. **처음 배포**: `VERCEL_QUICK_DEPLOY.md` → `VERCEL_FRONTEND_DEPLOY.md`
 2. **문제 발생**: `WHITE_SCREEN_FIX.md` 또는 `FRONTEND_DEPLOYMENT_FIX.md`
 3. **성공 확인**: `DEPLOYMENT_SUCCESS.md`
 
 ### 개발 시 참고할 문서
 1. **로컬 개발**: `USAGE.md`
-2. **환경 설정**: `NEON_SETUP.md` 또는 `PLANETSCALE_SETUP.md`
+2. **환경 설정**: `NEON_SETUP.md` (현재 사용 중)
 3. **호스팅 선택**: `FREE_HOSTING_OPTIONS.md`
+
+### 현재 상태 확인
+- **배포된 URL**: https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app
+- **백엔드 API**: https://integrated-test-platform.vercel.app
+- **헬스체크**: https://integrated-test-platform.vercel.app/health
 
 ## 🔄 문서 업데이트
 
 이 문서들은 프로젝트 진행 상황에 따라 지속적으로 업데이트됩니다. 최신 정보는 각 문서의 마지막 수정 날짜를 확인하세요.
+
+### 최근 업데이트 내용
+- ✅ **백엔드 포트**: 5000 → 8000으로 변경
+- ✅ **데이터베이스**: SQLite → Neon PostgreSQL로 변경
+- ✅ **배포 URL**: 실제 배포된 URL로 업데이트
+- ✅ **프로젝트 구조**: 현재 구조에 맞춰 문서 수정
+- ✅ **불필요한 문서**: 사용하지 않는 문서들 정리
 
 ---
 

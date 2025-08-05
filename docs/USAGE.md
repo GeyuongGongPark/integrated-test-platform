@@ -47,6 +47,11 @@ npm start
 
 4. **테스트 케이스 삭제**: 불필요한 테스트 케이스 삭제
 
+#### 폴더 관리
+1. **폴더 생성**: 테스트 케이스를 체계적으로 관리하기 위한 폴더 생성
+2. **폴더 구조**: 메인/서브/상세 카테고리로 체계적 관리
+3. **폴더별 테스트 케이스**: 폴더별로 테스트 케이스 정리
+
 #### 테스트 결과 관리
 1. **테스트 결과 추가**: 특정 테스트 케이스에 대한 실행 결과 기록
 2. **테스트 결과 조회**: 이전 실행 결과들을 확인
@@ -126,6 +131,11 @@ k6 run -e NAME=multi1 login/login_to_dashboard.js
    ```bash
    k6 run -e NAME=prod login/login_to_dashboard.js
    ```
+
+### 시나리오 4: 대시보드 활용
+1. **통합 대시보드**: 전체 테스트 현황 한눈에 확인
+2. **성능 테스트 대시보드**: 성능 테스트 결과 시각화
+3. **설정 관리**: 계정, 프로젝트, 폴더 설정 관리
 
 ## 🔧 환경 설정
 
@@ -246,6 +256,20 @@ curl -X POST http://localhost:8000/testcases \
 curl http://localhost:8000/testcases
 ```
 
+### 폴더 관리
+```bash
+# 폴더 생성
+curl -X POST http://localhost:8000/folders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "로그인 테스트",
+    "description": "로그인 관련 테스트 케이스"
+  }'
+
+# 폴더 조회
+curl http://localhost:8000/folders
+```
+
 ## 🎨 UI 특징
 
 ### 웹 애플리케이션
@@ -258,6 +282,12 @@ curl http://localhost:8000/testcases
   - Block: 노란색
   - N/T, N/A: 회색
 
+### 대시보드 기능
+- **통합 대시보드**: 전체 테스트 현황 시각화
+- **성능 지표**: 응답 시간, 처리량, 에러율 표시
+- **실시간 모니터링**: 테스트 실행 상태 실시간 확인
+- **설정 관리**: 계정, 프로젝트, 폴더 설정
+
 ### 성능 테스트 결과
 - **HTML 리포트**: 상세한 테스트 결과 리포트
 - **스크린샷 자동 저장**: 각 단계별 스크린샷 저장
@@ -267,10 +297,10 @@ curl http://localhost:8000/testcases
 ## 📈 향후 개선 사항
 
 ### 웹 애플리케이션
-1. **폴더 구조**: 테스트 케이스를 폴더별로 정리
-2. **스크린샷 관리**: 테스트 실행 시 자동 스크린샷 저장
-3. **보고서 생성**: 테스트 결과를 PDF/Excel로 내보내기
-4. **사용자 관리**: 다중 사용자 지원
+1. **사용자 인증**: 로그인/회원가입 시스템
+2. **고급 권한 관리**: 역할 기반 접근 제어
+3. **실시간 알림**: 테스트 완료/실패 알림
+4. **보고서 생성**: 테스트 결과를 PDF/Excel로 내보내기
 5. **JIRA 연동**: 버그 추적 시스템과 연동
 
 ### 성능 테스트
@@ -280,7 +310,13 @@ curl http://localhost:8000/testcases
 4. **알림 시스템**: 테스트 실패 시 알림
 5. **CI/CD 연동**: 자동화된 테스트 파이프라인
 
+### 자동화 기능
+1. **테스트 스케줄링**: 정기적인 테스트 자동 실행
+2. **API 문서 자동 생성**: 테스트 결과 기반 문서 생성
+3. **모바일 앱**: 모바일 환경 지원
+
 ## 📚 추가 문서
 
-- [INTEGRATION_PLAN.md](docs/INTEGRATION_PLAN.md): 통합 계획 문서
-- [LFBZ_performance_README.md](docs/LFBZ_performance_README.md): 성능 테스트 상세 가이드 
+- [INTEGRATION_PLAN.md](INTEGRATION_PLAN.md): 통합 계획 문서
+- [LFBZ_performance_README.md](LFBZ_performance_README.md): 성능 테스트 상세 가이드
+- [DEPLOYMENT_SUCCESS.md](DEPLOYMENT_SUCCESS.md): 배포 성공 가이드 
