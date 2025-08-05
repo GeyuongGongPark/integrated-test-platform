@@ -180,150 +180,189 @@ const FolderManager = () => {
       )}
 
       {showCreateForm && (
-        <div className="create-form">
-          <h3>새 폴더 생성</h3>
-          <form onSubmit={handleCreateFolder}>
-            <div className="form-group">
-              <label>폴더명 *</label>
-              <input
-                type="text"
-                value={formData.folder_name}
-                onChange={(e) => setFormData({...formData, folder_name: e.target.value})}
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>폴더 타입</label>
-              <select
-                value={formData.folder_type}
-                onChange={(e) => setFormData({...formData, folder_type: e.target.value})}
-              >
-                <option value="environment">환경 (Environment)</option>
-                <option value="deployment_date">배포일자 (Deployment Date)</option>
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label>환경</label>
-              <select
-                value={formData.environment}
-                onChange={(e) => setFormData({...formData, environment: e.target.value})}
-              >
-                <option value="dev">DEV</option>
-                <option value="alpha">ALPHA</option>
-                <option value="production">PRODUCTION</option>
-              </select>
-            </div>
-            
-            {formData.folder_type === 'deployment_date' && (
-              <div className="form-group">
-                <label>배포일자</label>
-                <input
-                  type="date"
-                  value={formData.deployment_date}
-                  onChange={(e) => setFormData({...formData, deployment_date: e.target.value})}
-                />
-              </div>
-            )}
-            
-            <div className="form-group">
-              <label>상위 폴더</label>
-              <select
-                value={formData.parent_folder_id || ''}
-                onChange={(e) => setFormData({...formData, parent_folder_id: e.target.value ? parseInt(e.target.value) : null})}
-              >
-                <option value="">없음 (최상위)</option>
-                {folders.map(folder => (
-                  <option key={folder.id} value={folder.id}>
-                    {folder.folder_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="form-actions">
-              <button type="submit" className="btn-submit">생성</button>
+        <div className="modal-overlay fullscreen-modal">
+          <div className="modal fullscreen-modal-content">
+            <div className="modal-header">
+              <h3>새 폴더 생성</h3>
               <button 
-                type="button" 
-                className="btn-cancel"
+                className="modal-close"
+                onClick={() => setShowCreateForm(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleCreateFolder}>
+                <div className="form-group">
+                  <label>폴더명 *</label>
+                  <input
+                    type="text"
+                    value={formData.folder_name}
+                    onChange={(e) => setFormData({...formData, folder_name: e.target.value})}
+                    required
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>폴더 타입</label>
+                  <select
+                    value={formData.folder_type}
+                    onChange={(e) => setFormData({...formData, folder_type: e.target.value})}
+                  >
+                    <option value="environment">환경 (Environment)</option>
+                    <option value="deployment_date">배포일자 (Deployment Date)</option>
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label>환경</label>
+                  <select
+                    value={formData.environment}
+                    onChange={(e) => setFormData({...formData, environment: e.target.value})}
+                  >
+                    <option value="dev">DEV</option>
+                    <option value="alpha">ALPHA</option>
+                    <option value="production">PRODUCTION</option>
+                  </select>
+                </div>
+                
+                {formData.folder_type === 'deployment_date' && (
+                  <div className="form-group">
+                    <label>배포일자</label>
+                    <input
+                      type="date"
+                      value={formData.deployment_date}
+                      onChange={(e) => setFormData({...formData, deployment_date: e.target.value})}
+                    />
+                  </div>
+                )}
+                
+                <div className="form-group">
+                  <label>상위 폴더</label>
+                  <select
+                    value={formData.parent_folder_id || ''}
+                    onChange={(e) => setFormData({...formData, parent_folder_id: e.target.value ? parseInt(e.target.value) : null})}
+                  >
+                    <option value="">없음 (최상위)</option>
+                    {folders.map(folder => (
+                      <option key={folder.id} value={folder.id}>
+                        {folder.folder_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </form>
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="btn btn-primary"
+                onClick={handleCreateFolder}
+              >
+                생성
+              </button>
+              <button 
+                className="btn btn-secondary"
                 onClick={() => setShowCreateForm(false)}
               >
                 취소
               </button>
             </div>
-          </form>
+          </div>
         </div>
       )}
 
       {editingFolder && (
-        <div className="edit-form">
-          <h3>폴더 수정</h3>
-          <form onSubmit={(e) => { e.preventDefault(); handleUpdateFolder(editingFolder.id); }}>
-            <div className="form-group">
-              <label>폴더명 *</label>
-              <input
-                type="text"
-                value={editFormData.folder_name}
-                onChange={(e) => setEditFormData({...editFormData, folder_name: e.target.value})}
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>폴더 타입</label>
-              <select
-                value={editFormData.folder_type}
-                onChange={(e) => setEditFormData({...editFormData, folder_type: e.target.value})}
-              >
-                <option value="environment">환경 (Environment)</option>
-                <option value="deployment_date">배포일자 (Deployment Date)</option>
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label>환경</label>
-              <select
-                value={editFormData.environment}
-                onChange={(e) => setEditFormData({...editFormData, environment: e.target.value})}
-              >
-                <option value="dev">DEV</option>
-                <option value="alpha">ALPHA</option>
-                <option value="production">PRODUCTION</option>
-              </select>
-            </div>
-            
-            {editFormData.folder_type === 'deployment_date' && (
-              <div className="form-group">
-                <label>배포일자</label>
-                <input
-                  type="date"
-                  value={editFormData.deployment_date}
-                  onChange={(e) => setEditFormData({...editFormData, deployment_date: e.target.value})}
-                />
-              </div>
-            )}
-            
-            <div className="form-group">
-              <label>상위 폴더</label>
-              <select
-                value={editFormData.parent_folder_id || ''}
-                onChange={(e) => setEditFormData({...editFormData, parent_folder_id: e.target.value ? parseInt(e.target.value) : null})}
-              >
-                <option value="">없음 (최상위)</option>
-                {folders.filter(f => f.id !== editingFolder.id).map(folder => (
-                  <option key={folder.id} value={folder.id}>
-                    {folder.folder_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="form-actions">
-              <button type="submit" className="btn-submit">수정</button>
+        <div className="modal-overlay fullscreen-modal">
+          <div className="modal fullscreen-modal-content">
+            <div className="modal-header">
+              <h3>폴더 수정</h3>
               <button 
-                type="button" 
-                className="btn-cancel"
+                className="modal-close"
+                onClick={() => {
+                  setEditingFolder(null);
+                  setEditFormData({
+                    folder_name: '',
+                    parent_folder_id: null,
+                    folder_type: 'environment',
+                    environment: 'dev',
+                    deployment_date: ''
+                  });
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={(e) => { e.preventDefault(); handleUpdateFolder(editingFolder.id); }}>
+                <div className="form-group">
+                  <label>폴더명 *</label>
+                  <input
+                    type="text"
+                    value={editFormData.folder_name}
+                    onChange={(e) => setEditFormData({...editFormData, folder_name: e.target.value})}
+                    required
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>폴더 타입</label>
+                  <select
+                    value={editFormData.folder_type}
+                    onChange={(e) => setEditFormData({...editFormData, folder_type: e.target.value})}
+                  >
+                    <option value="environment">환경 (Environment)</option>
+                    <option value="deployment_date">배포일자 (Deployment Date)</option>
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label>환경</label>
+                  <select
+                    value={editFormData.environment}
+                    onChange={(e) => setEditFormData({...editFormData, environment: e.target.value})}
+                  >
+                    <option value="dev">DEV</option>
+                    <option value="alpha">ALPHA</option>
+                    <option value="production">PRODUCTION</option>
+                  </select>
+                </div>
+                
+                {editFormData.folder_type === 'deployment_date' && (
+                  <div className="form-group">
+                    <label>배포일자</label>
+                    <input
+                      type="date"
+                      value={editFormData.deployment_date}
+                      onChange={(e) => setEditFormData({...editFormData, deployment_date: e.target.value})}
+                    />
+                  </div>
+                )}
+                
+                <div className="form-group">
+                  <label>상위 폴더</label>
+                  <select
+                    value={editFormData.parent_folder_id || ''}
+                    onChange={(e) => setEditFormData({...editFormData, parent_folder_id: e.target.value ? parseInt(e.target.value) : null})}
+                  >
+                    <option value="">없음 (최상위)</option>
+                    {folders.filter(f => f.id !== editingFolder.id).map(folder => (
+                      <option key={folder.id} value={folder.id}>
+                        {folder.folder_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </form>
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="btn btn-primary"
+                onClick={() => handleUpdateFolder(editingFolder.id)}
+              >
+                수정
+              </button>
+              <button 
+                className="btn btn-secondary"
                 onClick={() => {
                   setEditingFolder(null);
                   setEditFormData({
@@ -338,7 +377,7 @@ const FolderManager = () => {
                 취소
               </button>
             </div>
-          </form>
+          </div>
         </div>
       )}
 

@@ -165,7 +165,7 @@ class TestCase(db.Model):
     sub_category = db.Column(db.String(255), nullable=False)   # 중분류
     detail_category = db.Column(db.String(255), nullable=False) # 소분류
     pre_condition = db.Column(db.Text)                         # 사전조건
-    expected_result = db.Column(db.Text)                       # 기대결과 (새로 추가)
+    expected_result = db.Column(db.Text)                       # 기대결과
     remark = db.Column(db.Text)                               # 비고
     result_status = db.Column(db.String(10), default='N/T')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -257,6 +257,33 @@ class DashboardSummary(db.Model):
     pass_rate = db.Column(db.Float, default=0.0)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
 
+class AutomationTest(db.Model):
+    __tablename__ = 'AutomationTests'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    test_type = db.Column(db.String(50), nullable=False)  # selenium, playwright, cypress, puppeteer
+    script_path = db.Column(db.String(512), nullable=False)
+    environment = db.Column(db.String(50), default='dev')
+    parameters = db.Column(db.Text)  # JSON 문자열로 저장
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class AutomationTestResult(db.Model):
+    __tablename__ = 'AutomationTestResults'
+    id = db.Column(db.Integer, primary_key=True)
+    automation_test_id = db.Column(db.Integer, db.ForeignKey('AutomationTests.id'), nullable=False)
+    status = db.Column(db.String(20), nullable=False)  # Pass, Fail, Error, Running
+    execution_start = db.Column(db.DateTime, default=datetime.utcnow)
+    execution_end = db.Column(db.DateTime)
+    execution_duration = db.Column(db.Float)  # 실행 시간 (초)
+    output = db.Column(db.Text)  # 실행 출력
+    error_message = db.Column(db.Text)  # 오류 메시지
+    screenshot_path = db.Column(db.String(512))  # 스크린샷 경로
+    result_data = db.Column(db.Text)  # JSON 형태의 상세 결과 데이터
+    environment = db.Column(db.String(50), default='dev')
+    notes = db.Column(db.Text)  # 추가 메모
+
 
 
 # 기존 TCM API 엔드포인트들
@@ -285,6 +312,18 @@ def create_project():
 def get_testcases():
     try:
         testcases = TestCase.query.all()
+        print(f"🧪 전체 테스트 케이스 수: {len(testcases)}")
+        
+        # 폴더 ID별 테스트 케이스 수 확인
+        folder_counts = {}
+        for tc in testcases:
+            folder_id = tc.folder_id
+            if folder_id not in folder_counts:
+                folder_counts[folder_id] = 0
+            folder_counts[folder_id] += 1
+        
+        print(f"📁 폴더별 테스트 케이스 수: {folder_counts}")
+        
         data = [{
             'id': tc.id,
             'project_id': tc.project_id,
@@ -295,6 +334,10 @@ def get_testcases():
             'expected_result': tc.expected_result,
             'result_status': tc.result_status,
             'remark': tc.remark,
+            'folder_id': tc.folder_id,
+            'automation_code_path': tc.automation_code_path,
+            'automation_code_type': tc.automation_code_type,
+            'environment': tc.environment,
             'created_at': tc.created_at,
             'updated_at': tc.updated_at
         } for tc in testcases]
@@ -348,6 +391,8 @@ def get_testcase(id):
 def create_testcase():
     data = request.get_json()
     print("Received data:", data)
+    print("자동화 코드 경로:", data.get('automation_code_path'))
+    print("자동화 코드 타입:", data.get('automation_code_type'))
     
     # project_id가 없으면 기본 프로젝트 사용
     project_id = data.get('project_id')
@@ -357,6 +402,19 @@ def create_testcase():
             project_id = default_project.id
         else:
             return jsonify({'error': '기본 프로젝트가 없습니다. 먼저 프로젝트를 생성해주세요.'}), 400
+    
+    # folder_id가 없으면 기본 폴더 사용
+    folder_id = data.get('folder_id')
+    if not folder_id:
+        # DEV 환경의 첫 번째 배포일자 폴더를 기본으로 사용
+        dev_folder = Folder.query.filter_by(folder_type='environment', environment='dev').first()
+        if dev_folder:
+            default_deployment_folder = Folder.query.filter_by(
+                folder_type='deployment_date', 
+                parent_folder_id=dev_folder.id
+            ).first()
+            if default_deployment_folder:
+                folder_id = default_deployment_folder.id
     
     tc = TestCase(
         project_id=project_id,
@@ -368,7 +426,9 @@ def create_testcase():
         result_status=data.get('result_status', 'N/T'),
         remark=data.get('remark', ''),
         environment=data.get('environment', 'dev'),
-        folder_id=data.get('folder_id')
+        folder_id=folder_id,
+        automation_code_path=data.get('automation_code_path', ''),
+        automation_code_type=data.get('automation_code_type', 'playwright')
     )
 
     try:
@@ -401,6 +461,8 @@ def update_testcase(id):
     tc.remark = data.get('remark', tc.remark)
     tc.environment = data.get('environment', tc.environment)
     tc.folder_id = data.get('folder_id', tc.folder_id)
+    tc.automation_code_path = data.get('automation_code_path', tc.automation_code_path)
+    tc.automation_code_type = data.get('automation_code_type', tc.automation_code_type)
     db.session.commit()
     return jsonify({'message': '테스트 케이스 업데이트 완료'}), 200
 
@@ -413,15 +475,61 @@ def delete_testcase(id):
 
 @app.route('/testresults/<int:test_case_id>', methods=['GET'])
 def get_test_results(test_case_id):
-    results = TestResult.query.filter_by(test_case_id=test_case_id).all()
-    data = [{
-        'id': r.id,
-        'test_case_id': r.test_case_id,
-        'result': r.result,
-        'executed_at': r.executed_at,
-        'notes': r.notes
-    } for r in results]
-    return jsonify(data), 200
+    """특정 테스트 케이스의 실행 결과 조회"""
+    try:
+        results = TestResult.query.filter_by(test_case_id=test_case_id).order_by(TestResult.executed_at.desc()).all()
+        
+        result_list = []
+        for result in results:
+            result_data = {
+                'id': result.id,
+                'test_case_id': result.test_case_id,
+                'result': result.result,
+                'executed_at': result.executed_at.isoformat() if result.executed_at else None,
+                'notes': result.notes,
+                'screenshot': result.screenshot,
+                'environment': result.environment,
+                'execution_duration': result.execution_duration,
+                'error_message': result.error_message
+            }
+            result_list.append(result_data)
+        
+        return jsonify(result_list), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/testcases/<int:id>/screenshots', methods=['GET'])
+def get_testcase_screenshots(id):
+    """테스트 케이스의 스크린샷 목록 조회"""
+    try:
+        test_case = TestCase.query.get_or_404(id)
+        screenshots = Screenshot.query.filter_by(test_case_id=id).order_by(Screenshot.timestamp.desc()).all()
+        
+        screenshot_list = []
+        for screenshot in screenshots:
+            screenshot_data = {
+                'id': screenshot.id,
+                'screenshot_path': screenshot.screenshot_path,
+                'timestamp': screenshot.timestamp.isoformat() if screenshot.timestamp else None
+            }
+            screenshot_list.append(screenshot_data)
+        
+        return jsonify(screenshot_list), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/screenshots/<path:filename>', methods=['GET'])
+def get_screenshot(filename):
+    """스크린샷 파일 조회"""
+    try:
+        import os
+        screenshot_path = os.path.join('screenshots', filename)
+        if os.path.exists(screenshot_path):
+            return send_file(screenshot_path, mimetype='image/png')
+        else:
+            return jsonify({'error': '스크린샷 파일을 찾을 수 없습니다'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/testresults', methods=['POST'])
 def create_test_result():
@@ -565,6 +673,215 @@ def get_performance_test_results(id):
         'report_path': r.report_path
     } for r in results]
     return jsonify(data), 200
+
+# 자동화 테스트 API
+@app.route('/automation-tests', methods=['GET'])
+def get_automation_tests():
+    """모든 자동화 테스트 조회"""
+    try:
+        tests = AutomationTest.query.all()
+        return jsonify([{
+            'id': test.id,
+            'name': test.name,
+            'description': test.description,
+            'test_type': test.test_type,
+            'script_path': test.script_path,
+            'environment': test.environment,
+            'parameters': test.parameters,
+            'created_at': test.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'updated_at': test.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+        } for test in tests])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/automation-tests', methods=['POST'])
+def create_automation_test():
+    """자동화 테스트 생성"""
+    try:
+        data = request.get_json()
+        
+        new_test = AutomationTest(
+            name=data['name'],
+            description=data.get('description', ''),
+            test_type=data['test_type'],
+            script_path=data['script_path'],
+            environment=data.get('environment', 'dev'),
+            parameters=data.get('parameters', '')
+        )
+        
+        db.session.add(new_test)
+        db.session.commit()
+        
+        return jsonify({
+            'id': new_test.id,
+            'name': new_test.name,
+            'message': '자동화 테스트가 성공적으로 생성되었습니다.'
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/automation-tests/<int:id>', methods=['GET'])
+def get_automation_test(id):
+    """특정 자동화 테스트 조회"""
+    try:
+        test = AutomationTest.query.get_or_404(id)
+        return jsonify({
+            'id': test.id,
+            'name': test.name,
+            'description': test.description,
+            'test_type': test.test_type,
+            'script_path': test.script_path,
+            'environment': test.environment,
+            'parameters': test.parameters,
+            'created_at': test.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'updated_at': test.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/automation-tests/<int:id>', methods=['PUT'])
+def update_automation_test(id):
+    """자동화 테스트 수정"""
+    try:
+        test = AutomationTest.query.get_or_404(id)
+        data = request.get_json()
+        
+        test.name = data['name']
+        test.description = data.get('description', '')
+        test.test_type = data['test_type']
+        test.script_path = data['script_path']
+        test.environment = data.get('environment', 'dev')
+        test.parameters = data.get('parameters', '')
+        test.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': '자동화 테스트가 성공적으로 수정되었습니다.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/automation-tests/<int:id>', methods=['DELETE'])
+def delete_automation_test(id):
+    """자동화 테스트 삭제"""
+    try:
+        test = AutomationTest.query.get_or_404(id)
+        db.session.delete(test)
+        db.session.commit()
+        
+        return jsonify({
+            'message': '자동화 테스트가 성공적으로 삭제되었습니다.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/automation-tests/<int:id>/execute', methods=['POST'])
+def execute_automation_test(id):
+    """자동화 테스트 실행"""
+    try:
+        test = AutomationTest.query.get_or_404(id)
+        
+        # 실행 시작 시간
+        execution_start = datetime.utcnow()
+        
+        # 실제로는 여기서 자동화 테스트를 실행
+        # 현재는 시뮬레이션
+        import time
+        time.sleep(2)  # 실행 시간 시뮬레이션
+        
+        # 실행 종료 시간
+        execution_end = datetime.utcnow()
+        execution_duration = (execution_end - execution_start).total_seconds()
+        
+        # 시뮬레이션된 결과 (실제로는 테스트 실행 결과)
+        status = 'Pass'  # 또는 'Fail', 'Error'
+        output = f"테스트 '{test.name}' 실행 완료"
+        error_message = None
+        
+        # 결과 저장
+        result = AutomationTestResult(
+            automation_test_id=test.id,
+            status=status,
+            execution_start=execution_start,
+            execution_end=execution_end,
+            execution_duration=execution_duration,
+            output=output,
+            error_message=error_message,
+            environment=test.environment
+        )
+        
+        db.session.add(result)
+        db.session.commit()
+        
+        return jsonify({
+            'message': '자동화 테스트 실행이 완료되었습니다.',
+            'test_name': test.name,
+            'status': status,
+            'execution_duration': execution_duration,
+            'result_id': result.id
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/automation-tests/<int:id>/results', methods=['GET'])
+def get_automation_test_results(id):
+    """자동화 테스트의 실행 결과 조회"""
+    try:
+        results = AutomationTestResult.query.filter_by(automation_test_id=id).order_by(AutomationTestResult.execution_start.desc()).all()
+        
+        result_list = []
+        for result in results:
+            result_data = {
+                'id': result.id,
+                'automation_test_id': result.automation_test_id,
+                'status': result.status,
+                'execution_start': result.execution_start.isoformat() if result.execution_start else None,
+                'execution_end': result.execution_end.isoformat() if result.execution_end else None,
+                'execution_duration': result.execution_duration,
+                'output': result.output,
+                'error_message': result.error_message,
+                'screenshot_path': result.screenshot_path,
+                'result_data': result.result_data,
+                'environment': result.environment,
+                'notes': result.notes
+            }
+            result_list.append(result_data)
+        
+        return jsonify(result_list), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/automation-tests/<int:id>/results/<int:result_id>', methods=['GET'])
+def get_automation_test_result_detail(id, result_id):
+    """특정 자동화 테스트 실행 결과 상세 조회"""
+    try:
+        result = AutomationTestResult.query.filter_by(
+            automation_test_id=id, 
+            id=result_id
+        ).first_or_404()
+        
+        result_data = {
+            'id': result.id,
+            'automation_test_id': result.automation_test_id,
+            'status': result.status,
+            'execution_start': result.execution_start.isoformat() if result.execution_start else None,
+            'execution_end': result.execution_end.isoformat() if result.execution_end else None,
+            'execution_duration': result.execution_duration,
+            'output': result.output,
+            'error_message': result.error_message,
+            'screenshot_path': result.screenshot_path,
+            'result_data': result.result_data,
+            'environment': result.environment,
+            'notes': result.notes
+        }
+        
+        return jsonify(result_data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/test-executions', methods=['GET'])
 def get_test_executions():
@@ -831,6 +1148,8 @@ def get_folder_tree():
             folder_type='environment'
         ).all()
         
+        print(f"🔍 환경 폴더 수: {len(environment_folders)}")
+        
         tree = []
         for env_folder in environment_folders:
             env_node = {
@@ -841,11 +1160,15 @@ def get_folder_tree():
                 'children': []
             }
             
+            print(f"🌍 환경 폴더: {env_folder.folder_name} (ID: {env_folder.id})")
+            
             # 해당 환경의 배포일자별 폴더 조회
             deployment_folders = Folder.query.filter_by(
                 folder_type='deployment_date',
                 parent_folder_id=env_folder.id
             ).all()
+            
+            print(f"📅 배포일자 폴더 수: {len(deployment_folders)}")
             
             for dep_folder in deployment_folders:
                 dep_node = {
@@ -856,21 +1179,9 @@ def get_folder_tree():
                     'children': []
                 }
                 
-                # 해당 배포일자의 테스트 케이스 조회
-                test_cases = TestCase.query.filter_by(
-                    folder_id=dep_folder.id
-                ).all()
+                print(f"📅 배포일자 폴더: {dep_folder.folder_name} (ID: {dep_folder.id})")
                 
-                for tc in test_cases:
-                    tc_node = {
-                        'id': tc.id,
-                        'name': tc.expected_result[:50] + '...' if tc.expected_result and len(tc.expected_result) > 50 else (tc.expected_result or f"{tc.main_category} - {tc.sub_category}"),
-                        'type': 'test_case',
-                        'status': tc.result_status,
-                        'automation_code_path': tc.automation_code_path
-                    }
-                    dep_node['children'].append(tc_node)
-                
+                # 테스트 케이스는 제외하고 폴더만 반환
                 env_node['children'].append(dep_node)
             
             tree.append(env_node)
@@ -927,38 +1238,67 @@ def get_test_results_summary(environment):
 def upload_testcases_excel():
     """엑셀 파일에서 테스트 케이스 업로드"""
     try:
+        print("=== 파일 업로드 디버깅 ===")
+        print(f"Content-Type: {request.headers.get('Content-Type')}")
+        print(f"Files: {list(request.files.keys())}")
+        print(f"Form data: {list(request.form.keys())}")
+        
         if 'file' not in request.files:
+            print("❌ 'file' 키가 request.files에 없음")
+            print(f"사용 가능한 키들: {list(request.files.keys())}")
             return jsonify({'error': '파일이 없습니다'}), 400
         
         file = request.files['file']
+        print(f"파일명: {file.filename}")
+        print(f"파일 크기: {len(file.read()) if file else 'N/A'}")
+        file.seek(0)  # 파일 포인터를 다시 처음으로
+        
         if file.filename == '':
+            print("❌ 파일명이 비어있음")
             return jsonify({'error': '파일이 선택되지 않았습니다'}), 400
         
         if not file.filename.endswith('.xlsx'):
+            print(f"❌ 지원하지 않는 파일 형식: {file.filename}")
             return jsonify({'error': '엑셀 파일(.xlsx)만 업로드 가능합니다'}), 400
+        
+        print("✅ 파일 검증 통과")
         
         # 엑셀 파일 읽기
         df = pd.read_excel(file)
+        print(f"✅ 엑셀 파일 읽기 성공, 행 수: {len(df)}")
+        print(f"📊 컬럼명: {list(df.columns)}")
+        print(f"📋 첫 번째 행 데이터: {df.iloc[0].to_dict()}")
         
         created_count = 0
-        for _, row in df.iterrows():
+        for index, row in df.iterrows():
+            print(f"🔍 처리 중인 행 {index + 1}: {row.to_dict()}")
+            
             test_case = TestCase(
                 project_id=row.get('project_id', 1),
                 main_category=row.get('main_category', ''),
                 sub_category=row.get('sub_category', ''),
                 detail_category=row.get('detail_category', ''),
                 pre_condition=row.get('pre_condition', ''),
-                description=row.get('description', ''),
+                expected_result=row.get('expected_result', ''),
                 result_status=row.get('result_status', 'N/T'),
                 remark=row.get('remark', ''),
                 environment=row.get('environment', 'dev'),
                 automation_code_path=row.get('automation_code_path', ''),
                 automation_code_type=row.get('automation_code_type', '')
             )
+            
+            print(f"📝 생성된 테스트 케이스: main_category='{test_case.main_category}', expected_result='{test_case.expected_result}'")
+            
             db.session.add(test_case)
             created_count += 1
         
-        db.session.commit()
+        try:
+            db.session.commit()
+            print(f"✅ {created_count}개의 테스트 케이스 생성 완료")
+        except Exception as commit_error:
+            print(f"❌ 데이터베이스 커밋 오류: {str(commit_error)}")
+            db.session.rollback()
+            raise commit_error
         
         return jsonify({
             'message': f'{created_count}개의 테스트 케이스가 업로드되었습니다',
@@ -966,6 +1306,7 @@ def upload_testcases_excel():
         }), 201
         
     except Exception as e:
+        print(f"❌ 파일 업로드 오류: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # 엑셀 다운로드 API
@@ -986,7 +1327,7 @@ def download_testcases_excel():
                 'sub_category': tc.sub_category,
                 'detail_category': tc.detail_category,
                 'pre_condition': tc.pre_condition,
-                'description': tc.description,
+                'expected_result': tc.expected_result,
                 'result_status': tc.result_status,
                 'remark': tc.remark,
                 'environment': tc.environment,
@@ -1012,7 +1353,8 @@ def download_testcases_excel():
         )
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"다운로드 에러: {str(e)}")
+        return jsonify({'error': f'파일 다운로드 중 오류가 발생했습니다: {str(e)}'}), 500
 
 # 자동화 코드 실행 API
 @app.route('/testcases/<int:id>/execute', methods=['POST'])
@@ -1026,41 +1368,154 @@ def execute_automation_code(id):
         
         # 자동화 코드 실행
         script_path = test_case.automation_code_path
-        script_type = test_case.automation_code_type
+        script_type = test_case.automation_code_type or 'playwright'
+        
+        import time
+        start_time = time.time()
         
         if script_type == 'k6':
             # k6 성능 테스트 실행
-            engine = K6ExecutionEngine()
-            result = engine.execute_test(script_path, {})
-        elif script_type in ['selenium', 'playwright']:
-            # UI 테스트 실행
-            result = subprocess.run(
-                ['python', script_path],
-                capture_output=True,
-                text=True,
-                timeout=300  # 5분 타임아웃
+            result = k6_engine.execute_test(script_path, {})
+            execution_duration = time.time() - start_time
+            
+            # 실행 결과 저장
+            test_result = TestResult(
+                test_case_id=id,
+                result=result['status'],
+                environment=test_case.environment,
+                execution_duration=execution_duration,
+                error_message=result.get('error')
             )
+            db.session.add(test_result)
+            db.session.commit()
+            
+            return jsonify({
+                'message': '자동화 코드 실행 완료',
+                'result': result['status'],
+                'output': result.get('output', ''),
+                'error': result.get('error', ''),
+                'execution_duration': execution_duration
+            }), 200
+            
+        elif script_type in ['selenium', 'playwright', 'k6']:
+            # UI 테스트 실행
+            if script_type == 'k6':
+                # k6 실행
+                import os
+                # 스크립트 경로를 절대 경로로 변환
+                if not os.path.isabs(script_path):
+                    # 백엔드 디렉토리에서 상위 디렉토리로 이동
+                    backend_dir = os.path.dirname(os.path.abspath(__file__))
+                    project_root = os.path.dirname(backend_dir)
+                    script_path = os.path.join(project_root, script_path)
+                
+                print(f"🔍 k6 실행 경로: {script_path}")
+                print(f"📁 파일 존재 여부: {os.path.exists(script_path)}")
+                print(f"📁 프로젝트 루트: {project_root}")
+                print(f"📁 현재 작업 디렉토리: {os.getcwd()}")
+                
+                # 절대 경로 사용
+                absolute_script_path = os.path.abspath(script_path)
+                print(f"🔍 절대 경로: {absolute_script_path}")
+                print(f"📁 절대 경로 파일 존재 여부: {os.path.exists(absolute_script_path)}")
+                
+                # 환경 변수 설정
+                env = os.environ.copy()
+                env['K6_BROWSER_ENABLED'] = 'true'
+                env['K6_BROWSER_HEADLESS'] = 'true'
+                
+                result = subprocess.run(
+                    ['k6', 'run', absolute_script_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=300,  # 5분 타임아웃
+                    cwd=project_root,  # 프로젝트 루트에서 실행
+                    env=env
+                )
+            elif script_type == 'playwright':
+                # Playwright 실행
+                import os
+                # 스크립트 경로를 절대 경로로 변환
+                if not os.path.isabs(script_path):
+                    script_path = os.path.join(os.getcwd(), script_path)
+                
+                result = subprocess.run(
+                    ['npx', 'playwright', 'test', script_path, '--reporter=json'],
+                    capture_output=True,
+                    text=True,
+                    timeout=300,  # 5분 타임아웃
+                    cwd=os.path.dirname(script_path) if os.path.dirname(script_path) else None
+                )
+            else:
+                # Selenium 실행
+                import os
+                # 스크립트 경로를 절대 경로로 변환
+                if not os.path.isabs(script_path):
+                    script_path = os.path.join(os.getcwd(), script_path)
+                
+                result = subprocess.run(
+                    ['python', script_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=300,  # 5분 타임아웃
+                    cwd=os.path.dirname(script_path) if os.path.dirname(script_path) else None
+                )
+            
+            execution_duration = time.time() - start_time
+            
+            # 스크린샷 경로 생성 (Playwright의 경우)
+            screenshot_path = None
+            if script_type == 'playwright' and result.returncode == 0:
+                # Playwright 테스트 결과에서 스크린샷 경로 추출
+                try:
+                    import json
+                    import os
+                    from datetime import datetime
+                    
+                    # 테스트 결과 디렉토리 생성
+                    screenshot_dir = os.path.join('screenshots', f'testcase_{id}')
+                    os.makedirs(screenshot_dir, exist_ok=True)
+                    
+                    # 스크린샷 파일명 생성
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    screenshot_path = os.path.join(screenshot_dir, f'screenshot_{timestamp}.png')
+                    
+                    # Playwright 실행 결과에서 스크린샷 복사 (실제 구현에서는 더 복잡)
+                    if os.path.exists('test-results'):
+                        import shutil
+                        for root, dirs, files in os.walk('test-results'):
+                            for file in files:
+                                if file.endswith('.png'):
+                                    shutil.copy2(os.path.join(root, file), screenshot_path)
+                                    break
+                except Exception as e:
+                    print(f"스크린샷 처리 중 오류: {e}")
+            
+            # 실행 결과 저장
+            test_result = TestResult(
+                test_case_id=id,
+                result='Pass' if result.returncode == 0 else 'Fail',
+                environment=test_case.environment,
+                execution_duration=execution_duration,
+                error_message=result.stderr if result.returncode != 0 else None,
+                screenshot=screenshot_path
+            )
+            db.session.add(test_result)
+            db.session.commit()
+            
+            return jsonify({
+                'message': '자동화 코드 실행 완료',
+                'result': 'Pass' if result.returncode == 0 else 'Fail',
+                'output': result.stdout,
+                'error': result.stderr,
+                'execution_duration': execution_duration,
+                'screenshot_path': screenshot_path
+            }), 200
         else:
             return jsonify({'error': '지원하지 않는 자동화 코드 타입입니다'}), 400
         
-        # 실행 결과 저장
-        test_result = TestResult(
-            test_case_id=id,
-            result='Pass' if result.returncode == 0 else 'Fail',
-            environment=test_case.environment,
-            execution_duration=0.0,  # 실제 실행 시간 계산 필요
-            error_message=result.stderr if result.returncode != 0 else None
-        )
-        db.session.add(test_result)
-        db.session.commit()
-        
-        return jsonify({
-            'message': '자동화 코드 실행 완료',
-            'result': 'Pass' if result.returncode == 0 else 'Fail',
-            'output': result.stdout,
-            'error': result.stderr
-        }), 200
-        
+    except subprocess.TimeoutExpired:
+        return jsonify({'error': '자동화 코드 실행 시간이 초과되었습니다'}), 408
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1148,6 +1603,22 @@ def init_db():
                 
                 db.session.commit()
                 print("✅ 기본 폴더 구조 생성 완료")
+            
+            # 기존 테스트 케이스들에 기본 폴더 설정
+            orphaned_testcases = TestCase.query.filter_by(folder_id=None).all()
+            if orphaned_testcases:
+                # DEV 환경의 첫 번째 배포일자 폴더를 기본으로 사용
+                dev_folder = Folder.query.filter_by(folder_type='environment', environment='dev').first()
+                if dev_folder:
+                    default_deployment_folder = Folder.query.filter_by(
+                        folder_type='deployment_date', 
+                        parent_folder_id=dev_folder.id
+                    ).first()
+                    if default_deployment_folder:
+                        for tc in orphaned_testcases:
+                            tc.folder_id = default_deployment_folder.id
+                        db.session.commit()
+                        print(f"✅ {len(orphaned_testcases)}개의 테스트 케이스에 기본 폴더 설정 완료")
             
             print("Neon PostgreSQL 데이터베이스 초기화 완료!")
             
@@ -1259,6 +1730,25 @@ def debug_environment():
         except Exception as e:
             db_status = f"error: {str(e)}"
         
+        # 폴더 및 테스트 케이스 정보
+        folders = Folder.query.all()
+        testcases = TestCase.query.all()
+        
+        folder_info = [{
+            'id': f.id,
+            'name': f.folder_name,
+            'type': f.folder_type,
+            'environment': f.environment,
+            'parent_id': f.parent_folder_id
+        } for f in folders]
+        
+        testcase_info = [{
+            'id': tc.id,
+            'folder_id': tc.folder_id,
+            'main_category': tc.main_category,
+            'sub_category': tc.sub_category
+        } for tc in testcases]
+        
         # CORS 헤더 정보 수집
         cors_headers = {
             'origin': request.headers.get('Origin'),
@@ -1277,6 +1767,14 @@ def debug_environment():
             'database': {
                 'status': db_status,
                 'uri_masked': app.config.get('SQLALCHEMY_DATABASE_URI', '').split('@')[0].split('://')[0] + '://***@' + app.config.get('SQLALCHEMY_DATABASE_URI', '').split('@')[1] if '@' in app.config.get('SQLALCHEMY_DATABASE_URI', '') else app.config.get('SQLALCHEMY_DATABASE_URI', '')
+            },
+            'folders': {
+                'count': len(folders),
+                'data': folder_info
+            },
+            'testcases': {
+                'count': len(testcases),
+                'data': testcase_info
             },
             'cors': {
                 'origins': [

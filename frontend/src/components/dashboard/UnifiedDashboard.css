@@ -209,6 +209,19 @@
   margin-top: 10px;
 }
 
+.more-items.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #007bff;
+  font-weight: 500;
+}
+
+.more-items.clickable:hover {
+  background-color: #f8f9fa;
+  color: #0056b3;
+  transform: translateY(-1px);
+}
+
 /* 로딩 및 에러 상태 */
 .dashboard-loading {
   text-align: center;

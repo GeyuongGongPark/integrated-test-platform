@@ -3,8 +3,10 @@ import React, { useState } from 'react';
 import './App.css';
 import TestCaseApp from './components/testcases';
 import PerformanceTestManager from './components/performance';
+import AutomationTestManager from './components/automation';
 import UnifiedDashboard from './components/dashboard';
 import FolderManager from './components/dashboard/FolderManager';
+import Settings from './components/settings/Settings';
 import { ErrorBoundary } from './components/utils';
 
 function App() {
@@ -15,13 +17,19 @@ function App() {
       case 'dashboard':
         return (
           <ErrorBoundary>
-            <UnifiedDashboard />
+            <UnifiedDashboard setActiveTab={setActiveTab} />
           </ErrorBoundary>
         );
       case 'testcases':
         return (
           <ErrorBoundary>
             <TestCaseApp />
+          </ErrorBoundary>
+        );
+      case 'automation':
+        return (
+          <ErrorBoundary>
+            <AutomationTestManager />
           </ErrorBoundary>
         );
       case 'performance':
@@ -34,6 +42,12 @@ function App() {
         return (
           <ErrorBoundary>
             <FolderManager />
+          </ErrorBoundary>
+        );
+      case 'settings':
+        return (
+          <ErrorBoundary>
+            <Settings />
           </ErrorBoundary>
         );
       default:
@@ -72,16 +86,22 @@ function App() {
               🧪 테스트 케이스
             </button>
             <button 
+              className={`nav-link ${activeTab === 'automation' ? 'active' : ''}`}
+              onClick={() => setActiveTab('automation')}
+            >
+              🤖 자동화 테스트
+            </button>
+            <button 
               className={`nav-link ${activeTab === 'performance' ? 'active' : ''}`}
               onClick={() => setActiveTab('performance')}
             >
               ⚡ 성능 테스트
             </button>
             <button 
-              className={`nav-link ${activeTab === 'folders' ? 'active' : ''}`}
-              onClick={() => setActiveTab('folders')}
+              className={`nav-link ${activeTab === 'settings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('settings')}
             >
-              📁 폴더 관리
+              ⚙️ 설정
             </button>
           </div>
         </nav>

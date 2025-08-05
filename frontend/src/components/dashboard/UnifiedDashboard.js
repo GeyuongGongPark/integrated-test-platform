@@ -61,7 +61,7 @@ axios.interceptors.response.use(
   }
 );
 
-const UnifiedDashboard = () => {
+const UnifiedDashboard = ({ setActiveTab }) => {
   const [testCases, setTestCases] = useState([]);
   const [performanceTests, setPerformanceTests] = useState([]);
   const [testExecutions, setTestExecutions] = useState([]);
@@ -269,7 +269,12 @@ const UnifiedDashboard = () => {
               </div>
             ))}
             {testCases.length > 5 && (
-              <div className="more-items">+ {testCases.length - 5} more</div>
+              <div 
+                className="more-items clickable"
+                onClick={() => setActiveTab('testcases')}
+              >
+                + {testCases.length - 5} more
+              </div>
             )}
           </div>
         </div>
@@ -284,7 +289,12 @@ const UnifiedDashboard = () => {
               </div>
             ))}
             {performanceTests.length > 5 && (
-              <div className="more-items">+ {performanceTests.length - 5} more</div>
+              <div 
+                className="more-items clickable"
+                onClick={() => setActiveTab('performance')}
+              >
+                + {performanceTests.length - 5} more
+              </div>
             )}
           </div>
         </div>
@@ -301,7 +311,12 @@ const UnifiedDashboard = () => {
               </div>
             ))}
             {testExecutions.length > 5 && (
-              <div className="more-items">+ {testExecutions.length - 5} more</div>
+              <div 
+                className="more-items clickable"
+                onClick={() => setActiveTab('testcases')}
+              >
+                + {testExecutions.length - 5} more
+              </div>
             )}
           </div>
         </div>
