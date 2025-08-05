@@ -9,17 +9,25 @@
 - **카테고리 분류**: 메인/서브/상세 카테고리로 체계적 관리
 - **상태 관리**: N/T, Pass, Fail 등 테스트 결과 상태 관리
 - **결과 기록**: 테스트 실행 결과 및 노트 기록
+- **폴더 관리**: 테스트 케이스를 폴더별로 체계적 관리
 
 ### ⚡ 성능 테스트 관리
 - **K6 스크립트**: 성능 테스트 스크립트 관리
 - **실행 엔진**: K6 기반 성능 테스트 실행
 - **결과 분석**: 응답 시간, 처리량, 에러율 등 성능 지표 분석
 - **리포트 생성**: 성능 테스트 결과 리포트 생성
+- **자동화 테스트**: 반복적인 성능 테스트 자동화
 
 ### 📊 통합 대시보드
 - **실시간 모니터링**: 테스트 실행 상태 실시간 확인
 - **통계 대시보드**: 테스트 결과 통계 및 차트
 - **프로젝트 관리**: 다중 프로젝트 지원
+- **성능 지표**: 응답 시간, 처리량, 에러율 시각화
+
+### ⚙️ 설정 관리
+- **계정 관리**: 사용자 계정 정보 관리
+- **프로젝트 설정**: 프로젝트별 설정 관리
+- **폴더 구조**: 테스트 케이스 폴더 구조 관리
 
 ## 🏗️ 기술 스택
 
@@ -28,6 +36,7 @@
 - **Axios**: HTTP 클라이언트
 - **CSS3**: 반응형 디자인
 - **Error Boundary**: 에러 처리
+- **React Router**: 페이지 라우팅
 
 ### Backend
 - **Flask 2.3.3**: Python 웹 프레임워크
@@ -90,7 +99,7 @@ SECRET_KEY=your-secret-key-here
 
 #### 프론트엔드 (.env)
 ```env
-REACT_APP_API_URL=http://localhost:5000
+REACT_APP_API_URL=http://localhost:8000
 ```
 
 ### 3. 데이터베이스 초기화
@@ -120,6 +129,12 @@ flask db upgrade
 ### 프로젝트 관리
 - `GET /projects` - 프로젝트 목록 조회
 - `POST /projects` - 프로젝트 생성
+
+### 폴더 관리
+- `GET /folders` - 폴더 목록 조회
+- `POST /folders` - 폴더 생성
+- `PUT /folders/<id>` - 폴더 수정
+- `DELETE /folders/<id>` - 폴더 삭제
 
 ### 헬스체크
 - `GET /health` - 서버 상태 확인
@@ -155,6 +170,7 @@ integrated-test-platform/
 │   │   └── components/    # 컴포넌트 폴더
 │   │       ├── dashboard/     # 📊 대시보드
 │   │       │   ├── UnifiedDashboard.js
+│   │       │   ├── FolderManager.js
 │   │       │   ├── index.js
 │   │       │   └── README.md
 │   │       ├── testcases/     # 🧪 테스트 케이스
@@ -165,6 +181,15 @@ integrated-test-platform/
 │   │       │   ├── PerformanceTestManager.js
 │   │       │   ├── index.js
 │   │       │   └── README.md
+│   │       ├── settings/      # ⚙️ 설정 관리
+│   │       │   ├── Settings.js
+│   │       │   ├── AccountManager.js
+│   │       │   ├── ProjectManager.js
+│   │       │   ├── FolderManager.js
+│   │       │   └── index.js
+│   │       ├── automation/    # 🤖 자동화 테스트
+│   │       │   ├── AutomationTestManager.js
+│   │       │   └── index.js
 │   │       └── utils/         # 🛠️ 공통 유틸리티
 │   │           ├── ErrorBoundary.js
 │   │           ├── index.js
@@ -222,10 +247,11 @@ CORS(app, origins=[
 - ✅ **프론트엔드**: Vercel 배포 성공
 - ✅ **화면**: 정상 동작 확인
 - ✅ **CI/CD**: GitHub Actions 자동화 완료
+- ✅ **데이터베이스**: Neon PostgreSQL 연결 성공
 
 ### 배포 환경
 - **호스팅**: Vercel (무료 티어)
-- **데이터베이스**: SQLite (프로덕션)
+- **데이터베이스**: Neon PostgreSQL (프로덕션)
 - **Node.js**: 18.x
 - **Python**: 3.12
 
@@ -243,9 +269,6 @@ CORS(app, origins=[
 - **JavaScript**: ESLint
 - **커밋 메시지**: Conventional Commits
 
-## 📝 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
 
 ## 📞 지원
 
@@ -255,9 +278,9 @@ CORS(app, origins=[
 - **팀 내부**: 기능 요청 및 개선사항
 
 ### 문서
-- [배포 성공 가이드](DEPLOYMENT_SUCCESS.md)
-- [Vercel 프론트엔드 배포 가이드](VERCEL_FRONTEND_DEPLOY.md)
-- [흰 화면 문제 해결 가이드](WHITE_SCREEN_FIX.md)
+- [배포 성공 가이드](docs/DEPLOYMENT_SUCCESS.md)
+- [Vercel 프론트엔드 배포 가이드](docs/VERCEL_FRONTEND_DEPLOY.md)
+- [흰 화면 문제 해결 가이드](docs/WHITE_SCREEN_FIX.md)
 
 ## 🎉 완료된 기능
 
@@ -270,17 +293,26 @@ CORS(app, origins=[
 - [x] 에러 처리
 - [x] CORS 설정
 - [x] 환경 변수 관리
+- [x] 테스트 케이스 CRUD
+- [x] 성능 테스트 관리
+- [x] 대시보드 구현
+- [x] 폴더 관리 시스템
+- [x] 설정 관리 기능
 
 ### 🔄 향후 계획
 - [ ] 사용자 인증 시스템
 - [ ] 고급 권한 관리
-- [ ] PostgreSQL 마이그레이션
 - [ ] 실시간 알림 시스템
 - [ ] 모바일 앱 개발
 - [ ] 고급 분석 기능
+- [ ] 테스트 자동화 스케줄링
+- [ ] API 문서 자동 생성
 
 ---
 
-**🚀 완전한 클라우드 기반 테스트 플랫폼 구축을 성공적으로 완료했습니다!**
-
-무료 호스팅과 자동 배포를 통해 팀 협업에 최적화된 테스트 관리 시스템을 제공합니다.
+### 📈 주요 성과
+- **100% 클라우드 기반**: Vercel + Neon PostgreSQL
+- **자동 CI/CD**: GitHub Actions 파이프라인
+- **완전한 기능**: 테스트 케이스, 성능 테스트, 대시보드
+- **팀 협업**: 다중 사용자 지원
+- **무료 호스팅**: 비용 효율적인 운영
