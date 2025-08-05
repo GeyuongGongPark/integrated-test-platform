@@ -3,7 +3,10 @@ import React, { useState } from 'react';
 import './App.css';
 import TestCaseApp from './components/testcases';
 import PerformanceTestManager from './components/performance';
+import AutomationTestManager from './components/automation';
 import UnifiedDashboard from './components/dashboard';
+import FolderManager from './components/dashboard/FolderManager';
+import Settings from './components/settings/Settings';
 import { ErrorBoundary } from './components/utils';
 
 function App() {
@@ -14,7 +17,7 @@ function App() {
       case 'dashboard':
         return (
           <ErrorBoundary>
-            <UnifiedDashboard />
+            <UnifiedDashboard setActiveTab={setActiveTab} />
           </ErrorBoundary>
         );
       case 'testcases':
@@ -23,10 +26,28 @@ function App() {
             <TestCaseApp />
           </ErrorBoundary>
         );
+      case 'automation':
+        return (
+          <ErrorBoundary>
+            <AutomationTestManager />
+          </ErrorBoundary>
+        );
       case 'performance':
         return (
           <ErrorBoundary>
             <PerformanceTestManager />
+          </ErrorBoundary>
+        );
+      case 'folders':
+        return (
+          <ErrorBoundary>
+            <FolderManager />
+          </ErrorBoundary>
+        );
+      case 'settings':
+        return (
+          <ErrorBoundary>
+            <Settings />
           </ErrorBoundary>
         );
       default:
@@ -41,11 +62,11 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="App">
-        <header className="App-header">
+        {/* <header className="App-header">
           <h1>Test Platform - Production Ready v1.0.3</h1>
           <p>✅ 백엔드 배포 성공 | ✅ 프론트엔드 배포 성공</p>
           <p>🚀 완전한 CI/CD 파이프라인 구축 완료!</p>
-        </header>
+        </header> */}
         
         <nav className="navbar">
           <div className="nav-brand">
@@ -65,10 +86,22 @@ function App() {
               🧪 테스트 케이스
             </button>
             <button 
+              className={`nav-link ${activeTab === 'automation' ? 'active' : ''}`}
+              onClick={() => setActiveTab('automation')}
+            >
+              🤖 자동화 테스트
+            </button>
+            <button 
               className={`nav-link ${activeTab === 'performance' ? 'active' : ''}`}
               onClick={() => setActiveTab('performance')}
             >
               ⚡ 성능 테스트
+            </button>
+            <button 
+              className={`nav-link ${activeTab === 'settings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+            >
+              ⚙️ 설정
             </button>
           </div>
         </nav>

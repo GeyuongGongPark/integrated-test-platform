@@ -49,7 +49,7 @@
 | Variable | Value | Environment |
 |----------|-------|-------------|
 | `REACT_APP_API_URL` | `https://your-backend-domain.vercel.app` | Production |
-| `REACT_APP_API_URL` | `http://localhost:5000` | Preview |
+| `REACT_APP_API_URL` | `http://localhost:8000` | Preview |
 
 ## 5단계: 도메인 및 설정 확인
 

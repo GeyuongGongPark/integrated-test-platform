@@ -26,7 +26,7 @@ Vercel 대시보드 → Settings → Environment Variables:
 | Variable | Value | Environment |
 |----------|-------|-------------|
 | `REACT_APP_API_URL` | `https://integrated-test-platform.vercel.app` | Production |
-| `REACT_APP_API_URL` | `http://localhost:5000` | Preview |
+| `REACT_APP_API_URL` | `http://localhost:8000` | Preview |
 
 ### 2.2 환경 변수 확인 방법
 ```javascript
@@ -168,7 +168,7 @@ npx serve -s build
 ### 7.2 로컬에서 환경 변수 테스트
 ```bash
 # .env 파일 생성
-echo "REACT_APP_API_URL=http://localhost:5000" > .env
+echo "REACT_APP_API_URL=http://localhost:8000" > .env
 npm start
 ```
 

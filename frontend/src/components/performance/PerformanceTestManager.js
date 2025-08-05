@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import config from '../../config';
+
+// axios 기본 설정
+axios.defaults.baseURL = config.apiUrl;
 
 const PerformanceTestManager = () => {
     const [performanceTests, setPerformanceTests] = useState([]);

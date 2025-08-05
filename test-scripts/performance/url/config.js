@@ -1,7 +1,21 @@
 // import { BASE_URL } from "./base";
-import envData from './env_data.json';
 
-// 환경 정보 로딩
+// 환경 정보 로딩 (하드코딩으로 임시 해결)
+const envData = [
+  {
+    "name": "prod",
+    "base_url": "https://business.lawform.io",
+    "email": "ggpark+id20250211162329770_m@amicuslex.net",
+    "password": "q1w2E#R$"
+  },
+  {
+    "name": "alpha",
+    "base_url": "https://alpha.business.lfdev.io",
+    "email": "ggpark+id20250211092023378_m@amicuslex.net",
+    "password": "1q2w#E$R"
+  }
+];
+
 const ENVIRONMENTS = {};
 const LOGIN_CREDENTIALS = {};
 for (const env of envData) {

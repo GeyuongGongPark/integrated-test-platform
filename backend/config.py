@@ -15,6 +15,7 @@ class DevelopmentConfig(Config):
     """개발 환경 설정"""
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
+        os.environ.get('DATABASE_URL') or \
         'sqlite:///test_management.db'
 
 class TestingConfig(Config):
@@ -26,7 +27,8 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     """프로덕션 환경 설정"""
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+    SQLALCHEMY_DATABASE_URI = os.environ.get('PROD_DATABASE_URL') or \
+        os.environ.get('DATABASE_URL') or \
         'sqlite:///test_management.db'
     
     @classmethod

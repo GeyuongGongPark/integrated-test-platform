@@ -5,17 +5,18 @@
 - ✅ **프론트엔드**: Vercel 배포 성공
 - ✅ **화면**: 정상 동작 확인
 - ✅ **CI/CD**: GitHub Actions 자동화 완료
+- ✅ **데이터베이스**: Neon PostgreSQL 연결 성공
 
 ## 배포된 URL
 
 ### 백엔드 (API)
 - **URL**: `https://integrated-test-platform.vercel.app`
 - **헬스체크**: `https://integrated-test-platform.vercel.app/health`
-- **기능**: Flask API, SQLite 데이터베이스
+- **기능**: Flask API, Neon PostgreSQL 데이터베이스
 
 ### 프론트엔드 (웹 앱)
-- **URL**: `https://integrated-test-platform-fe.vercel.app`
-- **기능**: React 앱, 테스트 케이스 관리, 성능 테스트
+- **URL**: `https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app`
+- **기능**: React 앱, 테스트 케이스 관리, 성능 테스트, 대시보드
 
 ## 구축된 CI/CD 파이프라인
 
@@ -33,9 +34,12 @@
 ## 환경 변수 설정
 
 ### 백엔드 환경 변수
-- `DATABASE_URL`: SQLite 데이터베이스
+- `DATABASE_URL`: Neon PostgreSQL 데이터베이스
+- `DEV_DATABASE_URL`: 개발용 Neon PostgreSQL
+- `TEST_DATABASE_URL`: 테스트용 SQLite
 - `FLASK_ENV`: production
 - `FLASK_APP`: app.py
+- `SECRET_KEY`: 보안 키
 
 ### 프론트엔드 환경 변수
 - `REACT_APP_API_URL`: 백엔드 API URL
@@ -46,18 +50,22 @@
 - ✅ **헬스체크**: `/health` 엔드포인트
 - ✅ **테스트 케이스 관리**: CRUD 작업
 - ✅ **성능 테스트**: K6 스크립트 실행
+- ✅ **프로젝트 관리**: 다중 프로젝트 지원
+- ✅ **폴더 관리**: 테스트 케이스 폴더 구조
 - ✅ **CORS 설정**: 프론트엔드 도메인 허용
 
 ### 프론트엔드 기능
 - ✅ **테스트 케이스 관리**: UI 인터페이스
 - ✅ **성능 테스트 관리**: 대시보드
 - ✅ **통합 대시보드**: 전체 기능 통합
+- ✅ **설정 관리**: 계정, 프로젝트, 폴더 설정
+- ✅ **자동화 테스트**: 반복 테스트 자동화
 - ✅ **반응형 디자인**: 모바일/데스크톱 지원
 
 ## 팀 공유 준비
 
 ### 공유할 정보
-- **프론트엔드 URL**: `https://integrated-test-platform-fe.vercel.app`
+- **프론트엔드 URL**: `https://integrated-test-platform-fe-gyeonggong-parks-projects.vercel.app`
 - **백엔드 API**: `https://integrated-test-platform.vercel.app`
 - **GitHub 레포**: `https://github.com/GeyuongGongPark/integrated-test-platform`
 
@@ -65,7 +73,8 @@
 1. **프론트엔드 접속**: 웹 브라우저에서 URL 접속
 2. **테스트 케이스 생성**: UI에서 테스트 케이스 추가
 3. **성능 테스트 실행**: K6 스크립트 실행
-4. **결과 확인**: 대시보드에서 결과 확인
+4. **대시보드 확인**: 통합 대시보드에서 결과 확인
+5. **설정 관리**: 계정 및 프로젝트 설정
 
 ## 모니터링 및 유지보수
 
@@ -92,7 +101,7 @@
 3. **보안 강화**: 인증 및 권한 관리
 
 ### 장기 계획
-1. **데이터베이스 업그레이드**: PostgreSQL로 마이그레이션
+1. **사용자 인증**: 로그인/회원가입 시스템
 2. **고급 기능**: 고급 테스트 자동화
 3. **확장성**: 대규모 팀 지원
 
@@ -118,6 +127,9 @@
 - [x] 환경 변수 설정 완료
 - [x] CORS 설정 완료
 - [x] 기능 테스트 완료
+- [x] 데이터베이스 연결 성공
+- [x] 대시보드 구현 완료
+- [x] 설정 관리 기능 완료
 - [ ] 팀 공유 및 사용자 테스트
 - [ ] 피드백 수집 및 개선
 
@@ -129,5 +141,6 @@
 - **자동 배포**: GitHub Actions CI/CD
 - **팀 협업**: 클라우드 기반 접근
 - **확장 가능**: 향후 기능 확장 준비
+- **완전한 기능**: 테스트 케이스, 성능 테스트, 대시보드, 설정 관리
 
 이제 팀원들과 함께 사용할 수 있는 완전한 테스트 플랫폼이 준비되었습니다! 🎯 
