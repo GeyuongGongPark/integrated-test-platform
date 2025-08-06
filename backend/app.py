@@ -35,6 +35,11 @@ def create_app(config_name=None):
             config_name = 'development'
     
     app = Flask(__name__)
+    
+    # Vercel 환경에서 instance_path 설정
+    if os.environ.get('VERCEL'):
+        app.instance_path = '/tmp'
+    
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
     
@@ -61,6 +66,12 @@ def init_db():
     """데이터베이스 초기화"""
     with app.app_context():
         try:
+            # Vercel 환경에서는 데이터베이스 연결만 확인
+            if os.environ.get('VERCEL'):
+                db.session.execute('SELECT 1')
+                print("✅ Vercel 환경에서 데이터베이스 연결 성공")
+                return
+            
             db.session.execute('SELECT 1')
             print("✅ 데이터베이스 연결 성공")
             db.create_all()
@@ -95,6 +106,36 @@ def health_check():
         'environment': 'production' if os.environ.get('VERCEL') else 'development'
     })
     return add_cors_headers(response), 200
+
+# 간단한 테스트 엔드포인트
+@app.route('/test', methods=['GET'])
+def test_endpoint():
+    """간단한 테스트 엔드포인트"""
+    try:
+        # 환경 변수 확인
+        db_url = os.environ.get('DATABASE_URL', 'Not set')
+        secret_key = os.environ.get('SECRET_KEY', 'Not set')
+        flask_env = os.environ.get('FLASK_ENV', 'Not set')
+        
+        response = jsonify({
+            'status': 'test_ok',
+            'message': 'Backend is working',
+            'environment_vars': {
+                'DATABASE_URL_set': 'Yes' if db_url != 'Not set' else 'No',
+                'SECRET_KEY_set': 'Yes' if secret_key != 'Not set' else 'No',
+                'FLASK_ENV': flask_env,
+                'VERCEL': os.environ.get('VERCEL', 'Not set')
+            },
+            'timestamp': datetime.now().isoformat()
+        })
+        return add_cors_headers(response), 200
+    except Exception as e:
+        response = jsonify({
+            'status': 'error',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat()
+        })
+        return add_cors_headers(response), 500
 
 # CORS preflight 요청 처리
 @app.route('/<path:path>', methods=['OPTIONS'])

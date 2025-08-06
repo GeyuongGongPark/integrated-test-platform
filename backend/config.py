@@ -31,8 +31,17 @@ class ProductionConfig(Config):
         os.environ.get('DATABASE_URL') or \
         'sqlite:///test_management.db'
     
+    # Vercel 환경에서 파일 시스템 접근 방지
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+    }
+    
     @classmethod
     def init_app(cls, app):
+        # Vercel 환경에서 instance_path 설정
+        if os.environ.get('VERCEL'):
+            app.instance_path = '/tmp'
         # 프로덕션 환경에서 SSL 설정 (선택사항)
         pass
 

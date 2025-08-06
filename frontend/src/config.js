@@ -9,13 +9,15 @@ const config = {
   }
 };
 
-// 강제로 development 환경으로 설정 (로컬 개발용)
-const environment = 'development';
+// 환경에 따라 동적으로 설정 선택
+const environment = process.env.NODE_ENV || 'development';
 const currentConfig = config[environment];
 
 // 환경 정보 로깅 (개발 환경에서만)
-console.log('🌍 Environment:', environment);
-console.log('🔗 API URL:', currentConfig.apiUrl);
-console.log('📤 Upload URL:', currentConfig.uploadUrl);
+if (environment === 'development') {
+  console.log('🌍 Environment:', environment);
+  console.log('🔗 API URL:', currentConfig.apiUrl);
+  console.log('📤 Upload URL:', currentConfig.uploadUrl);
+}
 
 export default currentConfig;
