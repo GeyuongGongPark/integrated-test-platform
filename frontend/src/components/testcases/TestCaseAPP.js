@@ -9,12 +9,6 @@ const TestCaseScreenshots = ({ testCaseId }) => {
   const [screenshots, setScreenshots] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (testCaseId) {
-      fetchScreenshots();
-    }
-  }, [testCaseId, fetchScreenshots]);
-
   const fetchScreenshots = useCallback(async () => {
     try {
       setLoading(true);
@@ -26,6 +20,12 @@ const TestCaseScreenshots = ({ testCaseId }) => {
       setLoading(false);
     }
   }, [testCaseId]);
+
+  useEffect(() => {
+    if (testCaseId) {
+      fetchScreenshots();
+    }
+  }, [testCaseId, fetchScreenshots]);
 
   if (loading) {
     return <div className="screenshots-loading">스크린샷 로딩 중...</div>;
@@ -60,12 +60,6 @@ const TestCaseExecutionResults = ({ testCaseId }) => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (testCaseId) {
-      fetchResults();
-    }
-  }, [testCaseId, fetchResults]);
-
   const fetchResults = useCallback(async () => {
     try {
       setLoading(true);
@@ -77,6 +71,12 @@ const TestCaseExecutionResults = ({ testCaseId }) => {
       setLoading(false);
     }
   }, [testCaseId]);
+
+  useEffect(() => {
+    if (testCaseId) {
+      fetchResults();
+    }
+  }, [testCaseId, fetchResults]);
 
   if (loading) {
     return <div className="results-loading">실행 결과 로딩 중...</div>;
@@ -432,7 +432,7 @@ const TestCaseAPP = () => {
     return null;
   };
 
-  // 환경 폴더의 모든 하위 배포일자 폴더 ID들 가져오기
+  // 환경 폴더의 모든 하위 폴더 ID들 가져오기
   const getEnvironmentFolderIds = (nodes, environmentFolderId) => {
     console.log('=== getEnvironmentFolderIds 디버깅 ===');
     console.log('입력 nodes:', nodes);
@@ -454,6 +454,16 @@ const TestCaseAPP = () => {
         if (child.type === 'deployment_date') {
           folderIds.push(child.id);
           console.log('배포일자 폴더 추가:', child.id, child.name);
+          
+          // 배포일자 폴더의 하위 기능명 폴더들도 추가
+          if (child.children) {
+            for (const featureChild of child.children) {
+              if (featureChild.type === 'feature') {
+                folderIds.push(featureChild.id);
+                console.log('기능명 폴더 추가:', featureChild.id, featureChild.name);
+              }
+            }
+          }
         } else {
           console.log('배포일자가 아닌 자식 노드:', child.type, child.name);
         }
@@ -465,11 +475,44 @@ const TestCaseAPP = () => {
     return folderIds;
   };
 
+  // 배포일자 폴더의 모든 하위 폴더 ID들 가져오기
+  const getDeploymentFolderIds = (nodes, deploymentFolderId) => {
+    console.log('=== getDeploymentFolderIds 디버깅 ===');
+    console.log('입력 nodes:', nodes);
+    console.log('입력 deploymentFolderId:', deploymentFolderId);
+    
+    const deploymentNode = findFolderInTree(nodes, deploymentFolderId);
+    console.log('찾은 배포일자 노드:', deploymentNode);
+    
+    if (!deploymentNode || deploymentNode.type !== 'deployment_date') {
+      console.log('배포일자 노드를 찾을 수 없거나 타입이 맞지 않음');
+      return [];
+    }
+    
+    const folderIds = [deploymentNode.id]; // 배포일자 폴더 자체도 포함
+    if (deploymentNode.children) {
+      console.log('배포일자 노드의 자식들:', deploymentNode.children);
+      for (const child of deploymentNode.children) {
+        console.log('자식 노드 확인:', child);
+        if (child.type === 'feature') {
+          folderIds.push(child.id);
+          console.log('기능명 폴더 추가:', child.id, child.name);
+        } else {
+          console.log('기능명이 아닌 자식 노드:', child.type, child.name);
+        }
+      }
+    } else {
+      console.log('배포일자 노드에 자식이 없음');
+    }
+    console.log('최종 폴더 IDs:', folderIds);
+    return folderIds;
+  };
+
   const renderFolderTree = (nodes, level = 0) => {
     return nodes.map(node => {
       const hasChildren = node.children && node.children.length > 0;
       const isExpanded = expandedFolders.has(node.id);
-      const isFolder = node.type === 'environment' || node.type === 'deployment_date';
+      const isFolder = node.type === 'environment' || node.type === 'deployment_date' || node.type === 'feature';
       
       console.log(`렌더링 노드: ID=${node.id}, Name=${node.name}, Type=${node.type}, Level=${level}`);
       
@@ -497,7 +540,8 @@ const TestCaseAPP = () => {
             )}
             <span className="folder-icon">
               {node.type === 'environment' ? '🌍' : 
-               node.type === 'deployment_date' ? '📅' : '📄'}
+               node.type === 'deployment_date' ? '📅' : 
+               node.type === 'feature' ? '🔧' : '📄'}
             </span>
             <span className="folder-name">{node.name}</span>
             {node.type === 'test_case' && (
@@ -507,7 +551,9 @@ const TestCaseAPP = () => {
             )}
             {isFolder && (
               <span className="folder-type-badge">
-                {node.type === 'environment' ? '환경' : '배포일자'}
+                {node.type === 'environment' ? '환경' : 
+                 node.type === 'deployment_date' ? '배포일자' : 
+                 node.type === 'feature' ? '기능명' : ''}
               </span>
             )}
           </div>
@@ -538,15 +584,23 @@ const TestCaseAPP = () => {
         console.log('전체 folderTree:', folderTree);
         
         if (selectedFolderInfo?.type === 'environment') {
-          // 환경 폴더 선택 시: 해당 환경의 모든 배포일자 폴더의 테스트 케이스들
+          // 환경 폴더 선택 시: 해당 환경의 모든 하위 폴더의 테스트 케이스들
           const environmentFolderIds = getEnvironmentFolderIds(folderTree, selectedFolderId);
           console.log(`환경 필터링: ${selectedFolderInfo.name}, 폴더 IDs:`, environmentFolderIds);
           console.log(`테스트 케이스 folder_id: ${tcFolderId}, 포함 여부:`, environmentFolderIds.includes(tcFolderId));
           const result = environmentFolderIds.includes(tcFolderId);
           console.log('필터링 결과:', result);
           return result;
+        } else if (selectedFolderInfo?.type === 'deployment_date') {
+          // 배포일자 폴더 선택 시: 해당 배포일자의 모든 하위 폴더의 테스트 케이스들
+          const deploymentFolderIds = getDeploymentFolderIds(folderTree, selectedFolderId);
+          console.log(`배포일자 필터링: ${selectedFolderInfo.name}, 폴더 IDs:`, deploymentFolderIds);
+          console.log(`테스트 케이스 folder_id: ${tcFolderId}, 포함 여부:`, deploymentFolderIds.includes(tcFolderId));
+          const result = deploymentFolderIds.includes(tcFolderId);
+          console.log('필터링 결과:', result);
+          return result;
         } else {
-          // 배포일자 폴더 선택 시: 해당 폴더의 테스트 케이스들만
+          // 기능명 폴더 선택 시: 해당 폴더의 테스트 케이스들만
           console.log(`폴더 필터링: tc.folder_id ${tcFolderId} === selectedFolder ${selectedFolderId}`);
           const result = tcFolderId === selectedFolderId;
           console.log('필터링 결과:', result);
@@ -641,7 +695,9 @@ const TestCaseAPP = () => {
               테스트 케이스 ({filteredTestCases.length})
               {selectedFolder && (
                 <span className="folder-filter-info">
-                  - {findFolderInTree(folderTree, selectedFolder)?.type === 'environment' ? '환경' : '배포일자'} 필터링됨
+                  - {findFolderInTree(folderTree, selectedFolder)?.type === 'environment' ? '환경' : 
+                     findFolderInTree(folderTree, selectedFolder)?.type === 'deployment_date' ? '배포일자' : 
+                     findFolderInTree(folderTree, selectedFolder)?.type === 'feature' ? '기능명' : ''} 필터링됨
                 </span>
               )}
             </h3>

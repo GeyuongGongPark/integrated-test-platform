@@ -28,6 +28,7 @@ const AccountManager = () => {
   const [editUser, setEditUser] = useState({
     username: '',
     email: '',
+    password: '',
     role: 'User',
     is_active: true
   });
@@ -77,14 +78,27 @@ const AccountManager = () => {
   };
 
   const handleAddUser = async () => {
-    if (!newUser.username || !newUser.email || !newUser.password) {
-      alert('모든 필드를 입력해주세요.');
+    if (!newUser.username || !newUser.email) {
+      alert('사용자명과 이메일은 필수입니다.');
       return;
     }
 
     try {
-      await axios.post('/users', newUser);
-      alert('사용자가 성공적으로 추가되었습니다.');
+      const userData = {
+        username: newUser.username,
+        email: newUser.email,
+        role: newUser.role
+        // 비밀번호가 없으면 기본 비밀번호(1q2w#E$R)가 자동으로 설정됩니다.
+      };
+      
+      const response = await axios.post('/users', userData);
+      
+      if (response.data.default_password) {
+        alert(`사용자가 성공적으로 추가되었습니다.\n기본 비밀번호: ${response.data.default_password}`);
+      } else {
+        alert('사용자가 성공적으로 추가되었습니다.');
+      }
+      
       setShowAddUserModal(false);
       setNewUser({
         username: '',
@@ -105,7 +119,19 @@ const AccountManager = () => {
     }
 
     try {
-      await axios.put(`/users/${selectedUser.id}`, editUser);
+      const updateData = {
+        username: editUser.username,
+        email: editUser.email,
+        role: editUser.role,
+        is_active: editUser.is_active
+      };
+      
+      // 비밀번호가 입력된 경우에만 포함
+      if (editUser.password) {
+        updateData.password = editUser.password;
+      }
+      
+      await axios.put(`/users/${selectedUser.id}`, updateData);
       alert('사용자 정보가 성공적으로 수정되었습니다.');
       setShowEditUserModal(false);
       setSelectedUser(null);
@@ -146,8 +172,11 @@ const AccountManager = () => {
     }
 
     try {
-      // 실제로는 API 호출
-      // await axios.put('/account/password', passwordData);
+      await axios.put(`/users/${currentUser.id}/change-password`, {
+        current_password: passwordData.currentPassword,
+        new_password: passwordData.newPassword
+      });
+      
       alert('비밀번호가 성공적으로 변경되었습니다.');
       setShowPasswordModal(false);
       setPasswordData({
@@ -182,6 +211,7 @@ const AccountManager = () => {
     setEditUser({
       username: user.username,
       email: user.email,
+      password: '',
       role: user.role,
       is_active: user.is_active
     });
@@ -328,15 +358,6 @@ const AccountManager = () => {
               />
             </div>
             <div className="form-group">
-              <label>비밀번호:</label>
-              <input
-                type="password"
-                value={newUser.password}
-                onChange={(e) => setNewUser({...newUser, password: e.target.value})}
-                placeholder="비밀번호를 입력하세요"
-              />
-            </div>
-            <div className="form-group">
               <label>역할:</label>
               <select
                 value={newUser.role}
@@ -344,7 +365,13 @@ const AccountManager = () => {
               >
                 <option value="User">User</option>
                 <option value="Administrator">Administrator</option>
+                <option value="Guest">Guest</option>
               </select>
+            </div>
+            <div className="form-group">
+              <small className="form-help">
+                * 비밀번호는 기본값(1q2w#E$R)으로 설정됩니다.
+              </small>
             </div>
             <div className="modal-actions">
               <button className="btn btn-primary" onClick={handleAddUser}>
@@ -389,7 +416,17 @@ const AccountManager = () => {
               >
                 <option value="User">User</option>
                 <option value="Administrator">Administrator</option>
+                <option value="Guest">Guest</option>
               </select>
+            </div>
+            <div className="form-group">
+              <label>새 비밀번호 (선택사항):</label>
+              <input
+                type="password"
+                value={editUser.password}
+                onChange={(e) => setEditUser({...editUser, password: e.target.value})}
+                placeholder="새 비밀번호를 입력하세요 (변경하지 않으려면 비워두세요)"
+              />
             </div>
             <div className="form-group">
               <label>상태:</label>

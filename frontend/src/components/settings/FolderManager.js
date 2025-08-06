@@ -19,9 +19,11 @@ const FolderManager = () => {
     parent_folder_id: null,
     deployment_date: ''
   });
+  const [folderTree, setFolderTree] = useState([]);
 
   useEffect(() => {
     fetchFolders();
+    fetchFolderTree();
   }, []);
 
   const fetchFolders = async () => {
@@ -34,6 +36,15 @@ const FolderManager = () => {
       console.error('Folder fetch error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFolderTree = async () => {
+    try {
+      const response = await axios.get('/folders/tree');
+      setFolderTree(response.data);
+    } catch (err) {
+      console.error('Folder tree fetch error:', err);
     }
   };
 
@@ -92,7 +103,36 @@ const FolderManager = () => {
   };
 
   const getParentFolderOptions = () => {
-    return folders.filter(f => f.folder_type === 'environment');
+    const options = [];
+    
+    // 환경 폴더들 추가
+    folderTree.forEach(envFolder => {
+      options.push({
+        id: envFolder.id,
+        name: `🌍 ${envFolder.name} (환경)`,
+        type: 'environment'
+      });
+      
+      // 배포일자 폴더들 추가
+      envFolder.children.forEach(depFolder => {
+        options.push({
+          id: depFolder.id,
+          name: `📅 ${depFolder.name} (배포일자)`,
+          type: 'deployment_date'
+        });
+        
+        // 기능명 폴더들 추가
+        depFolder.children.forEach(featureFolder => {
+          options.push({
+            id: featureFolder.id,
+            name: `🔧 ${featureFolder.name} (기능명)`,
+            type: 'feature'
+          });
+        });
+      });
+    });
+    
+    return options;
   };
 
   if (loading) {
@@ -120,7 +160,12 @@ const FolderManager = () => {
           <div key={folder.id} className="folder-card">
             <div className="folder-info">
               <h3>{folder.folder_name}</h3>
-              <p>타입: {folder.folder_type === 'environment' ? '환경' : '배포일자'}</p>
+              <p>타입: {
+                folder.folder_type === 'environment' ? '환경' : 
+                folder.folder_type === 'deployment_date' ? '배포일자' : 
+                folder.folder_type === 'feature' ? '기능명' : 
+                folder.folder_type || '미분류'
+              }</p>
               {folder.environment && <p>환경: {folder.environment}</p>}
               {folder.deployment_date && <p>배포일자: {folder.deployment_date}</p>}
             </div>
@@ -197,6 +242,7 @@ const FolderManager = () => {
                 >
                   <option value="environment">환경 (Environment)</option>
                   <option value="deployment_date">배포일자 (Deployment Date)</option>
+                  <option value="feature">기능명 (Feature)</option>
                 </select>
               </div>
               <div className="form-group">
@@ -219,7 +265,7 @@ const FolderManager = () => {
                   <option value="">없음 (최상위)</option>
                   {getParentFolderOptions().map(folder => (
                     <option key={folder.id} value={folder.id}>
-                      {folder.folder_name}
+                      {folder.name}
                     </option>
                   ))}
                 </select>
@@ -294,6 +340,7 @@ const FolderManager = () => {
                 >
                   <option value="environment">환경 (Environment)</option>
                   <option value="deployment_date">배포일자 (Deployment Date)</option>
+                  <option value="feature">기능명 (Feature)</option>
                 </select>
               </div>
               <div className="form-group">
@@ -316,7 +363,7 @@ const FolderManager = () => {
                   <option value="">없음 (최상위)</option>
                   {getParentFolderOptions().map(folder => (
                     <option key={folder.id} value={folder.id}>
-                      {folder.folder_name}
+                      {folder.name}
                     </option>
                   ))}
                 </select>

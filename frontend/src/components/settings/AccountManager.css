@@ -103,6 +103,11 @@
   color: white;
 }
 
+.role-badge.guest {
+  background: #6c757d;
+  color: white;
+}
+
 .status-badge {
   padding: 4px 8px;
   border-radius: 12px;

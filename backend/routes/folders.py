@@ -139,17 +139,34 @@ def delete_folder(id):
 # 폴더 트리 구조 API
 @folders_bp.route('/folders/tree', methods=['GET'])
 def get_folder_tree():
-    """환경별 → 배포일자별 폴더 트리 구조 반환"""
+    """환경별 → 배포일자별 → 기능명별 폴더 트리 구조 반환"""
     try:
-        # 환경별 폴더 조회
-        environment_folders = Folder.query.filter_by(
-            folder_type='environment'
+        # 환경별 폴더 조회 (folder_type이 'environment'이거나 null인 상위 폴더들)
+        environment_folders = Folder.query.filter(
+            (Folder.folder_type == 'environment') | 
+            ((Folder.folder_type.is_(None)) & (Folder.parent_folder_id.is_(None)))
         ).all()
         
         print(f"🔍 환경 폴더 수: {len(environment_folders)}")
         
         tree = []
         for env_folder in environment_folders:
+            # folder_type이 null인 경우 환경 이름에서 타입 추정
+            folder_type = env_folder.folder_type
+            if folder_type is None:
+                if 'DEV' in env_folder.folder_name.upper():
+                    folder_type = 'environment'
+                    env_folder.environment = 'dev'
+                elif 'ALPHA' in env_folder.folder_name.upper():
+                    folder_type = 'environment'
+                    env_folder.environment = 'alpha'
+                elif 'PRODUCTION' in env_folder.folder_name.upper():
+                    folder_type = 'environment'
+                    env_folder.environment = 'production'
+                else:
+                    folder_type = 'environment'
+                    env_folder.environment = 'unknown'
+            
             env_node = {
                 'id': env_folder.id,
                 'name': env_folder.folder_name,
@@ -160,24 +177,55 @@ def get_folder_tree():
             
             print(f"🌍 환경 폴더: {env_folder.folder_name} (ID: {env_folder.id})")
             
-            # 해당 환경의 배포일자별 폴더 조회
-            deployment_folders = Folder.query.filter_by(
-                folder_type='deployment_date',
-                parent_folder_id=env_folder.id
+            # 해당 환경의 배포일자별 폴더 조회 (folder_type이 'deployment_date'이거나 null인 하위 폴더들)
+            deployment_folders = Folder.query.filter(
+                ((Folder.folder_type == 'deployment_date') | (Folder.folder_type.is_(None))) &
+                (Folder.parent_folder_id == env_folder.id)
             ).all()
             
             print(f"📅 배포일자 폴더 수: {len(deployment_folders)}")
             
             for dep_folder in deployment_folders:
+                # folder_type이 null인 경우 배포일자로 추정
+                dep_folder_type = dep_folder.folder_type
+                if dep_folder_type is None:
+                    dep_folder_type = 'deployment_date'
+                
                 dep_node = {
                     'id': dep_folder.id,
                     'name': dep_folder.folder_name,
                     'type': 'deployment_date',
-                    'deployment_date': dep_folder.deployment_date.strftime('%Y-%m-%d'),
+                    'deployment_date': dep_folder.deployment_date.strftime('%Y-%m-%d') if dep_folder.deployment_date else dep_folder.folder_name,
                     'children': []
                 }
                 
                 print(f"📅 배포일자 폴더: {dep_folder.folder_name} (ID: {dep_folder.id})")
+                
+                # 해당 배포일자의 기능명별 폴더 조회 (folder_type이 'feature'이거나 null인 하위 폴더들)
+                feature_folders = Folder.query.filter(
+                    ((Folder.folder_type == 'feature') | (Folder.folder_type.is_(None))) &
+                    (Folder.parent_folder_id == dep_folder.id)
+                ).all()
+                
+                print(f"🔧 기능명 폴더 수: {len(feature_folders)}")
+                
+                for feature_folder in feature_folders:
+                    # folder_type이 null인 경우 기능명으로 추정
+                    feature_folder_type = feature_folder.folder_type
+                    if feature_folder_type is None:
+                        feature_folder_type = 'feature'
+                    
+                    feature_node = {
+                        'id': feature_folder.id,
+                        'name': feature_folder.folder_name,
+                        'type': 'feature',
+                        'children': []
+                    }
+                    
+                    print(f"🔧 기능명 폴더: {feature_folder.folder_name} (ID: {feature_folder.id})")
+                    
+                    # 기능명 폴더에 하위 폴더가 있을 수 있지만, 여기서는 3단계까지만 표시
+                    dep_node['children'].append(feature_node)
                 
                 # 테스트 케이스는 제외하고 폴더만 반환
                 env_node['children'].append(dep_node)
