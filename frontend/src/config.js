@@ -13,11 +13,9 @@ const config = {
 const environment = process.env.NODE_ENV || 'development';
 const currentConfig = config[environment];
 
-// 환경 정보 로깅 (개발 환경에서만)
-if (environment === 'development') {
-  console.log('🌍 Environment:', environment);
-  console.log('🔗 API URL:', currentConfig.apiUrl);
-  console.log('📤 Upload URL:', currentConfig.uploadUrl);
-}
+// 환경 정보 로깅 (모든 환경에서)
+console.log('🌍 Environment:', environment);
+console.log('🔗 API URL:', currentConfig.apiUrl);
+console.log('📤 Upload URL:', currentConfig.uploadUrl);
 
 export default currentConfig;

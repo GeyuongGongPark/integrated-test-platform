@@ -137,6 +137,22 @@ def test_endpoint():
         })
         return add_cors_headers(response), 500
 
+# CORS 테스트 엔드포인트
+@app.route('/cors-test', methods=['GET', 'OPTIONS'])
+def cors_test():
+    """CORS 테스트 엔드포인트"""
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'preflight_ok'})
+        return add_cors_headers(response), 200
+    
+    response = jsonify({
+        'status': 'cors_ok',
+        'message': 'CORS is working',
+        'origin': request.headers.get('Origin', 'No origin'),
+        'timestamp': datetime.now().isoformat()
+    })
+    return add_cors_headers(response), 200
+
 # CORS preflight 요청 처리
 @app.route('/<path:path>', methods=['OPTIONS'])
 def handle_options(path):
