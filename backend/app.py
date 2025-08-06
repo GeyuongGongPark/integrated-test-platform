@@ -96,8 +96,12 @@ def init_db():
             db.session.rollback()
 
 # 헬스체크 엔드포인트
-@app.route('/health', methods=['GET'])
+@app.route('/health', methods=['GET', 'OPTIONS'])
 def health_check():
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'preflight_ok'})
+        return add_cors_headers(response), 200
+    
     response = jsonify({
         'status': 'healthy', 
         'message': 'Test Platform Backend is running - Modularized Version',
@@ -108,9 +112,13 @@ def health_check():
     return add_cors_headers(response), 200
 
 # 간단한 테스트 엔드포인트
-@app.route('/test', methods=['GET'])
+@app.route('/test', methods=['GET', 'OPTIONS'])
 def test_endpoint():
     """간단한 테스트 엔드포인트"""
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'preflight_ok'})
+        return add_cors_headers(response), 200
+    
     try:
         # 환경 변수 확인
         db_url = os.environ.get('DATABASE_URL', 'Not set')
