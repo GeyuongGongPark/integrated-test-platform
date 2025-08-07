@@ -1,11 +1,18 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_from_directory
 from models import db, AutomationTest, AutomationTestResult
 from utils.cors import add_cors_headers
 from datetime import datetime
 import time
+import os
+import glob
+from pathlib import Path
+from urllib.parse import unquote
 
 # Blueprint 생성
 automation_bp = Blueprint('automation', __name__)
+
+# 스크린샷 관련 설정
+SCREENSHOT_BASE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'test-scripts')
 
 # 자동화 테스트 API
 @automation_bp.route('/automation-tests', methods=['GET'])
@@ -226,6 +233,137 @@ def get_automation_test_result_detail(id, result_id):
         }
         
         response = jsonify(result_data)
+        return add_cors_headers(response), 200
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500 
+
+@automation_bp.route('/screenshots', methods=['GET'])
+def get_screenshots():
+    """사용 가능한 스크린샷 목록 조회"""
+    try:
+        screenshots = []
+        
+        # test-scripts 폴더 내의 모든 PNG 파일 검색
+        for root, dirs, files in os.walk(SCREENSHOT_BASE_PATH):
+            for file in files:
+                if file.lower().endswith('.png'):
+                    # 상대 경로 계산
+                    rel_path = os.path.relpath(os.path.join(root, file), SCREENSHOT_BASE_PATH)
+                    screenshots.append({
+                        'filename': file,
+                        'path': rel_path,
+                        'full_path': os.path.join(root, file),
+                        'timestamp': os.path.getmtime(os.path.join(root, file)),
+                        'size': os.path.getsize(os.path.join(root, file))
+                    })
+        
+        # 타임스탬프 기준으로 정렬 (최신순)
+        screenshots.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        response = jsonify(screenshots)
+        return add_cors_headers(response), 200
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@automation_bp.route('/screenshots/<path:filename>', methods=['GET'])
+def get_screenshot(filename):
+    """특정 스크린샷 파일 제공"""
+    try:
+        # 보안을 위해 경로 검증
+        safe_path = os.path.normpath(unquote(filename))
+        if safe_path.startswith('..') or safe_path.startswith('/'):
+            response = jsonify({'error': 'Invalid path'})
+            return add_cors_headers(response), 400
+        
+        file_path = os.path.join(SCREENSHOT_BASE_PATH, safe_path)
+        
+        if not os.path.exists(file_path):
+            response = jsonify({'error': 'Screenshot not found'})
+            return add_cors_headers(response), 404
+        
+        # 파일의 디렉토리와 파일명 분리
+        directory = os.path.dirname(safe_path)
+        filename_only = os.path.basename(safe_path)
+        
+        if directory:
+            return send_from_directory(os.path.join(SCREENSHOT_BASE_PATH, directory), filename_only)
+        else:
+            return send_from_directory(SCREENSHOT_BASE_PATH, filename_only)
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@automation_bp.route('/screenshots/by-test/<int:test_id>', methods=['GET'])
+def get_screenshots_by_test(test_id):
+    """특정 테스트와 관련된 스크린샷 조회"""
+    try:
+        # 테스트 정보 조회
+        test = AutomationTest.query.get_or_404(test_id)
+        
+        # 스크립트 경로에서 스크린샷 폴더 추정
+        script_path = test.script_path
+        screenshots = []
+        
+        # 스크립트 경로 기반으로 관련 스크린샷 검색
+        if script_path:
+            # 스크립트 파일명에서 폴더명 추출
+            script_name = os.path.basename(script_path)
+            script_dir = os.path.dirname(script_path)
+            
+            # 관련 스크린샷 폴더 검색
+            for root, dirs, files in os.walk(SCREENSHOT_BASE_PATH):
+                for file in files:
+                    if file.lower().endswith('.png'):
+                        # 스크립트와 관련된 스크린샷인지 확인
+                        rel_path = os.path.relpath(os.path.join(root, file), SCREENSHOT_BASE_PATH)
+                        
+                        # 스크립트 경로와 관련된 스크린샷 필터링
+                        if script_name.lower().replace('.js', '') in rel_path.lower() or \
+                           any(part in rel_path.lower() for part in script_dir.lower().split('/') if part):
+                            screenshots.append({
+                                'filename': file,
+                                'path': rel_path,
+                                'full_path': os.path.join(root, file),
+                                'timestamp': os.path.getmtime(os.path.join(root, file)),
+                                'size': os.path.getsize(os.path.join(root, file))
+                            })
+        
+        # 타임스탬프 기준으로 정렬 (최신순)
+        screenshots.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        response = jsonify(screenshots)
+        return add_cors_headers(response), 200
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@automation_bp.route('/screenshots/recent', methods=['GET'])
+def get_recent_screenshots():
+    """최근 스크린샷 조회"""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        screenshots = []
+        
+        # test-scripts 폴더 내의 모든 PNG 파일 검색
+        for root, dirs, files in os.walk(SCREENSHOT_BASE_PATH):
+            for file in files:
+                if file.lower().endswith('.png'):
+                    rel_path = os.path.relpath(os.path.join(root, file), SCREENSHOT_BASE_PATH)
+                    screenshots.append({
+                        'filename': file,
+                        'path': rel_path,
+                        'full_path': os.path.join(root, file),
+                        'timestamp': os.path.getmtime(os.path.join(root, file)),
+                        'size': os.path.getsize(os.path.join(root, file))
+                    })
+        
+        # 타임스탬프 기준으로 정렬하고 최근 것만 반환
+        screenshots.sort(key=lambda x: x['timestamp'], reverse=True)
+        screenshots = screenshots[:limit]
+        
+        response = jsonify(screenshots)
         return add_cors_headers(response), 200
     except Exception as e:
         response = jsonify({'error': str(e)})

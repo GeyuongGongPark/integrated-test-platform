@@ -3,18 +3,108 @@ import axios from 'axios';
 import config from '../../config';
 import './AutomationTestDetail.css';
 
+// 스크린샷 갤러리 컴포넌트
+const ScreenshotGallery = ({ testId, testName }) => {
+  const [screenshots, setScreenshots] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedScreenshot, setSelectedScreenshot] = useState(null);
+
+  useEffect(() => {
+    if (testId) {
+      fetchScreenshots();
+    }
+  }, [testId]);
+
+  const fetchScreenshots = async () => {
+    try {
+      setLoading(true);
+      // 먼저 테스트 관련 스크린샷 조회
+      const response = await axios.get(`/screenshots/by-test/${testId}`);
+      setScreenshots(response.data);
+    } catch (err) {
+      console.error('스크린샷 조회 오류:', err);
+      // 테스트 관련 스크린샷이 없으면 최근 스크린샷 조회
+      try {
+        const recentResponse = await axios.get('/screenshots/recent?limit=20');
+        setScreenshots(recentResponse.data);
+      } catch (recentErr) {
+        console.error('최근 스크린샷 조회 오류:', recentErr);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleScreenshotClick = (screenshot) => {
+    setSelectedScreenshot(screenshot);
+  };
+
+  const closeModal = () => {
+    setSelectedScreenshot(null);
+  };
+
+  if (loading) {
+    return <div className="screenshots-loading">스크린샷 로딩 중...</div>;
+  }
+
+  if (screenshots.length === 0) {
+    return <div className="no-screenshots">관련 스크린샷이 없습니다.</div>;
+  }
+
+  return (
+    <div className="screenshot-gallery">
+      <h4>관련 스크린샷 ({screenshots.length}개)</h4>
+      <div className="screenshot-grid">
+        {screenshots.map((screenshot, index) => (
+          <div 
+            key={index} 
+            className="screenshot-item"
+            onClick={() => handleScreenshotClick(screenshot)}
+          >
+            <img 
+              src={`${config.apiUrl}/screenshots/${screenshot.path}`}
+              alt={screenshot.filename}
+              className="screenshot-thumbnail"
+            />
+            <div className="screenshot-info">
+              <span className="screenshot-filename">{screenshot.filename}</span>
+              <span className="screenshot-date">
+                {new Date(screenshot.timestamp * 1000).toLocaleString()}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 스크린샷 모달 */}
+      {selectedScreenshot && (
+        <div className="screenshot-modal" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={closeModal}>×</button>
+            <img 
+              src={`${config.apiUrl}/screenshots/${selectedScreenshot.path}`}
+              alt={selectedScreenshot.filename}
+              className="modal-screenshot"
+            />
+            <div className="modal-info">
+              <h3>{selectedScreenshot.filename}</h3>
+              <p>경로: {selectedScreenshot.path}</p>
+              <p>크기: {(selectedScreenshot.size / 1024).toFixed(1)} KB</p>
+              <p>생성일: {new Date(selectedScreenshot.timestamp * 1000).toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // 자동화 테스트 실행 결과 컴포넌트
 const AutomationTestResults = ({ testId }) => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (testId) {
-      fetchResults();
-    }
-  }, [testId, fetchResults]);
-
-  const fetchResults = useCallback(async () => {
+  const fetchResults = async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/automation-tests/${testId}/results`);
@@ -23,6 +113,12 @@ const AutomationTestResults = ({ testId }) => {
       console.error('자동화 테스트 결과 조회 오류:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (testId) {
+      fetchResults();
     }
   }, [testId]);
 
@@ -180,6 +276,11 @@ const AutomationTestDetail = ({ test, onClose, onRefresh }) => {
             </div>
           </div>
         )}
+
+        <div className="detail-section">
+          <h3>관련 스크린샷</h3>
+          <ScreenshotGallery testId={test.id} testName={test.name} />
+        </div>
 
         <div className="detail-section">
           <h3>실행 결과</h3>

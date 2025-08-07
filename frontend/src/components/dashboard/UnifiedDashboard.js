@@ -61,6 +61,8 @@ axios.interceptors.response.use(
   }
 );
 
+
+
 const UnifiedDashboard = ({ setActiveTab }) => {
   const [testCases, setTestCases] = useState([]);
   const [performanceTests, setPerformanceTests] = useState([]);
@@ -69,14 +71,36 @@ const UnifiedDashboard = ({ setActiveTab }) => {
   const [testcaseSummaries, setTestcaseSummaries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dbInitializing, setDbInitializing] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
+  const initializeDatabase = async () => {
+    try {
+      setDbInitializing(true);
+      console.log('🔄 데이터베이스 초기화 시작...');
+      
+      const response = await axios.post('/init-db');
+      console.log('✅ 데이터베이스 초기화 성공:', response.data);
+      
+      // 초기화 후 데이터 다시 로드
+      await fetchDashboardData();
+      
+      return true;
+    } catch (err) {
+      console.error('❌ 데이터베이스 초기화 실패:', err);
+      return false;
+    } finally {
+      setDbInitializing(false);
+    }
+  };
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // API URL 로깅
       console.log('🔗 Current API URL:', config.apiUrl);
@@ -102,6 +126,15 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       try {
         const healthRes = await axios.get('/health');
         console.log('✅ Health check successful:', healthRes.data);
+        
+        // 데이터베이스 상태 확인
+        if (healthRes.data.database && !healthRes.data.database.tables_exist) {
+          console.log('⚠️ 데이터베이스 테이블이 존재하지 않습니다. 초기화를 시도합니다...');
+          const initSuccess = await initializeDatabase();
+          if (!initSuccess) {
+            throw new Error('데이터베이스 초기화에 실패했습니다.');
+          }
+        }
       } catch (healthErr) {
         console.error('❌ Health check failed:', healthErr);
       }
@@ -126,7 +159,6 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       
       console.log('✅ Dashboard data loaded successfully');
     } catch (err) {
-      setError('데이터를 불러오는 중 오류가 발생했습니다.');
       console.error('Dashboard data fetch error:', err);
       console.error('Error details:', {
         message: err.message,
@@ -134,6 +166,20 @@ const UnifiedDashboard = ({ setActiveTab }) => {
         response: err.response,
         request: err.request
       });
+      
+      // 데이터베이스 오류인 경우 초기화 시도
+      if (err.response?.status === 500 && err.response?.data?.error?.includes('no such table')) {
+        console.log('🔄 데이터베이스 테이블 오류 감지. 초기화를 시도합니다...');
+        setError('데이터베이스 테이블이 없습니다. 초기화를 시도합니다...');
+        
+        const initSuccess = await initializeDatabase();
+        if (initSuccess) {
+          setError(null);
+          return; // 성공하면 함수 종료
+        }
+      }
+      
+      setError('데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -268,6 +314,29 @@ const UnifiedDashboard = ({ setActiveTab }) => {
   return (
     <div className="unified-dashboard">
       <h1>통합 테스트 플랫폼 대시보드</h1>
+      
+      {/* 데이터베이스 초기화 버튼 */}
+      <div className="db-init-section">
+        <button 
+          className={`db-init-button ${dbInitializing ? 'initializing' : ''}`}
+          onClick={initializeDatabase}
+          disabled={dbInitializing}
+        >
+          {dbInitializing ? '데이터베이스 초기화 중...' : '데이터베이스 초기화'}
+        </button>
+        {error && (
+          <div className="error-message">
+            {error}
+            <button 
+              className="retry-button"
+              onClick={initializeDatabase}
+              disabled={dbInitializing}
+            >
+              다시 시도
+            </button>
+          </div>
+        )}
+      </div>
       
       {/* 환경별 테스트 케이스 상태 요약 */}
       <div className="environment-summary-section">

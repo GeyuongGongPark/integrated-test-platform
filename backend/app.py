@@ -66,16 +66,13 @@ def init_db():
     """데이터베이스 초기화"""
     with app.app_context():
         try:
-            # Vercel 환경에서는 데이터베이스 연결만 확인
-            if os.environ.get('VERCEL'):
-                db.session.execute('SELECT 1')
-                print("✅ Vercel 환경에서 데이터베이스 연결 성공")
-                return
-            
+            # Vercel 환경에서도 테이블 생성 시도
             db.session.execute('SELECT 1')
             print("✅ 데이터베이스 연결 성공")
+            
+            # 모든 테이블 생성
             db.create_all()
-            print("✅ PostgreSQL 테이블 생성 완료")
+            print("✅ 데이터베이스 테이블 생성 완료")
             
             # 기본 프로젝트 생성
             from models import Project
@@ -89,7 +86,7 @@ def init_db():
                 db.session.commit()
                 print("✅ 기본 프로젝트 생성 완료")
             
-            print("Neon PostgreSQL 데이터베이스 초기화 완료!")
+            print("데이터베이스 초기화 완료!")
             
         except Exception as e:
             print(f"❌ 데이터베이스 초기화 중 오류: {str(e)}")
@@ -102,14 +99,43 @@ def health_check():
         response = jsonify({'status': 'preflight_ok'})
         return add_cors_headers(response), 200
     
-    response = jsonify({
-        'status': 'healthy', 
-        'message': 'Test Platform Backend is running - Modularized Version',
-        'version': '2.0.0',
-        'timestamp': datetime.now().isoformat(),
-        'environment': 'production' if os.environ.get('VERCEL') else 'development'
-    })
-    return add_cors_headers(response), 200
+    try:
+        # 데이터베이스 연결 확인
+        db.session.execute('SELECT 1')
+        db_status = 'connected'
+        
+        # 테이블 존재 여부 확인
+        from models import TestCase, PerformanceTest, TestExecution
+        tables_exist = True
+        try:
+            TestCase.query.first()
+            PerformanceTest.query.first()
+            TestExecution.query.first()
+        except Exception as e:
+            tables_exist = False
+            print(f"테이블 확인 중 오류: {str(e)}")
+        
+        response = jsonify({
+            'status': 'healthy', 
+            'message': 'Test Platform Backend is running - Modularized Version',
+            'version': '2.0.0',
+            'timestamp': datetime.now().isoformat(),
+            'environment': 'production' if os.environ.get('VERCEL') else 'development',
+            'database': {
+                'status': db_status,
+                'tables_exist': tables_exist,
+                'url_set': 'Yes' if os.environ.get('DATABASE_URL') else 'No'
+            }
+        })
+        return add_cors_headers(response), 200
+    except Exception as e:
+        response = jsonify({
+            'status': 'unhealthy',
+            'message': f'Database connection failed: {str(e)}',
+            'timestamp': datetime.now().isoformat(),
+            'environment': 'production' if os.environ.get('VERCEL') else 'development'
+        })
+        return add_cors_headers(response), 500
 
 # 간단한 테스트 엔드포인트
 @app.route('/test', methods=['GET', 'OPTIONS'])
@@ -182,7 +208,39 @@ def handle_options(path):
     
     return response, 200
 
+# 데이터베이스 초기화 엔드포인트
+@app.route('/init-db', methods=['POST', 'OPTIONS'])
+def initialize_database():
+    """데이터베이스 초기화 엔드포인트"""
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'preflight_ok'})
+        return add_cors_headers(response), 200
+    
+    try:
+        init_db()
+        response = jsonify({
+            'status': 'success',
+            'message': '데이터베이스 초기화가 완료되었습니다.',
+            'timestamp': datetime.now().isoformat()
+        })
+        return add_cors_headers(response), 200
+    except Exception as e:
+        response = jsonify({
+            'status': 'error',
+            'message': f'데이터베이스 초기화 중 오류가 발생했습니다: {str(e)}',
+            'timestamp': datetime.now().isoformat()
+        })
+        return add_cors_headers(response), 500
+
 # Flask 서버 실행
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=8000, debug=True) 
+    app.run(host='0.0.0.0', port=8000, debug=True)
+
+# Vercel 환경에서 앱 시작 시 데이터베이스 초기화
+if os.environ.get('VERCEL'):
+    try:
+        init_db()
+        print("✅ Vercel 환경에서 데이터베이스 초기화 완료")
+    except Exception as e:
+        print(f"❌ Vercel 환경에서 데이터베이스 초기화 실패: {str(e)}") 
