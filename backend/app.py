@@ -66,13 +66,29 @@ def init_db():
     """데이터베이스 초기화"""
     with app.app_context():
         try:
-            # Vercel 환경에서도 테이블 생성 시도
+            # 데이터베이스 연결 확인
             db.session.execute('SELECT 1')
             print("✅ 데이터베이스 연결 성공")
+            
+            # 현재 데이터베이스 URI 로깅
+            db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set')
+            print(f"🔗 현재 데이터베이스 URI: {db_uri[:50]}...")
             
             # 모든 테이블 생성
             db.create_all()
             print("✅ 데이터베이스 테이블 생성 완료")
+            
+            # 테이블 목록 확인
+            try:
+                result = db.session.execute("""
+                    SELECT table_name 
+                    FROM information_schema.tables 
+                    WHERE table_schema = 'public'
+                """)
+                tables = [row[0] for row in result]
+                print(f"📋 생성된 테이블 목록: {tables}")
+            except Exception as e:
+                print(f"⚠️ 테이블 목록 확인 중 오류: {str(e)}")
             
             # 기본 프로젝트 생성
             from models import Project
@@ -90,7 +106,9 @@ def init_db():
             
         except Exception as e:
             print(f"❌ 데이터베이스 초기화 중 오류: {str(e)}")
+            print(f"🔍 오류 타입: {type(e).__name__}")
             db.session.rollback()
+            raise
 
 # 헬스체크 엔드포인트
 @app.route('/health', methods=['GET', 'OPTIONS'])
@@ -150,15 +168,35 @@ def test_endpoint():
         db_url = os.environ.get('DATABASE_URL', 'Not set')
         secret_key = os.environ.get('SECRET_KEY', 'Not set')
         flask_env = os.environ.get('FLASK_ENV', 'Not set')
+        vercel_env = os.environ.get('VERCEL', 'Not set')
+        
+        # 데이터베이스 연결 테스트
+        db_connection_status = 'unknown'
+        db_error = None
+        try:
+            db.session.execute('SELECT 1')
+            db_connection_status = 'connected'
+        except Exception as e:
+            db_connection_status = 'failed'
+            db_error = str(e)
+        
+        # 현재 설정된 데이터베이스 URI 확인
+        current_db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set')
         
         response = jsonify({
             'status': 'test_ok',
             'message': 'Backend is working',
             'environment_vars': {
                 'DATABASE_URL_set': 'Yes' if db_url != 'Not set' else 'No',
+                'DATABASE_URL_length': len(db_url) if db_url != 'Not set' else 0,
                 'SECRET_KEY_set': 'Yes' if secret_key != 'Not set' else 'No',
                 'FLASK_ENV': flask_env,
-                'VERCEL': os.environ.get('VERCEL', 'Not set')
+                'VERCEL': vercel_env
+            },
+            'database': {
+                'connection_status': db_connection_status,
+                'current_uri': current_db_uri[:50] + '...' if len(current_db_uri) > 50 else current_db_uri,
+                'error': db_error
             },
             'timestamp': datetime.now().isoformat()
         })

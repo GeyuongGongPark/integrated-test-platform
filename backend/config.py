@@ -27,9 +27,15 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     """프로덕션 환경 설정"""
-    SQLALCHEMY_DATABASE_URI = os.environ.get('PROD_DATABASE_URL') or \
-        os.environ.get('DATABASE_URL') or \
-        'sqlite:///test_management.db'
+    # Vercel 환경에서는 PostgreSQL을 강제로 사용
+    if os.environ.get('VERCEL'):
+        SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+        if not SQLALCHEMY_DATABASE_URI:
+            raise ValueError("Vercel 환경에서 DATABASE_URL이 설정되지 않았습니다.")
+    else:
+        SQLALCHEMY_DATABASE_URI = os.environ.get('PROD_DATABASE_URL') or \
+            os.environ.get('DATABASE_URL') or \
+            'sqlite:///test_management.db'
     
     # Vercel 환경에서 파일 시스템 접근 방지
     SQLALCHEMY_ENGINE_OPTIONS = {
