@@ -85,8 +85,8 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       const response = await axios.post('/init-db');
       console.log('✅ 데이터베이스 초기화 성공:', response.data);
       
-      // 초기화 후 데이터 다시 로드
-      await fetchDashboardData();
+      // 초기화 후 데이터 다시 로드 (skipInit=true로 호출하여 무한 루프 방지)
+      await fetchDashboardData(true);
       
       return true;
     } catch (err) {
@@ -97,7 +97,7 @@ const UnifiedDashboard = ({ setActiveTab }) => {
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (skipInit = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -106,29 +106,13 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       console.log('🔗 Current API URL:', config.apiUrl);
       console.log('🌐 Current Origin:', window.location.origin);
       
-      // 먼저 간단한 테스트 요청
-      try {
-        const testRes = await axios.get('/test');
-        console.log('✅ Test endpoint successful:', testRes.data);
-      } catch (testErr) {
-        console.error('❌ Test endpoint failed:', testErr);
-      }
-      
-      // CORS 전용 테스트 요청
-      try {
-        const corsTestRes = await axios.get('/cors-test');
-        console.log('✅ CORS test successful:', corsTestRes.data);
-      } catch (corsTestErr) {
-        console.error('❌ CORS test failed:', corsTestErr);
-      }
-      
       // 헬스체크 요청
       try {
         const healthRes = await axios.get('/health');
         console.log('✅ Health check successful:', healthRes.data);
         
-        // 데이터베이스 상태 확인
-        if (healthRes.data.database && !healthRes.data.database.tables_exist) {
+        // 데이터베이스 상태 확인 (skipInit이 false일 때만)
+        if (!skipInit && healthRes.data.database && !healthRes.data.database.tables_exist) {
           console.log('⚠️ 데이터베이스 테이블이 존재하지 않습니다. 초기화를 시도합니다...');
           const initSuccess = await initializeDatabase();
           if (!initSuccess) {
@@ -167,8 +151,8 @@ const UnifiedDashboard = ({ setActiveTab }) => {
         request: err.request
       });
       
-      // 데이터베이스 오류인 경우 초기화 시도
-      if (err.response?.status === 500 && err.response?.data?.error?.includes('no such table')) {
+      // 데이터베이스 오류인 경우 초기화 시도 (skipInit이 false일 때만)
+      if (!skipInit && err.response?.status === 500 && err.response?.data?.error?.includes('no such table')) {
         console.log('🔄 데이터베이스 테이블 오류 감지. 초기화를 시도합니다...');
         setError('데이터베이스 테이블이 없습니다. 초기화를 시도합니다...');
         

@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "app.py",
+      "src": "app_simple.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/app.py",
+      "dest": "/app_simple.py",
       "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
       "headers": {
         "Access-Control-Allow-Origin": "*",
@@ -20,8 +20,5 @@
         "Access-Control-Expose-Headers": "*"
       }
     }
-  ],
-  "env": {
-    "VERCEL_AUTH_DISABLED": "true"
-  }
+  ]
 }
