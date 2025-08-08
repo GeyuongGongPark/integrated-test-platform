@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from config import config
+from sqlalchemy import text
 
 # 모델 import
 from models import db
@@ -67,7 +68,7 @@ def init_db():
     with app.app_context():
         try:
             # 데이터베이스 연결 확인
-            db.session.execute('SELECT 1')
+            db.session.execute(text('SELECT 1'))
             print("✅ 데이터베이스 연결 성공")
             
             # 현재 데이터베이스 URI 로깅
@@ -80,11 +81,11 @@ def init_db():
             
             # 테이블 목록 확인
             try:
-                result = db.session.execute("""
+                result = db.session.execute(text("""
                     SELECT table_name 
                     FROM information_schema.tables 
                     WHERE table_schema = 'public'
-                """)
+                """))
                 tables = [row[0] for row in result]
                 print(f"📋 생성된 테이블 목록: {tables}")
             except Exception as e:
@@ -119,7 +120,7 @@ def health_check():
     
     try:
         # 데이터베이스 연결 확인
-        db.session.execute('SELECT 1')
+        db.session.execute(text('SELECT 1'))
         db_status = 'connected'
         
         # 테이블 존재 여부 확인
@@ -174,7 +175,7 @@ def test_endpoint():
         db_connection_status = 'unknown'
         db_error = None
         try:
-            db.session.execute('SELECT 1')
+            db.session.execute(text('SELECT 1'))
             db_connection_status = 'connected'
         except Exception as e:
             db_connection_status = 'failed'
