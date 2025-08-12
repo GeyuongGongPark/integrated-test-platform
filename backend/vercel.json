@@ -23,5 +23,6 @@
   ],
   "env": {
     "VERCEL_AUTH_DISABLED": "true"
-  }
+  },
+  "public": true
 }

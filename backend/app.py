@@ -1,25 +1,72 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from flask_migrate import Migrate
 from datetime import datetime
 import os
+from dotenv import load_dotenv
+
+# .env 파일 로드 (절대 경로 사용)
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+load_dotenv(env_path)
 
 # Flask 앱 생성
 app = Flask(__name__)
 
 # 기본 설정
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'fallback-secret-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'sqlite:///fallback.db'
+
+# 데이터베이스 URL 설정 (환경 변수 우선, 없으면 기본값)
+database_url = os.environ.get('DATABASE_URL')
+
+# Vercel 환경에서는 SSL 모드가 필요할 수 있음
+if database_url and 'vercel.app' in os.environ.get('VERCEL_URL', ''):
+    if database_url.startswith('mysql://'):
+        database_url = database_url.replace('mysql://', 'mysql+pymysql://')
+    if '?' not in database_url:
+        database_url += '?ssl_mode=VERIFY_IDENTITY'
+
+if not database_url:
+    # Vercel 환경에서는 SQLite 사용, 로컬에서는 MySQL 사용
+    if 'vercel.app' in os.environ.get('VERCEL_URL', ''):
+        # Vercel에서는 임시로 SQLite 사용 (읽기 전용)
+        database_url = 'sqlite:///:memory:'
+        print("🚀 Vercel 환경에서 SQLite 사용")
+    else:
+        # 로컬 개발 환경용 기본값
+        database_url = 'mysql+pymysql://root:1q2w#E$R@127.0.0.1:3306/test_management'
+        print("🏠 로컬 환경에서 MySQL 사용")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'connect_args': {
+        'connect_timeout': 10,
+        'read_timeout': 30,
+        'write_timeout': 30
+    }
+}
+
+# 환경 변수 로깅 (디버깅용)
+print(f"🔗 Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
+print(f"🔑 Secret Key: {app.config['SECRET_KEY']}")
+print(f"🌍 Environment: {os.environ.get('FLASK_ENV', 'production')}")
+print(f"🚀 Vercel URL: {os.environ.get('VERCEL_URL', 'Not Vercel')}")
+print(f"📁 .env 파일 경로: {env_path}")
+print(f"📁 .env 파일 존재: {os.path.exists(env_path)}")
 
 # CORS 설정 - 모든 origin 허용, credentials 지원
 CORS(app, origins="*", supports_credentials=True, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"])
 
 # 데이터베이스 초기화
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 # 데이터베이스 모델들
 class User(db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -29,43 +76,48 @@ class User(db.Model):
     last_login = db.Column(db.DateTime)
 
 class Project(db.Model):
+    __tablename__ = 'projects'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Folder(db.Model):
+    __tablename__ = 'Folders'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    parent_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('Folders.id'), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class TestCase(db.Model):
+    __tablename__ = 'TestCases'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     test_type = db.Column(db.String(50))
     script_path = db.Column(db.String(500))
-    folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'))
+    folder_id = db.Column(db.Integer, db.ForeignKey('Folders.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class TestResult(db.Model):
+    __tablename__ = 'test_result'
     id = db.Column(db.Integer, primary_key=True)
-    test_case_id = db.Column(db.Integer, db.ForeignKey('test_case.id'))
+    test_case_id = db.Column(db.Integer, db.ForeignKey('TestCases.id'))
     status = db.Column(db.String(20))
     execution_time = db.Column(db.Float)
     result_data = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Screenshot(db.Model):
+    __tablename__ = 'Screenshots'
     id = db.Column(db.Integer, primary_key=True)
     test_result_id = db.Column(db.Integer, db.ForeignKey('test_result.id'))
     file_path = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class PerformanceTest(db.Model):
+    __tablename__ = 'PerformanceTests'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
@@ -76,14 +128,16 @@ class PerformanceTest(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class PerformanceTestResult(db.Model):
+    __tablename__ = 'PerformanceTestResults'
     id = db.Column(db.Integer, primary_key=True)
-    test_id = db.Column(db.Integer, db.ForeignKey('performance_test.id'))
+    test_id = db.Column(db.Integer, db.ForeignKey('PerformanceTests.id'))
     status = db.Column(db.String(20))
     execution_time = db.Column(db.Float)
     result_data = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class AutomationTest(db.Model):
+    __tablename__ = 'AutomationTests'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
@@ -95,14 +149,16 @@ class AutomationTest(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class AutomationTestResult(db.Model):
+    __tablename__ = 'AutomationTestResults'
     id = db.Column(db.Integer, primary_key=True)
-    test_id = db.Column(db.Integer, db.ForeignKey('automation_test.id'))
+    test_id = db.Column(db.Integer, db.ForeignKey('AutomationTests.id'))
     status = db.Column(db.String(20))
     execution_time = db.Column(db.Float)
     result_data = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DashboardSummary(db.Model):
+    __tablename__ = 'DashboardSummaries'
     id = db.Column(db.Integer, primary_key=True)
     environment = db.Column(db.String(100))
     total_tests = db.Column(db.Integer, default=0)
@@ -168,7 +224,7 @@ def init_database():
     
     try:
         with app.app_context():
-            db.create_all()
+            # 기존 테이블 사용 (db.create_all() 제거)
             
             # 샘플 데이터 생성
             if not Project.query.first():
@@ -183,7 +239,8 @@ def init_database():
                     passed_tests=0,
                     failed_tests=0,
                     skipped_tests=0,
-                    pass_rate=0.0
+                    pass_rate=0.0,
+                    last_updated=datetime.utcnow()
                 )
                 db.session.add(summary)
                 db.session.commit()
@@ -465,8 +522,7 @@ def get_projects():
         data = [{
             'id': p.id,
             'name': p.name,
-            'description': p.description,
-            'created_at': p.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'description': p.description
         } for p in projects]
         response = jsonify(data)
         return response, 200
@@ -779,6 +835,143 @@ def get_test_results(testcase_id):
         return jsonify(data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# 기능 폴더 추가 API
+@app.route('/folders/feature', methods=['POST', 'OPTIONS'])
+def add_feature_folders():
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'preflight_ok'}), 200
+    
+    try:
+        # 기존 날짜 폴더들에 기능 폴더 추가
+        from datetime import datetime
+        
+        # 날짜 폴더 ID들 (4, 5, 6)
+        date_folder_ids = [4, 5, 6]
+        
+        # 기능 폴더들
+        feature_folders = [
+            {'name': 'CLM/Draft', 'parent_id': 4},
+            {'name': 'CLM/Review', 'parent_id': 4},
+            {'name': 'CLM/Sign', 'parent_id': 4},
+            {'name': 'CLM/Process', 'parent_id': 4},
+            {'name': 'Litigation/Draft', 'parent_id': 5},
+            {'name': 'Litigation/Schedule', 'parent_id': 5},
+            {'name': 'Dashboard/Setting', 'parent_id': 6}
+        ]
+        
+        added_folders = []
+        for feature in feature_folders:
+            # 이미 존재하는지 확인
+            existing = Folder.query.filter_by(name=feature['name'], parent_id=feature['parent_id']).first()
+            if not existing:
+                new_folder = Folder(
+                    name=feature['name'],
+                    parent_id=feature['parent_id'],
+                    created_at=datetime.utcnow()
+                )
+                db.session.add(new_folder)
+                added_folders.append(feature['name'])
+        
+        if added_folders:
+            db.session.commit()
+            return jsonify({
+                'status': 'success',
+                'message': f'기능 폴더 {len(added_folders)}개가 추가되었습니다.',
+                'added_folders': added_folders
+            }), 200
+        else:
+            return jsonify({
+                'status': 'info',
+                'message': '추가할 기능 폴더가 없습니다.'
+            }), 200
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# 테스트 케이스 폴더 재배치 API
+@app.route('/testcases/reorganize', methods=['POST', 'OPTIONS'])
+def reorganize_testcases():
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'preflight_ok'}), 200
+    
+    try:
+        # 테스트 케이스 이름에 따라 적절한 기능 폴더로 이동
+        testcases = TestCase.query.all()
+        moved_count = 0
+        
+        for tc in testcases:
+            new_folder_id = None
+            
+            # CLM 관련 테스트 케이스들을 CLM 기능 폴더로 이동
+            if 'CLM' in tc.name:
+                if 'Draft' in tc.name:
+                    new_folder_id = 7  # CLM/Draft
+                elif 'Review' in tc.name:
+                    new_folder_id = 8  # CLM/Review
+                elif 'Sign' in tc.name:
+                    new_folder_id = 9  # CLM/Sign
+                elif 'Process' in tc.name:
+                    new_folder_id = 10  # CLM/Process
+                else:
+                    new_folder_id = 7  # 기본적으로 CLM/Draft
+            # Litigation 관련 테스트 케이스들을 Litigation 기능 폴더로 이동
+            elif 'Litigation' in tc.name:
+                if 'Draft' in tc.name:
+                    new_folder_id = 11  # Litigation/Draft
+                elif 'Schedule' in tc.name:
+                    new_folder_id = 12  # Litigation/Schedule
+                else:
+                    new_folder_id = 11  # 기본적으로 Litigation/Draft
+            # Dashboard 관련 테스트 케이스들을 Dashboard 기능 폴더로 이동
+            elif 'Dashboard' in tc.name:
+                new_folder_id = 13  # Dashboard/Setting
+            
+            if new_folder_id and tc.folder_id != new_folder_id:
+                tc.folder_id = new_folder_id
+                moved_count += 1
+        
+        if moved_count > 0:
+            db.session.commit()
+            return jsonify({
+                'status': 'success',
+                'message': f'{moved_count}개의 테스트 케이스가 기능 폴더로 이동되었습니다.'
+            }), 200
+        else:
+            return jsonify({
+                'status': 'info',
+                'message': '이동할 테스트 케이스가 없습니다.'
+            }), 200
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# 데이터베이스 연결 상태 확인 API
+@app.route('/health', methods=['GET'])
+def health_check():
+    try:
+        # 데이터베이스 연결 테스트
+        db.session.execute('SELECT 1')
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected',
+            'timestamp': datetime.utcnow().isoformat(),
+            'environment': os.environ.get('FLASK_ENV', 'production'),
+            'vercel_url': os.environ.get('VERCEL_URL', 'Not Vercel')
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'database': 'disconnected',
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat(),
+            'environment': os.environ.get('FLASK_ENV', 'production'),
+            'vercel_url': os.environ.get('VERCEL_URL', 'Not Vercel')
+        }), 500
 
 if __name__ == '__main__':
     with app.app_context():

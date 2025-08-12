@@ -3,9 +3,5 @@ Flask-SQLAlchemy==3.0.5
 Flask-CORS==4.0.0
 Flask-Migrate==4.0.5
 python-dotenv==1.0.0
-psycopg2-binary==2.9.10
-alembic==1.16.4
-pandas==2.1.4
-openpyxl==3.1.2
-bcrypt==4.1.2
+PyMySQL==1.1.0
 gunicorn==21.2.0 
