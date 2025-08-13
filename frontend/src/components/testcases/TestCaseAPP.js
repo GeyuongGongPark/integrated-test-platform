@@ -822,7 +822,7 @@ const TestCaseAPP = () => {
                   </button>
                 </div>
                 {expandedTestCases.has(testCase.id) && (
-                  <div className="testcase-details">
+                  <div className="testcase-details expanded">
                     <div className="testcase-info">
                       <p><strong>대분류:</strong> {testCase.main_category || '없음'}</p>
                       <p><strong>중분류:</strong> {testCase.sub_category || '없음'}</p>

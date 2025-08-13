@@ -82,13 +82,20 @@ class AutomationTest(db.Model):
 class TestResult(db.Model):
     __tablename__ = 'TestResults'
     id = db.Column(db.Integer, primary_key=True)
-    test_case_id = db.Column(db.Integer, db.ForeignKey('TestCases.id'), nullable=False)
+    test_case_id = db.Column(db.Integer, db.ForeignKey('TestCases.id'), nullable=True)  # nullable=True로 변경
+    automation_test_id = db.Column(db.Integer, db.ForeignKey('AutomationTests.id'), nullable=True)  # 자동화 테스트 ID 추가
+    performance_test_id = db.Column(db.Integer, db.ForeignKey('PerformanceTests.id'), nullable=True)  # 성능 테스트 ID 추가
     result = db.Column(db.String(20))  # Pass, Fail, Skip, Error
     execution_time = db.Column(db.Float)  # 초 단위
     environment = db.Column(db.String(50))
     executed_by = db.Column(db.String(100))
     executed_at = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
+    
+    # test_case_id, automation_test_id, performance_test_id 중 하나는 반드시 있어야 함
+    __table_args__ = (
+        db.CheckConstraint('test_case_id IS NOT NULL OR automation_test_id IS NOT NULL OR performance_test_id IS NOT NULL', name='check_test_reference'),
+    )
 
 # 대시보드 요약 모델
 class DashboardSummary(db.Model):
@@ -107,7 +114,9 @@ class TestExecution(db.Model):
     __tablename__ = 'TestExecutions'
     id = db.Column(db.Integer, primary_key=True)
     test_type = db.Column(db.String(50))  # performance, automation, manual
-    test_id = db.Column(db.Integer)  # 해당 테스트의 ID
+    test_case_id = db.Column(db.Integer, db.ForeignKey('TestCases.id'), nullable=True)
+    automation_test_id = db.Column(db.Integer, db.ForeignKey('AutomationTests.id'), nullable=True)
+    performance_test_id = db.Column(db.Integer, db.ForeignKey('PerformanceTests.id'), nullable=True)
     environment = db.Column(db.String(50))
     executed_by = db.Column(db.String(100))
     status = db.Column(db.String(20))  # running, completed, failed

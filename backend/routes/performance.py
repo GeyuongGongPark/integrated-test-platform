@@ -107,18 +107,19 @@ def execute_performance_test(id):
         performance_test_id=pt.id,
         test_type='performance',
         status=result.get('status', 'Error'),
-        result_data=json.dumps(result)
+        result_summary=json.dumps(result)
     )
     
     if result.get('status') == 'Pass':
-        # 성능 테스트 결과 저장
+        # 성능 테스트 결과 저장 - TestResult 모델의 실제 필드 사용
         perf_result = TestResult(
             performance_test_id=pt.id,
-            status=result.get('status'),
-            response_time_avg=result.get('response_time_avg'),
-            throughput=result.get('throughput'),
-            error_rate=result.get('error_rate', 0.0),
-            result_data=json.dumps(result)
+            result=result.get('status'),
+            execution_time=result.get('execution_time', 0.0),
+            environment=pt.environment,
+            executed_by='system',
+            executed_at=datetime.utcnow(),
+            notes=json.dumps(result)  # 성능 테스트 결과를 notes에 JSON으로 저장
         )
         db.session.add(perf_result)
     
@@ -138,13 +139,12 @@ def get_performance_test_results(id):
     data = [{
         'id': r.id,
         'performance_test_id': r.performance_test_id,
+        'result': r.result,
         'execution_time': r.execution_time,
-        'response_time_avg': r.response_time_avg,
-        'response_time_p95': r.response_time_p95,
-        'throughput': r.throughput,
-        'error_rate': r.error_rate,
-        'status': r.status,
-        'report_path': r.report_path
+        'environment': r.environment,
+        'executed_by': r.executed_by,
+        'executed_at': r.executed_at.strftime('%Y-%m-%d %H:%M:%S') if r.executed_at else None,
+        'notes': r.notes
     } for r in results]
     response = jsonify(data)
     return add_cors_headers(response), 200
@@ -155,12 +155,13 @@ def get_test_executions():
     data = [{
         'id': e.id,
         'test_case_id': e.test_case_id,
+        'automation_test_id': e.automation_test_id,
         'performance_test_id': e.performance_test_id,
         'test_type': e.test_type,
-        'execution_start': e.execution_start,
-        'execution_end': e.execution_end,
+        'started_at': e.started_at.strftime('%Y-%m-%d %H:%M:%S') if e.started_at else None,
+        'completed_at': e.completed_at.strftime('%Y-%m-%d %H:%M:%S') if e.completed_at else None,
         'status': e.status,
-        'result_data': json.loads(e.result_data) if e.result_data else None
+        'result_summary': json.loads(e.result_summary) if e.result_summary else None
     } for e in executions]
     response = jsonify(data)
     return add_cors_headers(response), 200
@@ -171,10 +172,11 @@ def create_test_execution():
     
     execution = TestExecution(
         test_case_id=data.get('test_case_id'),
+        automation_test_id=data.get('automation_test_id'),
         performance_test_id=data.get('performance_test_id'),
         test_type=data.get('test_type'),
         status=data.get('status', 'Running'),
-        result_data=json.dumps(data.get('result_data', {}))
+        result_summary=json.dumps(data.get('result_data', {}))
     )
     
     db.session.add(execution)

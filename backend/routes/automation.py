@@ -7,6 +7,7 @@ import os
 import glob
 from pathlib import Path
 from urllib.parse import unquote
+import json
 
 # Blueprint 생성
 automation_bp = Blueprint('automation', __name__)
@@ -28,8 +29,8 @@ def get_automation_tests():
             'script_path': test.script_path,
             'environment': test.environment,
             'parameters': test.parameters,
-            'created_at': test.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'updated_at': test.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': test.created_at.strftime('%Y-%m-%d %H:%M:%S') if test.created_at else None,
+            'updated_at': test.updated_at.strftime('%Y-%m-%d %H:%M:%S') if test.updated_at else None
         } for test in tests])
         return add_cors_headers(response), 200
     except Exception as e:
@@ -78,8 +79,8 @@ def get_automation_test(id):
             'script_path': test.script_path,
             'environment': test.environment,
             'parameters': test.parameters,
-            'created_at': test.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'updated_at': test.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': test.created_at.strftime('%Y-%m-%d %H:%M:%S') if test.created_at else None,
+            'updated_at': test.updated_at.strftime('%Y-%m-%d %H:%M:%S') if test.updated_at else None
         })
         return add_cors_headers(response), 200
     except Exception as e:
@@ -147,20 +148,19 @@ def execute_automation_test(id):
         execution_duration = (execution_end - execution_start).total_seconds()
         
         # 시뮬레이션된 결과 (실제로는 테스트 실행 결과)
-        status = 'Pass'  # 또는 'Fail', 'Error'
+        status = 'Pass'  # 또는 'Fail', 'Skip', 'Error'
         output = f"테스트 '{test.name}' 실행 완료"
         error_message = None
         
-        # 결과 저장
+        # TestResult 모델을 사용하여 결과 저장
         result = TestResult(
             automation_test_id=test.id,
-            status=status,
-            execution_start=execution_start,
-            execution_end=execution_end,
-            execution_duration=execution_duration,
-            output=output,
-            error_message=error_message,
-            environment=test.environment
+            result=status,
+            execution_time=execution_duration,
+            environment=test.environment,
+            executed_by='system',  # 또는 실제 사용자 ID
+            executed_at=execution_end,
+            notes=output
         )
         
         db.session.add(result)
@@ -182,22 +182,21 @@ def execute_automation_test(id):
 def get_automation_test_results(id):
     """자동화 테스트의 실행 결과 조회"""
     try:
-        results = TestResult.query.filter_by(automation_test_id=id).order_by(TestResult.execution_start.desc()).all()
+        # TestResult 모델에서 자동화 테스트 결과 조회
+        results = TestResult.query.filter_by(
+            automation_test_id=id
+        ).order_by(TestResult.executed_at.desc()).all()
         
         result_list = []
         for result in results:
             result_data = {
                 'id': result.id,
                 'automation_test_id': result.automation_test_id,
-                'status': result.status,
-                'execution_start': result.execution_start.isoformat() if result.execution_start else None,
-                'execution_end': result.execution_end.isoformat() if result.execution_end else None,
-                'execution_duration': result.execution_duration,
-                'output': result.output,
-                'error_message': result.error_message,
-                'screenshot_path': result.screenshot_path,
-                'result_data': result.result_data,
+                'result': result.result,
+                'execution_time': result.execution_time,
                 'environment': result.environment,
+                'executed_by': result.executed_by,
+                'executed_at': result.executed_at.isoformat() if result.executed_at else None,
                 'notes': result.notes
             }
             result_list.append(result_data)
@@ -212,23 +211,20 @@ def get_automation_test_results(id):
 def get_automation_test_result_detail(id, result_id):
     """특정 자동화 테스트 실행 결과 상세 조회"""
     try:
+        # TestResult 모델에서 특정 결과 조회
         result = TestResult.query.filter_by(
-            automation_test_id=id, 
+            automation_test_id=id,
             id=result_id
         ).first_or_404()
         
         result_data = {
             'id': result.id,
             'automation_test_id': result.automation_test_id,
-            'status': result.status,
-            'execution_start': result.execution_start.isoformat() if result.execution_start else None,
-            'execution_end': result.execution_end.isoformat() if result.execution_end else None,
-            'execution_duration': result.execution_duration,
-            'output': result.output,
-            'error_message': result.error_message,
-            'screenshot_path': result.screenshot_path,
-            'result_data': result.result_data,
+            'result': result.result,
+            'execution_time': result.execution_time,
             'environment': result.environment,
+            'executed_by': result.executed_by,
+            'executed_at': result.executed_at.isoformat() if result.executed_at else None,
             'notes': result.notes
         }
         
@@ -236,7 +232,7 @@ def get_automation_test_result_detail(id, result_id):
         return add_cors_headers(response), 200
     except Exception as e:
         response = jsonify({'error': str(e)})
-        return add_cors_headers(response), 500 
+        return add_cors_headers(response), 500
 
 @automation_bp.route('/screenshots', methods=['GET'])
 def get_screenshots():

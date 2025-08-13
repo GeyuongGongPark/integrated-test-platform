@@ -1,79 +1,78 @@
-# 📚 Documentation & Configuration
+# Integrated Test Platform
 
-이 폴더는 프로젝트의 문서와 설정 파일들을 포함합니다.
+## 프로젝트 개요
+통합 테스트 플랫폼으로, 성능 테스트, 자동화 테스트, 테스트 케이스 관리 등을 제공합니다.
 
-## 📁 파일 구조
+## 환경 변수 설정
 
-### 📋 문서
-- **README.md** - 이 파일
-- **API_TESTING_GUIDE.md** - API 테스트 가이드
-- **POSTMAN_USAGE_GUIDE.md** - Postman 사용법 상세 가이드
-- **PROJECT_STRUCTURE.md** - 프로젝트 구조 상세 설명
-- **DEPLOYMENT_SUMMARY.md** - 배포 상태 및 문제 해결 요약
+### Vercel 환경에서 필요한 환경 변수
 
-### 🛠️ 설정 파일
-- **postman_collection.json** - Postman API 컬렉션
-- **postman_environment.json** - Postman 환경 설정
-- **docker-compose.yml** - Docker 컨테이너 설정
-- **env.example** - 환경 변수 예시
+백엔드가 Vercel에서 정상 작동하려면 다음 환경 변수들을 설정해야 합니다:
 
-### 🗄️ 데이터베이스
-- **mysql-init/** - MySQL 초기화 스크립트
-  - `01-init.sql` - 데이터베이스 및 테이블 생성
-  - `02-external-access.sql` - 외부 접근 권한 설정
-
-## 🚀 빠른 시작
-
-### 1. Postman 설정
-1. `postman_collection.json`을 Postman에 Import
-2. `postman_environment.json`을 Postman에 Import
-3. 환경을 "Integrated Test Platform Environment"로 설정
-
-### 2. Docker 실행
 ```bash
-# MySQL 데이터베이스 실행
-docker-compose up -d mysql
+# Flask 설정
+SECRET_KEY=your-secret-key-here
+FLASK_ENV=production
 
-# 상태 확인
-docker-compose ps
+# 데이터베이스 설정 (Vercel 환경)
+DATABASE_URL=mysql+pymysql://username:password@host:port/database_name?ssl_mode=VERIFY_IDENTITY
+
+# CORS 설정 (Vercel 환경)
+CORS_ORIGINS=https://frontend-alpha-ten-pi.vercel.app,https://frontend-alpha-jade-15.vercel.app
+
+# Vercel 환경 변수 (자동 설정됨)
+VERCEL=1
+VERCEL_URL=https://your-backend.vercel.app
 ```
 
-### 3. 환경 변수 설정
-```bash
-# .env 파일 생성
-cp env.example .env
+### 로컬 개발 환경
+로컬에서는 기본 설정을 사용하며, 별도 환경 변수 설정이 필요하지 않습니다.
 
-# 필요한 값으로 수정
-DATABASE_URL=mysql+pymysql://root:password@localhost:3306/test_management
-SECRET_KEY=your-secret-key
-FLASK_ENV=development
+## CORS 문제 해결
+
+### 문제 상황
+프론트엔드에서 백엔드 API 호출 시 CORS 정책 위반 오류가 발생하는 경우:
+
+```
+Access to XMLHttpRequest at 'https://backend-alpha-liard.vercel.app/health' 
+from origin 'https://frontend-alpha-ten-pi.vercel.app' has been blocked by CORS policy
 ```
 
-## 📖 문서 가이드
+### 해결 방법
 
-### API 테스트
-- **Postman Collection**: 모든 API 엔드포인트를 포함한 테스트 컬렉션
-- **API 가이드**: 각 API의 사용법과 예시
-- **테스트 시나리오**: 일반적인 테스트 워크플로우
+1. **환경 변수 확인**: Vercel 대시보드에서 `DATABASE_URL`과 `CORS_ORIGINS` 설정
+2. **백엔드 재배포**: 환경 변수 변경 후 백엔드 재배포
+3. **CORS 설정 확인**: `utils/cors.py`의 `setup_cors` 함수가 Vercel 환경에서만 실행되는지 확인
 
-### 배포 및 운영
-- **배포 요약**: 현재 배포 상태와 해결된 문제들
-- **프로젝트 구조**: 전체 시스템 아키텍처 설명
-- **Docker 설정**: 로컬 개발 환경 구성
+## 배포 가이드
 
-## 🔧 유지보수
+### 백엔드 배포 (Vercel)
+1. 환경 변수 설정
+2. `vercel.json` 설정 확인
+3. Git push로 자동 배포
 
-### 문서 업데이트
-- API 변경 시 관련 문서 동시 업데이트
-- 새로운 기능 추가 시 사용법 문서 작성
-- 문제 해결 후 DEPLOYMENT_SUMMARY.md 업데이트
+### 프론트엔드 배포 (Vercel)
+1. `config.js`에서 API URL 확인
+2. Git push로 자동 배포
 
-### 설정 파일 관리
-- 환경별 설정 파일 분리 (dev, staging, prod)
-- 민감한 정보는 .env 파일에 저장
-- Git에 커밋하지 않을 파일은 .gitignore에 추가
+## 개발 환경 실행
 
----
+### 백엔드 (로컬)
+```bash
+cd backend
+python app.py
+```
 
-**마지막 업데이트**: 2025년 8월 13일  
-**문서 버전**: 2.0.1 
+### 프론트엔드 (로컬)
+```bash
+cd frontend
+npm start
+```
+
+## 문제 해결
+
+### 데이터를 불러올 수 없는 경우
+1. 백엔드 헬스체크: `/health` 엔드포인트 접근 확인
+2. CORS 설정: 브라우저 개발자 도구에서 CORS 오류 확인
+3. 환경 변수: Vercel 환경 변수 설정 확인
+4. 로그 확인: Vercel 함수 로그에서 오류 메시지 확인 

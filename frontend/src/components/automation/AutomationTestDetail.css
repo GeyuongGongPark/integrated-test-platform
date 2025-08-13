@@ -5,6 +5,10 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   margin: 20px;
   overflow: hidden;
+  /* 세로 스크롤 추가 */
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .detail-header {
@@ -14,6 +18,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  /* 헤더는 고정 */
+  flex-shrink: 0;
 }
 
 .detail-header h2 {
@@ -44,6 +50,31 @@
 
 .detail-content {
   padding: 20px;
+  /* 내용 영역에 스크롤 추가 */
+  overflow-y: auto;
+  flex: 1;
+  /* 스크롤바 스타일링 */
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+/* 웹킷 브라우저용 스크롤바 스타일링 */
+.detail-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.detail-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.detail-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.detail-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 .detail-section {
@@ -129,6 +160,10 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
+  /* 결과 영역도 스크롤 가능하도록 */
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 10px;
 }
 
 .result-item {
@@ -242,6 +277,8 @@
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+  /* 액션 버튼은 하단에 고정 */
+  flex-shrink: 0;
 }
 
 .btn {
@@ -466,6 +503,8 @@
 @media (max-width: 768px) {
   .automation-test-detail {
     margin: 10px;
+    /* 모바일에서는 전체 높이 사용 */
+    max-height: 95vh;
   }
   
   .detail-header {
@@ -474,6 +513,8 @@
   
   .detail-content {
     padding: 15px;
+    /* 모바일에서도 스크롤 유지 */
+    overflow-y: auto;
   }
   
   .info-grid {
@@ -507,9 +548,19 @@
   .modal-screenshot {
     max-height: 60vh;
   }
+  
+  /* 모바일에서 결과 영역 높이 조정 */
+  .automation-results-container {
+    max-height: 300px;
+  }
 }
 
 @media (max-width: 480px) {
+  .automation-test-detail {
+    /* 작은 화면에서는 거의 전체 높이 사용 */
+    max-height: 98vh;
+  }
+  
   .screenshot-grid {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 8px;
@@ -529,5 +580,10 @@
   
   .screenshot-date {
     font-size: 10px;
+  }
+  
+  /* 작은 화면에서 결과 영역 높이 조정 */
+  .automation-results-container {
+    max-height: 250px;
   }
 } 

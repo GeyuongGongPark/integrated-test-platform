@@ -161,21 +161,21 @@ const AutomationTestManager = () => {
               </div>
               <div className="automation-actions">
                 <button 
-                  className="btn btn-automation"
+                  className="btn btn-automation btn-icon"
                   onClick={() => handleExecuteTest(test.id)}
                   title="자동화 실행"
                 >
                   🤖
                 </button>
                 <button 
-                  className="btn btn-details"
+                  className="btn btn-details btn-icon"
                   onClick={() => handleViewDetail(test)}
                   title="상세보기"
                 >
                   📄
                 </button>
                 <button 
-                  className="btn btn-edit-icon"
+                  className="btn btn-edit-icon btn-icon"
                   onClick={() => {
                     setEditingTest(test);
                     setShowEditModal(true);
@@ -185,7 +185,7 @@ const AutomationTestManager = () => {
                   ✏️
                 </button>
                 <button 
-                  className="btn btn-delete-icon"
+                  className="btn btn-delete-icon btn-icon"
                   onClick={() => handleDeleteTest(test.id)}
                   title="삭제"
                 >

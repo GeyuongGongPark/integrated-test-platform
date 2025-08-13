@@ -1,0 +1,473 @@
+/* 성능 테스트 매니저 스타일 */
+.performance-test-manager {
+  padding: 20px;
+}
+
+.performance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.performance-header h2 {
+  color: #333;
+  margin: 0;
+  font-size: 1.8em;
+}
+
+/* 통일된 버튼 스타일 */
+.btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  margin-right: 8px;
+  min-width: 40px;
+  height: 40px;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 아이콘 버튼 최적화 */
+.btn-icon {
+  min-width: 40px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  font-size: 16px;
+}
+
+/* 버튼 타입별 스타일 */
+.btn-add {
+  background: #007bff;
+  color: white;
+  min-width: auto;
+  width: auto;
+  padding: 8px 16px;
+}
+
+.btn-add:hover {
+  background: #0056b3;
+}
+
+.btn-automation {
+  background: #ffc107;
+  color: #333;
+}
+
+.btn-automation:hover:not(:disabled) {
+  background: #e0a800;
+}
+
+.btn-details {
+  background: #17a2b8;
+  color: white;
+}
+
+.btn-details:hover {
+  background: #138496;
+}
+
+.btn-delete-icon {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-delete-icon:hover:not(:disabled) {
+  background: #c82333;
+}
+
+/* 폼 스타일 */
+.add-test-form {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  border: 1px solid #e9ecef;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+  outline: 0;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+/* 테스트 목록 스타일 */
+.test-list {
+  display: grid;
+  gap: 20px;
+}
+
+.test-item {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.test-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #007bff;
+}
+
+.test-item.selected {
+  border-color: #007bff;
+  background: #f8f9ff;
+}
+
+.test-info {
+  margin-bottom: 15px;
+}
+
+.test-name {
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.test-description {
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.test-meta {
+  display: flex;
+  gap: 20px;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.test-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* 테스트 상세보기 스타일 */
+.test-details {
+  margin-top: 15px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+  transform: scaleY(0);
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.test-details.expanded {
+  transform: scaleY(1);
+  opacity: 1;
+  max-height: none;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.test-details .test-info {
+  margin-bottom: 20px;
+}
+
+.test-details .test-info p {
+  margin: 8px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.test-details .test-info strong {
+  color: #495057;
+  font-weight: 600;
+  min-width: 100px;
+  display: inline-block;
+}
+
+.test-results h5 {
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+/* 결과 테이블 스타일 */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.results-table th,
+.results-table td {
+  border: 1px solid #dee2e6;
+  padding: 12px;
+  text-align: left;
+}
+
+.results-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.results-table tr:hover {
+  background: #f8f9fa;
+}
+
+/* 상태별 배지 스타일 */
+.status-pass {
+  background: #d4edda;
+  color: #155724;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.status-fail {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.status-error {
+  background: #e2e3e5;
+  color: #6c757d;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+/* 결과 비고 스타일 */
+.result-notes {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* details/summary 스타일 */
+details {
+  margin: 5px 0;
+}
+
+summary {
+  cursor: pointer;
+  color: #007bff;
+  font-weight: 500;
+  user-select: none;
+}
+
+summary:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+/* 선택된 테스트 아이템 스타일 */
+.test-item.selected {
+  border-color: #007bff;
+  background: #f8f9ff;
+}
+
+.test-item.selected .test-details {
+  border-top-color: #007bff;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .performance-test-manager {
+    padding: 15px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .test-actions {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+    margin-right: 0;
+    margin-bottom: 8px;
+  }
+  
+  .test-meta {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+/* 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 90%;
+  max-height: 90%;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.fullscreen-modal {
+  padding: 20px;
+}
+
+.fullscreen-modal-content {
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.modal-close:hover {
+  background: #f8f9fa;
+  color: #333;
+}
+
+.modal-body {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-actions {
+  padding: 20px;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn-save {
+  background: #28a745;
+  color: white;
+}
+
+.btn-save:hover {
+  background: #218838;
+}
+
+.btn-cancel {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: #545b62;
+}
