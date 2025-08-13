@@ -395,8 +395,8 @@ const UnifiedDashboard = ({ setActiveTab }) => {
             {testCases.slice(0, 5).map(testCase => (
               <div key={testCase.id} className="test-item">
                 <span className="test-name">{testCase.description}</span>
-                <span className={`test-status ${testCase.result_status.toLowerCase().replace('/', '-')}`}>
-                  {testCase.result_status}
+                <span className={`test-status ${(testCase.result_status || 'N/A').toLowerCase().replace('/', '-')}`}>
+                  {testCase.result_status || 'N/A'}
                 </span>
               </div>
             ))}
@@ -437,8 +437,8 @@ const UnifiedDashboard = ({ setActiveTab }) => {
             {testExecutions.slice(0, 5).map(execution => (
               <div key={execution.id} className="test-item">
                 <span className="test-name">Test #{execution.id}</span>
-                <span className={`test-status ${execution.status.toLowerCase().replace('/', '-')}`}>
-                  {execution.status}
+                <span className={`test-status ${(execution.status || 'N/A').toLowerCase().replace('/', '-')}`}>
+                  {execution.status || 'N/A'}
                 </span>
               </div>
             ))}

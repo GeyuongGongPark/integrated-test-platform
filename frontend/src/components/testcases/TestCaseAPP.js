@@ -12,7 +12,7 @@ const TestCaseScreenshots = ({ testCaseId }) => {
   const fetchScreenshots = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/testcases/${testCaseId}/screenshots`);
+      const response = await axios.get(`${config.apiUrl}/testcases/${testCaseId}/screenshots`);
       setScreenshots(response.data);
     } catch (err) {
       console.error('스크린샷 조회 오류:', err);
@@ -63,7 +63,7 @@ const TestCaseExecutionResults = ({ testCaseId }) => {
   const fetchResults = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/testresults/${testCaseId}`);
+      const response = await axios.get(`${config.apiUrl}/testresults/${testCaseId}`);
       setResults(response.data);
     } catch (err) {
       console.error('실행 결과 조회 오류:', err);
@@ -89,10 +89,10 @@ const TestCaseExecutionResults = ({ testCaseId }) => {
   return (
     <div className="execution-results-container">
       {results.map((result, index) => (
-        <div key={result.id} className={`result-item ${result.result.toLowerCase()}`}>
+        <div key={result.id} className={`result-item ${(result.result || 'N/A').toLowerCase()}`}>
           <div className="result-header">
-            <span className={`result-status ${result.result.toLowerCase()}`}>
-              {result.result}
+            <span className={`result-status ${(result.result || 'N/A').toLowerCase()}`}>
+              {result.result || 'N/A'}
             </span>
             <span className="result-timestamp">
               {new Date(result.executed_at).toLocaleString()}
@@ -167,19 +167,34 @@ const TestCaseAPP = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      
+      console.log('=== fetchData 디버깅 ===');
+      console.log('config.apiUrl:', config.apiUrl);
+      console.log('요청할 URL들:');
+      console.log('- testcases:', `${config.apiUrl}/testcases`);
+      console.log('- folders/tree:', `${config.apiUrl}/folders/tree`);
+      console.log('- folders:', `${config.apiUrl}/folders`);
+      
       const [testCasesRes, treeRes, foldersRes] = await Promise.all([
-        axios.get('/testcases'),
-        axios.get('/folders/tree'),
-        axios.get('/folders')
+        axios.get(`${config.apiUrl}/testcases`),
+        axios.get(`${config.apiUrl}/folders/tree`),
+        axios.get(`${config.apiUrl}/folders`)
       ]);
 
+      console.log('=== API 응답 디버깅 ===');
+      console.log('testCases 응답:', testCasesRes);
       console.log('받아온 테스트 케이스 데이터:', testCasesRes.data);
+      console.log('테스트 케이스 개수:', testCasesRes.data?.length);
+      console.log('tree 응답:', treeRes);
+      console.log('folders 응답:', foldersRes);
+      
       setTestCases(testCasesRes.data);
       setFolderTree(treeRes.data);
       setAllFolders(foldersRes.data);
     } catch (err) {
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
       console.error('Test case data fetch error:', err);
+      console.error('에러 상세:', err.response);
     } finally {
       setLoading(false);
     }
@@ -218,7 +233,7 @@ const TestCaseAPP = () => {
 
     try {
       console.log('업로드 요청 시작...');
-      const response = await axios.post('/testcases/upload', formData, {
+      const response = await axios.post(`${config.apiUrl}/testcases/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -247,7 +262,7 @@ const TestCaseAPP = () => {
 
     try {
       console.log('전송할 테스트 케이스 데이터:', newTestCase);
-      await axios.post('/testcases', newTestCase);
+      await axios.post(`${config.apiUrl}/testcases`, newTestCase);
       alert('테스트 케이스가 성공적으로 추가되었습니다.');
       setShowAddModal(false);
       setNewTestCase({
@@ -275,7 +290,7 @@ const TestCaseAPP = () => {
     }
 
     try {
-      await axios.put(`/testcases/${editingTestCase.id}`, editingTestCase);
+      await axios.put(`${config.apiUrl}/testcases/${editingTestCase.id}`, editingTestCase);
       alert('테스트 케이스가 성공적으로 수정되었습니다.');
       setShowEditModal(false);
       setEditingTestCase(null);
@@ -291,7 +306,7 @@ const TestCaseAPP = () => {
     }
 
     try {
-      await axios.delete(`/testcases/${testCaseId}`);
+      await axios.delete(`${config.apiUrl}/testcases/${testCaseId}`);
       alert('테스트 케이스가 성공적으로 삭제되었습니다.');
       fetchData(); // 데이터 새로고침
     } catch (err) {
@@ -311,7 +326,7 @@ const TestCaseAPP = () => {
 
   const handleDownload = async () => {
     try {
-      const response = await axios.get('/testcases/download', {
+      const response = await axios.get(`${config.apiUrl}/testcases/download`, {
         responseType: 'blob',
       });
 
@@ -508,6 +523,15 @@ const TestCaseAPP = () => {
     return folderIds;
   };
 
+  // 폴더 타입을 판단하는 함수 (백엔드에서 제공하는 type 사용)
+  const getFolderType = (folderId) => {
+    const folder = findFolderInTree(folderTree, folderId);
+    if (!folder) return 'unknown';
+    
+    // 백엔드에서 제공하는 type 필드 사용
+    return folder.type || 'unknown';
+  };
+
   const renderFolderTree = (nodes, level = 0) => {
     return nodes.map(node => {
       const hasChildren = node.children && node.children.length > 0;
@@ -522,7 +546,14 @@ const TestCaseAPP = () => {
             className={`folder-item ${selectedFolder === node.id && isFolder ? 'selected' : ''} ${isFolder ? 'clickable' : ''}`}
             onClick={() => {
               if (isFolder) {
-                console.log(`클릭된 폴더: ID=${node.id}, Name=${node.name}, Type=${node.type}`);
+                const folderType = getFolderType(node.id);
+                console.log(`클릭된 폴더: ID=${node.id}, Name=${node.name}, Type=${folderType}`);
+                console.log('폴더 타입 상세:', {
+                  id: node.id,
+                  name: node.name,
+                  parent_id: node.parent_id,
+                  calculated_type: folderType
+                });
                 handleFolderSelect(node.id);
               }
             }}
@@ -539,21 +570,21 @@ const TestCaseAPP = () => {
               </span>
             )}
             <span className="folder-icon">
-              {node.type === 'environment' ? '🌍' : 
-               node.type === 'deployment_date' ? '📅' : 
-               node.type === 'feature' ? '🔧' : '📄'}
+              {getFolderType(node.id) === 'environment' ? '🌍' : 
+               getFolderType(node.id) === 'deployment_date' ? '📅' : 
+               getFolderType(node.id) === 'feature' ? '🔧' : '📄'}
             </span>
             <span className="folder-name">{node.name}</span>
-            {node.type === 'test_case' && (
-              <span className={`test-status ${node.status.toLowerCase().replace('/', '-')}`}>
-                {node.status}
+            {getFolderType(node.id) === 'test_case' && (
+              <span className={`test-status ${(node.status || 'N/A').toLowerCase().replace('/', '-')}`}>
+                {node.status || 'N/A'}
               </span>
             )}
             {isFolder && (
               <span className="folder-type-badge">
-                {node.type === 'environment' ? '환경' : 
-                 node.type === 'deployment_date' ? '배포일자' : 
-                 node.type === 'feature' ? '기능명' : ''}
+                {getFolderType(node.id) === 'environment' ? '환경' : 
+                 getFolderType(node.id) === 'deployment_date' ? '배포일자' : 
+                 getFolderType(node.id) === 'feature' ? '기능명' : ''}
               </span>
             )}
           </div>
@@ -574,37 +605,40 @@ const TestCaseAPP = () => {
         
         // 선택된 폴더 정보 찾기
         const selectedFolderInfo = findFolderInTree(folderTree, selectedFolderId);
+        const selectedFolderType = getFolderType(selectedFolderId);
         
         console.log('=== 필터링 디버깅 ===');
-        console.log('테스트 케이스:', tc.expected_result || tc.main_category);
+        console.log('테스트 케이스:', tc.name || tc.description);
         console.log('tc.folder_id:', tc.folder_id, '->', tcFolderId);
         console.log('selectedFolder:', selectedFolder, '->', selectedFolderId);
         console.log('selectedFolderInfo:', selectedFolderInfo);
+        console.log('selectedFolderType:', selectedFolderType);
         console.log('전체 testCases:', testCases.length);
-        console.log('전체 folderTree:', folderTree);
         
-        if (selectedFolderInfo?.type === 'environment') {
+        if (selectedFolderType === 'environment') {
           // 환경 폴더 선택 시: 해당 환경의 모든 하위 폴더의 테스트 케이스들
           const environmentFolderIds = getEnvironmentFolderIds(folderTree, selectedFolderId);
           console.log(`환경 필터링: ${selectedFolderInfo.name}, 폴더 IDs:`, environmentFolderIds);
-          console.log(`테스트 케이스 folder_id: ${tcFolderId}, 포함 여부:`, environmentFolderIds.includes(tcFolderId));
           const result = environmentFolderIds.includes(tcFolderId);
           console.log('필터링 결과:', result);
           return result;
-        } else if (selectedFolderInfo?.type === 'deployment_date') {
-          // 배포일자 폴더 선택 시: 해당 배포일자의 모든 하위 폴더의 테스트 케이스들
+        } else if (selectedFolderType === 'deployment_date') {
+          // 날짜 폴더 선택 시: 해당 날짜의 모든 하위 폴더의 테스트 케이스들
           const deploymentFolderIds = getDeploymentFolderIds(folderTree, selectedFolderId);
-          console.log(`배포일자 필터링: ${selectedFolderInfo.name}, 폴더 IDs:`, deploymentFolderIds);
-          console.log(`테스트 케이스 folder_id: ${tcFolderId}, 포함 여부:`, deploymentFolderIds.includes(tcFolderId));
+          console.log(`날짜 필터링: ${selectedFolderInfo.name}, 폴더 IDs:`, deploymentFolderIds);
           const result = deploymentFolderIds.includes(tcFolderId);
           console.log('필터링 결과:', result);
           return result;
-        } else {
-          // 기능명 폴더 선택 시: 해당 폴더의 테스트 케이스들만
-          console.log(`폴더 필터링: tc.folder_id ${tcFolderId} === selectedFolder ${selectedFolderId}`);
+        } else if (selectedFolderType === 'feature') {
+          // 기능 폴더 선택 시: 해당 폴더의 테스트 케이스들만
+          console.log(`기능 폴더 필터링: tc.folder_id ${tcFolderId} === selectedFolder ${selectedFolderId}`);
           const result = tcFolderId === selectedFolderId;
           console.log('필터링 결과:', result);
           return result;
+        } else {
+          // 알 수 없는 폴더 타입: 전체 테스트 케이스 표시
+          console.log('알 수 없는 폴더 타입, 전체 테스트 케이스 표시');
+          return true;
         }
       })
     : testCases;
@@ -736,8 +770,8 @@ const TestCaseAPP = () => {
                     </div>
                   </div>
                   <div className="status-section">
-                    <span className={`status-badge ${testCase.result_status.toLowerCase().replace('/', '-')}`}>
-                      {testCase.result_status}
+                    <span className={`status-badge ${(testCase.result_status || 'N/A').toLowerCase().replace('/', '-')}`}>
+                      {testCase.result_status || 'N/A'}
                     </span>
                     <select
                       className="status-select"
@@ -790,11 +824,11 @@ const TestCaseAPP = () => {
                 {expandedTestCases.has(testCase.id) && (
                   <div className="testcase-details">
                     <div className="testcase-info">
-                      <p><strong>대분류:</strong> {testCase.main_category}</p>
-                      <p><strong>중분류:</strong> {testCase.sub_category}</p>
-                      <p><strong>소분류:</strong> {testCase.detail_category}</p>
-                      <p><strong>사전조건:</strong> {testCase.pre_condition}</p>
-                      <p><strong>기대결과:</strong> {testCase.expected_result}</p>
+                      <p><strong>대분류:</strong> {testCase.main_category || '없음'}</p>
+                      <p><strong>중분류:</strong> {testCase.sub_category || '없음'}</p>
+                      <p><strong>소분류:</strong> {testCase.detail_category || '없음'}</p>
+                      <p><strong>사전조건:</strong> {testCase.pre_condition || '없음'}</p>
+                      <p><strong>기대결과:</strong> {testCase.expected_result || '없음'}</p>
                       <p><strong>비고:</strong> {testCase.remark || '없음'}</p>
                       {testCase.automation_code_path && (
                         <p><strong>자동화 코드:</strong> {testCase.automation_code_path}</p>
