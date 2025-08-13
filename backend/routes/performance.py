@@ -18,7 +18,7 @@ def get_performance_tests():
         'id': pt.id,
         'name': pt.name,
         'description': pt.description,
-        'k6_script_path': pt.k6_script_path,
+        'script_path': pt.script_path,
         'environment': pt.environment,
         'parameters': pt.parameters,
         'created_at': pt.created_at,
@@ -34,7 +34,7 @@ def create_performance_test():
     pt = PerformanceTest(
         name=data.get('name'),
         description=data.get('description'),
-        k6_script_path=data.get('k6_script_path'),
+        script_path=data.get('script_path'),
         environment=data.get('environment', 'prod'),
         parameters=json.dumps(data.get('parameters', {}))
     )
@@ -56,7 +56,7 @@ def get_performance_test(id):
         'id': pt.id,
         'name': pt.name,
         'description': pt.description,
-        'k6_script_path': pt.k6_script_path,
+        'script_path': pt.script_path,
         'environment': pt.environment,
         'parameters': json.loads(pt.parameters) if pt.parameters else {},
         'created_at': pt.created_at,
@@ -72,7 +72,7 @@ def update_performance_test(id):
     
     pt.name = data.get('name', pt.name)
     pt.description = data.get('description', pt.description)
-    pt.k6_script_path = data.get('k6_script_path', pt.k6_script_path)
+    pt.script_path = data.get('script_path', pt.script_path)
     pt.environment = data.get('environment', pt.environment)
     pt.parameters = json.dumps(data.get('parameters', {}))
     
@@ -100,7 +100,7 @@ def execute_performance_test(id):
         env_vars.update(base_params)
     
     # k6 테스트 실행
-    result = k6_engine.execute_test(pt.k6_script_path, env_vars)
+    result = k6_engine.execute_test(pt.script_path, env_vars)
     
     # 실행 결과 저장
     execution = TestExecution(
