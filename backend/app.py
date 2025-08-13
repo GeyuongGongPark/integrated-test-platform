@@ -8,6 +8,7 @@ from sqlalchemy import text
 from models import db, Project, DashboardSummary, User, Folder, TestCase, PerformanceTest, AutomationTest, TestResult
 from routes.testcases_extended import testcases_extended_bp
 from routes.dashboard_extended import dashboard_extended_bp
+from utils.cors import setup_cors
 
 # .env 파일 로드 (절대 경로 사용)
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
@@ -19,11 +20,15 @@ app = Flask(__name__)
 # 기본 설정
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'fallback-secret-key'
 
+# 환경 확인
+is_vercel = 'vercel.app' in os.environ.get('VERCEL_URL', '') or os.environ.get('VERCEL') == '1'
+is_local = not is_vercel
+
 # 데이터베이스 URL 설정 (환경 변수 우선, 없으면 기본값)
 database_url = os.environ.get('DATABASE_URL')
 
 # Vercel 환경에서는 SSL 모드가 필요할 수 있음
-if database_url and 'vercel.app' in os.environ.get('VERCEL_URL', ''):
+if database_url and is_vercel:
     if database_url.startswith('mysql://'):
         database_url = database_url.replace('mysql://', 'mysql+pymysql://')
     if '?' not in database_url:
@@ -31,7 +36,7 @@ if database_url and 'vercel.app' in os.environ.get('VERCEL_URL', ''):
 
 if not database_url:
     # Vercel 환경에서는 SQLite 사용, 로컬에서는 MySQL 사용
-    if 'vercel.app' in os.environ.get('VERCEL_URL', ''):
+    if is_vercel:
         # Vercel에서는 임시로 SQLite 사용 (읽기 전용)
         database_url = 'sqlite:///:memory:'
         print("🚀 Vercel 환경에서 SQLite 사용")
@@ -55,20 +60,20 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 # 환경 변수 로깅 (디버깅용)
 print(f"🔗 Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
 print(f"🔑 Secret Key: {app.config['SECRET_KEY']}")
-print(f"🌍 Environment: {os.environ.get('FLASK_ENV', 'production')}")
+print(f"🌍 Environment: {'production' if is_vercel else 'development'}")
 print(f"🚀 Vercel URL: {os.environ.get('VERCEL_URL', 'Not Vercel')}")
 print(f"📁 .env 파일 경로: {env_path}")
 print(f"📁 .env 파일 존재: {os.path.exists(env_path)}")
 
-# CORS 헬퍼 함수
-def add_cors_headers(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
-
-# CORS 설정 - 모든 origin 허용, credentials 지원
-CORS(app, origins="*", supports_credentials=True, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"])
+# CORS 설정 - 환경별로 다르게 적용
+if is_vercel:
+    # Vercel 환경: utils/cors.py의 setup_cors 함수 사용
+    print("🌐 Vercel 환경에서 고급 CORS 설정 적용")
+    setup_cors(app)
+else:
+    # 로컬 환경: 기본 CORS 설정만 사용
+    print("🌐 로컬 환경에서 기본 CORS 설정 적용")
+    CORS(app, origins="*", supports_credentials=False, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"])
 
 # 데이터베이스 초기화
 db.init_app(app)
@@ -94,7 +99,7 @@ def health_check():
             'message': 'Test Platform Backend is running',
             'version': '2.0.1',
             'timestamp': datetime.now().isoformat(),
-            'environment': 'production' if os.environ.get('VERCEL') else 'development',
+            'environment': 'production' if is_vercel else 'development',
             'database': {
                 'status': 'connected',
                 'url_set': 'Yes' if os.environ.get('DATABASE_URL') else 'No'
@@ -106,7 +111,7 @@ def health_check():
             'status': 'unhealthy',
             'message': f'Health check failed: {str(e)}',
             'timestamp': datetime.now().isoformat(),
-            'environment': 'production' if os.environ.get('VERCEL') else 'development',
+            'environment': 'production' if is_vercel else 'development',
             'database': {
                 'status': 'disconnected',
                 'error': str(e)
