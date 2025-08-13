@@ -133,10 +133,10 @@ const AutomationTestResults = ({ testId }) => {
   return (
     <div className="automation-results-container">
       {results.map((result, index) => (
-        <div key={result.id} className={`result-item ${result.status.toLowerCase()}`}>
+        <div key={result.id} className={`result-item ${(result.status || 'N/A').toLowerCase()}`}>
           <div className="result-header">
-            <span className={`result-status ${result.status.toLowerCase()}`}>
-              {result.status}
+            <span className={`result-status ${(result.status || 'N/A').toLowerCase()}`}>
+              {result.status || 'N/A'}
             </span>
             <span className="result-timestamp">
               {new Date(result.execution_start).toLocaleString()}

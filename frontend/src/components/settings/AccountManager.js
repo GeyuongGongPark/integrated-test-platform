@@ -267,8 +267,8 @@ const AccountManager = () => {
             </div>
             <div className="info-item">
               <label>역할:</label>
-              <span className={`role-badge ${currentUser?.role?.toLowerCase()}`}>
-                {currentUser?.role}
+              <span className={`role-badge ${(currentUser?.role || 'User').toLowerCase()}`}>
+                {currentUser?.role || 'User'}
               </span>
             </div>
             <div className="info-item">
@@ -302,8 +302,8 @@ const AccountManager = () => {
                   <div className="user-info">
                     <div className="user-name">{user.username}</div>
                     <div className="user-email">{user.email}</div>
-                    <span className={`role-badge ${user.role.toLowerCase()}`}>
-                      {user.role}
+                    <span className={`role-badge ${(user.role || 'User').toLowerCase()}`}>
+                      {user.role || 'User'}
                     </span>
                     <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
                       {user.is_active ? '활성' : '비활성'}

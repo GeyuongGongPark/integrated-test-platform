@@ -117,7 +117,7 @@ const FolderManager = () => {
             {node.type === 'environment' ? '🌍' : 
              node.type === 'deployment_date' ? '📅' : '📄'}
           </span>
-          <span className="folder-name">{node.name}</span>
+          <span className="folder-name">{node.folder_name}</span>
           <div className="folder-actions">
                          {node.type !== 'test_case' && (
                <>
@@ -126,7 +126,7 @@ const FolderManager = () => {
                    onClick={() => {
                      setEditingFolder(node);
                      setEditFormData({
-                       folder_name: node.name,
+                       folder_name: node.folder_name,
                        parent_folder_id: node.parent_folder_id || null,
                        folder_type: node.type,
                        environment: node.environment || 'dev',

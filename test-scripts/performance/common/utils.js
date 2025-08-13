@@ -1,10 +1,19 @@
-export function getFormattedTimestamp() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  }
+// Common utility functions for performance testing
+const utils = {
+    // Generate random data
+    generateRandomString: (length = 10) => {
+        return Math.random().toString(36).substring(2, length + 2);
+    },
+    
+    // Wait for specified time
+    wait: (ms) => {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    },
+    
+    // Format timestamp
+    formatTimestamp: (timestamp) => {
+        return new Date(timestamp).toISOString();
+    }
+};
+
+module.exports = utils; 

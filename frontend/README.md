@@ -1,70 +1,147 @@
-# Getting Started with Create React App
+# Integrated Test Platform - Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React 기반의 통합 테스트 플랫폼 프론트엔드 애플리케이션입니다.
 
-## Available Scripts
+## 🚀 주요 기능
 
-In the project directory, you can run:
+- **대시보드**: 통합된 테스트 결과 및 통계
+- **성능 테스트**: K6 기반 성능 테스트 관리
+- **자동화 테스트**: Playwright 기반 자동화 테스트
+- **테스트 케이스**: 체계적인 테스트 케이스 관리
+- **사용자 관리**: 프로젝트별 사용자 권한 관리
 
-### `npm start`
+## 🏗️ 프로젝트 구조
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```
+src/
+├── components/              # React 컴포넌트
+│   ├── dashboard/          # 대시보드 관련 컴포넌트
+│   ├── performance/        # 성능 테스트 컴포넌트
+│   ├── automation/         # 자동화 테스트 컴포넌트
+│   ├── testcases/          # 테스트 케이스 컴포넌트
+│   ├── settings/           # 설정 관련 컴포넌트
+│   └── utils/              # 유틸리티 컴포넌트
+├── App.js                  # 메인 애플리케이션 컴포넌트
+├── App.css                 # 메인 스타일
+├── index.js                # 애플리케이션 진입점
+└── config.js               # 설정 파일
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🛠️ 기술 스택
 
-### `npm test`
+- **React 18**: 사용자 인터페이스
+- **CSS3**: 스타일링
+- **Chart.js**: 데이터 시각화
+- **Material-UI**: UI 컴포넌트 (계획)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 📦 설치 및 실행
 
-### `npm run build`
+### 1. 의존성 설치
+```bash
+npm install
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 2. 개발 서버 실행
+```bash
+npm start
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 3. 프로덕션 빌드
+```bash
+npm run build
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 4. 테스트 실행
+```bash
+npm test
+```
 
-### `npm run eject`
+## 🔧 환경 설정
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+프론트엔드 설정은 `src/config.js`에서 관리됩니다:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```javascript
+const config = {
+  apiBaseUrl: process.env.REACT_APP_API_URL || 'http://localhost:5000',
+  // 기타 설정...
+};
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 📱 컴포넌트 설명
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Dashboard
+- **UnifiedDashboard**: 통합 대시보드
+- **FolderManager**: 폴더 관리
 
-## Learn More
+### Performance Testing
+- **PerformanceTestManager**: 성능 테스트 관리
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Automation Testing
+- **AutomationTestManager**: 자동화 테스트 관리
+- **AutomationTestDetail**: 자동화 테스트 상세
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Test Cases
+- **TestCaseAPP**: 테스트 케이스 관리
 
-### Code Splitting
+### Settings
+- **Settings**: 설정 메인 페이지
+- **AccountManager**: 계정 관리
+- **ProjectManager**: 프로젝트 관리
+- **FolderManager**: 폴더 관리
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🎨 스타일링
 
-### Analyzing the Bundle Size
+현재 CSS3를 사용하여 스타일링하고 있으며, 향후 Material-UI 도입을 계획하고 있습니다.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 🧪 테스트
 
-### Making a Progressive Web App
+```bash
+# 단위 테스트 실행
+npm test
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+# 테스트 커버리지 확인
+npm test -- --coverage
 
-### Advanced Configuration
+# E2E 테스트 (Playwright)
+cd ../test-scripts/playwright
+npx playwright test
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 📦 배포
 
-### Deployment
+### Vercel 배포
+```bash
+npm run build
+vercel --prod
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### 정적 파일 서버
+```bash
+npm run build
+# build 폴더를 웹 서버에 업로드
+```
 
-### `npm run build` fails to minify
+## 🔄 개발 워크플로우
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1. **기능 개발**: 새로운 컴포넌트 또는 기능 추가
+2. **테스트**: 단위 테스트 및 통합 테스트 작성
+3. **리뷰**: 코드 리뷰 및 품질 검증
+4. **배포**: 테스트 통과 후 배포
+
+## 📚 추가 문서
+
+- [API 테스팅 가이드](../API_TESTING_GUIDE.md)
+- [사용법 가이드](../docs/USAGE.md)
+- [배포 가이드](../docs/DEPLOYMENT_SUCCESS.md)
+
+## 🤝 기여하기
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.

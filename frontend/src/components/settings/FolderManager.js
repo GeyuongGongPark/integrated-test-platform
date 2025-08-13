@@ -164,7 +164,7 @@ const FolderManager = () => {
                 folder.folder_type === 'environment' ? '환경' : 
                 folder.folder_type === 'deployment_date' ? '배포일자' : 
                 folder.folder_type === 'feature' ? '기능명' : 
-                folder.folder_type || '미분류'
+                folder.folder_type ? folder.folder_type : '미분류'
               }</p>
               {folder.environment && <p>환경: {folder.environment}</p>}
               {folder.deployment_date && <p>배포일자: {folder.deployment_date}</p>}

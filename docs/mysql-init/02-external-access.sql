@@ -11,3 +11,4 @@ GRANT ALL PRIVILEGES ON test_management.* TO 'testuser'@'%';
 
 -- 권한 적용
 FLUSH PRIVILEGES;
+

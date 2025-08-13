@@ -1,98 +1,148 @@
-# 통합 테스트 관리 플랫폼
+# 🚀 Integrated Test Platform
 
-웹 기반의 통합 테스트 관리 시스템으로, 테스트 케이스 관리, 성능 테스트, 자동화 테스트를 한 곳에서 관리할 수 있습니다.
+## 📋 프로젝트 개요
 
-## 주요 기능
+통합 테스트 플랫폼은 다양한 테스트 유형(API, 성능, 자동화)을 통합 관리할 수 있는 웹 기반 플랫폼입니다.
 
-### 📋 테스트 케이스 관리
-- 계층적 폴더 구조로 테스트 케이스 조직화
-- 엑셀 업로드/다운로드 지원
-- 테스트 상태 관리 (Pass/Fail/N/T/Block)
-- **새로운 기능**: Playwright 자동화 코드 연결
+## ✨ 주요 기능
 
-### 🤖 자동화 테스트
-- Playwright, Selenium, Cypress, Puppeteer 지원
-- 자동화 스크립트 실행 및 결과 관리
-- **새로운 기능**: 테스트 케이스별 자동화 실행
-- **새로운 기능**: 스크린샷 자동 캡처 및 표시
+- **🧪 Test Cases**: 테스트 케이스 관리 및 실행
+- **⚡ Performance Tests**: K6 기반 성능 테스트
+- **🤖 Automation Tests**: Playwright 기반 자동화 테스트
+- **📁 Folder Management**: 계층적 폴더 구조 관리
+- **📊 Dashboard**: 테스트 결과 통계 및 분석
+- **👥 User Management**: 사용자 및 프로젝트 관리
 
-### 📊 성능 테스트
-- k6 기반 성능 테스트 실행
-- 실시간 성능 메트릭 모니터링
-- 성능 테스트 결과 리포트 생성
+## 🏗️ 기술 스택
 
-### 📈 대시보드
-- 환경별 테스트 결과 요약
-- 실시간 통계 및 차트
-- 테스트 진행 상황 추적
+### Backend
+- **Python 3.13+**
+- **Flask 2.3+**
+- **SQLAlchemy 2.0+**
+- **MySQL 8.0+**
+- **Docker**
 
-## 새로운 자동화 기능
+### Frontend
+- **React 18+**
+- **Axios**
+- **Chart.js**
 
-### 테스트 케이스와 자동화 코드 연결
-1. **자동화 코드 설정**: 테스트 케이스에 Playwright 스크립트 경로 지정
-2. **원클릭 실행**: 테스트 케이스 헤더의 🤖 버튼으로 자동화 실행
-3. **실행 결과 표시**: 스크린샷과 실행 로그를 테스트 케이스 상세에서 확인
-4. **버튼 순서**: 자동화 → 아코디언 → 수정 → 삭제
+### Testing Tools
+- **K6** (성능 테스트)
+- **Playwright** (자동화 테스트)
 
-### 스크린샷 기능
-- Playwright 테스트 실행 시 자동 스크린샷 캡처
-- 테스트 케이스 상세에서 스크린샷 갤러리 형태로 표시
-- 실행 결과별 스크린샷 분류 및 관리
+## 🚀 빠른 시작
 
-### 아코디언 아이콘 변경
-- 기존: ▼/▶ → 새로운: 📋/📄
-- 더 직관적인 문서 아이콘으로 변경
+### 1. 저장소 클론
+```bash
+git clone <repository-url>
+cd integrated-test-platform
+```
 
-## 설치 및 실행
-
-### 백엔드 설정
+### 2. 백엔드 실행
 ```bash
 cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
 
-### 프론트엔드 설정
+### 3. 프론트엔드 실행
 ```bash
 cd frontend
 npm install
 npm start
 ```
 
-### Playwright 설정 (자동화 테스트용)
+### 4. 데이터베이스 설정
 ```bash
-npm install -g @playwright/test
-npx playwright install
+# Docker로 MySQL 실행
+docker-compose up -d mysql
+
+# 또는 docs/mysql-init/ 스크립트 실행
 ```
 
-## 사용법
+## 📁 프로젝트 구조
 
-### 1. 테스트 케이스에 자동화 코드 연결
-1. 테스트 케이스 편집 모달에서 "자동화 코드 경로" 입력
-2. 자동화 코드 타입 선택 (Playwright 권장)
-3. 저장 후 테스트 케이스 헤더에 🤖 버튼 표시
+```
+integrated-test-platform/
+├── backend/                 # Flask 백엔드
+│   ├── app.py              # 메인 애플리케이션
+│   ├── models.py           # 데이터베이스 모델
+│   ├── routes/             # API 라우트
+│   └── utils/              # 유틸리티 함수
+├── frontend/                # React 프론트엔드
+│   ├── src/
+│   │   ├── components/     # React 컴포넌트
+│   │   └── config.js       # API 설정
+│   └── package.json
+├── docs/                    # 문서 및 설정 파일
+│   ├── postman_collection.json
+│   ├── docker-compose.yml
+│   └── README.md
+├── test-scripts/            # 테스트 스크립트
+└── README.md               # 이 파일
+```
 
-### 2. 자동화 테스트 실행
-1. 테스트 케이스 목록에서 🤖 버튼 클릭
-2. 백엔드에서 Playwright 스크립트 실행
-3. 실행 결과와 스크린샷이 자동으로 저장
+## 🌐 배포
 
-### 3. 결과 확인
-1. 테스트 케이스 상세보기 (📄 버튼)
-2. "📸 실행 결과 스크린샷" 섹션에서 스크린샷 확인
-3. "🤖 자동화 실행 결과" 섹션에서 실행 로그 확인
+### Vercel 배포
+- **Backend**: `https://backend-alpha-liard.vercel.app`
+- **Frontend**: `https://integrated-test-platform-dydlxktca-gyeonggong-parks-projects.vercel.app`
 
-## 샘플 Playwright 스크립트
+### 환경 변수
+```bash
+DATABASE_URL=mysql+pymysql://user:password@host:port/database
+SECRET_KEY=your-secret-key
+FLASK_ENV=production
+```
 
-`test-scripts/playwright/sample-login.spec.js` 파일을 참고하여 자동화 스크립트를 작성하세요.
+## 📚 문서
 
-## 기술 스택
+- **API 가이드**: `docs/API_TESTING_GUIDE.md`
+- **Postman 사용법**: `docs/POSTMAN_USAGE_GUIDE.md`
+- **프로젝트 구조**: `docs/PROJECT_STRUCTURE.md`
+- **배포 요약**: `docs/DEPLOYMENT_SUMMARY.md`
 
-- **백엔드**: Flask, SQLAlchemy, PostgreSQL
-- **프론트엔드**: React, CSS3
-- **자동화**: Playwright, Selenium, k6
-- **배포**: Vercel, Railway
+## 🧪 테스트
 
-## 라이선스
+### API 테스트
+```bash
+# Postman Collection 사용
+docs/postman_collection.json
+```
 
-MIT License
+### 성능 테스트
+```bash
+cd test-scripts/performance
+k6 run script.js
+```
+
+### 자동화 테스트
+```bash
+cd test-scripts/playwright
+npx playwright test
+```
+
+## 🤝 기여하기
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+
+## 📞 연락처
+
+프로젝트 링크: [https://github.com/username/integrated-test-platform](https://github.com/username/integrated-test-platform)
+
+---
+
+**마지막 업데이트**: 2025년 8월 13일  
+**버전**: 2.0.1  
+**상태**: 프로덕션 배포 완료 ✅

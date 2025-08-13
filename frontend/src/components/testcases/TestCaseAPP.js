@@ -468,19 +468,19 @@ const TestCaseAPP = () => {
         console.log('자식 노드 확인:', child);
         if (child.type === 'deployment_date') {
           folderIds.push(child.id);
-          console.log('배포일자 폴더 추가:', child.id, child.name);
+          console.log('배포일자 폴더 추가:', child.id, child.folder_name);
           
           // 배포일자 폴더의 하위 기능명 폴더들도 추가
           if (child.children) {
             for (const featureChild of child.children) {
               if (featureChild.type === 'feature') {
                 folderIds.push(featureChild.id);
-                console.log('기능명 폴더 추가:', featureChild.id, featureChild.name);
+                console.log('기능명 폴더 추가:', featureChild.id, featureChild.folder_name);
               }
             }
           }
         } else {
-          console.log('배포일자가 아닌 자식 노드:', child.type, child.name);
+          console.log('배포일자가 아닌 자식 노드:', child.type, child.folder_name);
         }
       }
     } else {
@@ -511,9 +511,9 @@ const TestCaseAPP = () => {
         console.log('자식 노드 확인:', child);
         if (child.type === 'feature') {
           folderIds.push(child.id);
-          console.log('기능명 폴더 추가:', child.id, child.name);
-        } else {
-          console.log('기능명이 아닌 자식 노드:', child.type, child.name);
+                  console.log('기능명 폴더 추가:', child.id, child.folder_name);
+      } else {
+        console.log('기능명이 아닌 자식 노드:', child.type, child.folder_name);
         }
       }
     } else {
@@ -538,7 +538,7 @@ const TestCaseAPP = () => {
       const isExpanded = expandedFolders.has(node.id);
       const isFolder = node.type === 'environment' || node.type === 'deployment_date' || node.type === 'feature';
       
-      console.log(`렌더링 노드: ID=${node.id}, Name=${node.name}, Type=${node.type}, Level=${level}`);
+      console.log(`렌더링 노드: ID=${node.id}, Name=${node.folder_name}, Type=${node.type}, Level=${level}`);
       
       return (
         <div key={node.id} style={{ marginLeft: level * 20 }}>
@@ -547,11 +547,11 @@ const TestCaseAPP = () => {
             onClick={() => {
               if (isFolder) {
                 const folderType = getFolderType(node.id);
-                console.log(`클릭된 폴더: ID=${node.id}, Name=${node.name}, Type=${folderType}`);
+                console.log(`클릭된 폴더: ID=${node.id}, Name=${node.folder_name}, Type=${folderType}`);
                 console.log('폴더 타입 상세:', {
                   id: node.id,
-                  name: node.name,
-                  parent_id: node.parent_id,
+                  name: node.folder_name,
+                  parent_id: node.parent_folder_id,
                   calculated_type: folderType
                 });
                 handleFolderSelect(node.id);
@@ -574,7 +574,7 @@ const TestCaseAPP = () => {
                getFolderType(node.id) === 'deployment_date' ? '📅' : 
                getFolderType(node.id) === 'feature' ? '🔧' : '📄'}
             </span>
-            <span className="folder-name">{node.name}</span>
+            <span className="folder-name">{node.folder_name}</span>
             {getFolderType(node.id) === 'test_case' && (
               <span className={`test-status ${(node.status || 'N/A').toLowerCase().replace('/', '-')}`}>
                 {node.status || 'N/A'}
@@ -618,14 +618,14 @@ const TestCaseAPP = () => {
         if (selectedFolderType === 'environment') {
           // 환경 폴더 선택 시: 해당 환경의 모든 하위 폴더의 테스트 케이스들
           const environmentFolderIds = getEnvironmentFolderIds(folderTree, selectedFolderId);
-          console.log(`환경 필터링: ${selectedFolderInfo.name}, 폴더 IDs:`, environmentFolderIds);
+          console.log(`환경 필터링: ${selectedFolderInfo.folder_name}, 폴더 IDs:`, environmentFolderIds);
           const result = environmentFolderIds.includes(tcFolderId);
           console.log('필터링 결과:', result);
           return result;
         } else if (selectedFolderType === 'deployment_date') {
           // 날짜 폴더 선택 시: 해당 날짜의 모든 하위 폴더의 테스트 케이스들
           const deploymentFolderIds = getDeploymentFolderIds(folderTree, selectedFolderId);
-          console.log(`날짜 필터링: ${selectedFolderInfo.name}, 폴더 IDs:`, deploymentFolderIds);
+          console.log(`날짜 필터링: ${selectedFolderInfo.folder_name}, 폴더 IDs:`, deploymentFolderIds);
           const result = deploymentFolderIds.includes(tcFolderId);
           console.log('필터링 결과:', result);
           return result;

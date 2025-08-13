@@ -1,32 +1,14 @@
-[
-  {
-    "name": "prod",
-    "base_url": "https://business.lawform.io",
-    "email": "ggpark+id20250211162329770_m@amicuslex.net",
-    "password": "q1w2E#R$"
+{
+  "dev": {
+    "baseUrl": "http://localhost:3000",
+    "apiUrl": "http://localhost:5000"
   },
-  {
-    "name": "alpha",
-    "base_url": "https://alpha.business.lfdev.io",
-    "email": "ggpark+id20250211092023378_m@amicuslex.net",
-    "password": "1q2w#E$R"
+  "staging": {
+    "baseUrl": "https://staging.example.com",
+    "apiUrl": "https://staging-api.example.com"
   },
-  {
-    "name": "multi1",
-    "base_url": "https://harim.business.lawform.io",
-    "email": "jjs1@ami.com",
-    "password": "1q2w#E$R"
-  },
-  {
-    "name": "multi2",
-    "base_url": "https://harim.business.lawform.io",
-    "email": "1t@ami.com",
-    "password": "1q2w#E$R"
-  },
-  {
-    "name": "multi3",
-    "base_url": "https://harim.business.lawform.io",
-    "email": "1s@ami.com",
-    "password": "1q2w#E$R"
+  "production": {
+    "baseUrl": "https://production.example.com",
+    "apiUrl": "https://production-api.example.com"
   }
-] 
+} 

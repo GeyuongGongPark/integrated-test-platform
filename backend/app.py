@@ -1,11 +1,13 @@
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
 from datetime import datetime
 import os
 from dotenv import load_dotenv
 from sqlalchemy import text
+from models import db, Project, DashboardSummary, User, Folder, TestCase, PerformanceTest, AutomationTest, TestResult
+from routes.testcases_extended import testcases_extended_bp
+from routes.dashboard_extended import dashboard_extended_bp
 
 # .env 파일 로드 (절대 경로 사용)
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
@@ -58,127 +60,23 @@ print(f"🚀 Vercel URL: {os.environ.get('VERCEL_URL', 'Not Vercel')}")
 print(f"📁 .env 파일 경로: {env_path}")
 print(f"📁 .env 파일 존재: {os.path.exists(env_path)}")
 
+# CORS 헬퍼 함수
+def add_cors_headers(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 # CORS 설정 - 모든 origin 허용, credentials 지원
 CORS(app, origins="*", supports_credentials=True, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"])
 
 # 데이터베이스 초기화
-db = SQLAlchemy(app)
+db.init_app(app)
 migrate = Migrate(app, db)
 
-# 데이터베이스 모델들
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    role = db.Column(db.String(20), default='User')
-    is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime)
-
-class Project(db.Model):
-    __tablename__ = 'projects'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
-
-class Folder(db.Model):
-    __tablename__ = 'Folders'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    parent_id = db.Column(db.Integer, db.ForeignKey('Folders.id'), nullable=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class TestCase(db.Model):
-    __tablename__ = 'TestCases'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text)
-    test_type = db.Column(db.String(50))
-    script_path = db.Column(db.String(500))
-    folder_id = db.Column(db.Integer, db.ForeignKey('Folders.id'))
-    
-    # 원래 기획에 있던 필드들 추가
-    main_category = db.Column(db.String(100))
-    sub_category = db.Column(db.String(100))
-    detail_category = db.Column(db.String(100))
-    pre_condition = db.Column(db.Text)
-    expected_result = db.Column(db.Text)
-    remark = db.Column(db.Text)
-    automation_code_path = db.Column(db.String(500))
-    environment = db.Column(db.String(50))
-    
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class TestResult(db.Model):
-    __tablename__ = 'test_result'
-    id = db.Column(db.Integer, primary_key=True)
-    test_case_id = db.Column(db.Integer, db.ForeignKey('TestCases.id'))
-    status = db.Column(db.String(20))
-    execution_time = db.Column(db.Float)
-    result_data = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Screenshot(db.Model):
-    __tablename__ = 'Screenshots'
-    id = db.Column(db.Integer, primary_key=True)
-    test_result_id = db.Column(db.Integer, db.ForeignKey('test_result.id'))
-    file_path = db.Column(db.String(500))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class PerformanceTest(db.Model):
-    __tablename__ = 'PerformanceTests'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text)
-    script_path = db.Column(db.String(500))
-    environment = db.Column(db.String(100))
-    parameters = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class PerformanceTestResult(db.Model):
-    __tablename__ = 'PerformanceTestResults'
-    id = db.Column(db.Integer, primary_key=True)
-    test_id = db.Column(db.Integer, db.ForeignKey('PerformanceTests.id'))
-    status = db.Column(db.String(20))
-    execution_time = db.Column(db.Float)
-    result_data = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class AutomationTest(db.Model):
-    __tablename__ = 'AutomationTests'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text)
-    test_type = db.Column(db.String(50))
-    script_path = db.Column(db.String(500))
-    environment = db.Column(db.String(100))
-    parameters = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class AutomationTestResult(db.Model):
-    __tablename__ = 'AutomationTestResults'
-    id = db.Column(db.Integer, primary_key=True)
-    test_id = db.Column(db.Integer, db.ForeignKey('AutomationTests.id'))
-    status = db.Column(db.String(20))
-    execution_time = db.Column(db.Float)
-    result_data = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class DashboardSummary(db.Model):
-    __tablename__ = 'DashboardSummaries'
-    id = db.Column(db.Integer, primary_key=True)
-    environment = db.Column(db.String(100))
-    total_tests = db.Column(db.Integer, default=0)
-    passed_tests = db.Column(db.Integer, default=0)
-    failed_tests = db.Column(db.Integer, default=0)
-    skipped_tests = db.Column(db.Integer, default=0)
-    pass_rate = db.Column(db.Float, default=0.0)
-    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+# Blueprint 등록
+app.register_blueprint(testcases_extended_bp)
+app.register_blueprint(dashboard_extended_bp)
 
 # 기본 라우트들
 @app.route('/health', methods=['GET', 'OPTIONS'])
@@ -321,9 +219,13 @@ def create_testcase():
         testcase = TestCase(
             name=data.get('name'),
             description=data.get('description'),
-            test_type=data.get('test_type'),
-            script_path=data.get('script_path'),
-            folder_id=data.get('folder_id')
+            main_category=data.get('main_category'),
+            sub_category=data.get('sub_category'),
+            detail_category=data.get('detail_category'),
+            pre_condition=data.get('pre_condition'),
+            expected_result=data.get('expected_result'),
+            folder_id=data.get('folder_id'),
+            environment=data.get('environment', 'dev')
         )
         db.session.add(testcase)
         db.session.commit()
@@ -423,8 +325,11 @@ def get_folders():
         folders = Folder.query.all()
         data = [{
             'id': f.id,
-            'name': f.name,
-            'parent_id': f.parent_id,
+            'folder_name': f.folder_name,
+            'folder_type': f.folder_type,
+            'environment': f.environment,
+            'deployment_date': f.deployment_date.strftime('%Y-%m-%d') if f.deployment_date else None,
+            'parent_folder_id': f.parent_folder_id,
             'project_id': f.project_id,
             'created_at': f.created_at.strftime('%Y-%m-%d %H:%M:%S')
         } for f in folders]
@@ -442,7 +347,7 @@ def get_folders_tree():
     try:
         # 폴더 트리 구조 생성
         def build_tree(parent_id=None):
-            folders = Folder.query.filter_by(parent_id=parent_id).all()
+            folders = Folder.query.filter_by(parent_folder_id=parent_id).all()
             tree = []
             for folder in folders:
                 # 폴더 타입 판별
@@ -451,15 +356,18 @@ def get_folders_tree():
                 else:
                     # 부모 폴더가 환경 폴더인지 확인
                     parent_folder = Folder.query.get(parent_id)
-                    if parent_folder and parent_folder.parent_id is None:
+                    if parent_folder and parent_folder.parent_folder_id is None:
                         folder_type = 'deployment_date'
                     else:
                         folder_type = 'feature'
                 
                 node = {
                     'id': folder.id,
-                    'name': folder.name,
-                    'parent_id': folder.parent_id,
+                    'folder_name': folder.folder_name,
+                    'folder_type': folder.folder_type,
+                    'environment': folder.environment,
+                    'deployment_date': folder.deployment_date.strftime('%Y-%m-%d') if folder.deployment_date else None,
+                    'parent_folder_id': folder.parent_folder_id,
                     'project_id': folder.project_id,
                     'type': folder_type,
                     'created_at': folder.created_at.strftime('%Y-%m-%d %H:%M:%S'),
@@ -481,8 +389,8 @@ def create_folder():
     try:
         data = request.get_json()
         folder = Folder(
-            name=data.get('name'),
-            parent_id=data.get('parent_id'),
+            folder_name=data.get('name'),
+            parent_folder_id=data.get('parent_id'),
             project_id=data.get('project_id')
         )
         db.session.add(folder)
@@ -737,6 +645,7 @@ def get_testcase_summaries():
             }
             summaries.append(summary)
         
+        # 프론트엔드에서 기대하는 배열 형태로 반환
         response = jsonify(summaries)
         return response, 200
     except Exception as e:

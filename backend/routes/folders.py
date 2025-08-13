@@ -195,7 +195,7 @@ def get_folder_tree():
                     'id': dep_folder.id,
                     'name': dep_folder.folder_name,
                     'type': 'deployment_date',
-                    'deployment_date': dep_folder.deployment_date.strftime('%Y-%m-%d') if dep_folder.deployment_date else dep_folder.folder_name,
+                    'deployment_date': dep_folder.deployment_date.strftime('%Y-%m-%d') if dep_folder.deployment_date else (dep_folder.folder_name or 'Unknown'),
                     'children': []
                 }
                 
