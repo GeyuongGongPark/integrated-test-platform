@@ -2,9 +2,16 @@ from flask import Blueprint, request, jsonify
 from models import db, TestCase, TestResult
 from utils.cors import add_cors_headers
 from datetime import datetime
-import pandas as pd
 import io
 import os
+
+# pandas import를 조건부로 처리
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+    print("⚠️ pandas 모듈을 사용할 수 없습니다. Excel 기능이 비활성화됩니다.")
 
 # Blueprint 생성
 testcases_extended_bp = Blueprint('testcases_extended', __name__)
@@ -102,6 +109,11 @@ def upload_testcases():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'preflight_ok'}), 200
     
+    # pandas 사용 불가능 시 오류 반환
+    if not PANDAS_AVAILABLE:
+        response = jsonify({'error': 'Excel 파일 처리를 위해 pandas 모듈이 필요합니다. 현재 환경에서는 지원되지 않습니다.'})
+        return add_cors_headers(response), 501
+    
     try:
         if 'file' not in request.files:
             response = jsonify({'error': '파일이 없습니다'})
@@ -151,6 +163,11 @@ def upload_testcases():
 def download_testcases():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'preflight_ok'}), 200
+    
+    # pandas 사용 불가능 시 오류 반환
+    if not PANDAS_AVAILABLE:
+        response = jsonify({'error': 'Excel 파일 생성을 위해 pandas 모듈이 필요합니다. 현재 환경에서는 지원되지 않습니다.'})
+        return add_cors_headers(response), 501
     
     try:
         testcases = TestCase.query.all()
