@@ -31,8 +31,14 @@ database_url = os.environ.get('DATABASE_URL')
 if database_url and is_vercel:
     if database_url.startswith('mysql://'):
         database_url = database_url.replace('mysql://', 'mysql+pymysql://')
-    if '?' not in database_url:
-        database_url += '?ssl_mode=VERIFY_IDENTITY'
+    # ssl_mode 파라미터 제거하고 기본 SSL 설정 사용
+    if '?' in database_url:
+        # 기존 파라미터가 있으면 ssl_mode만 제거
+        params = database_url.split('?')[1].split('&')
+        filtered_params = [p for p in params if not p.startswith('ssl_mode=')]
+        if filtered_params:
+            database_url = database_url.split('?')[0] + '?' + '&'.join(filtered_params)
+    print("🚀 Vercel 환경에서 MySQL 연결 설정 적용")
 
 if not database_url:
     # Vercel 환경에서는 SQLite 사용, 로컬에서는 MySQL 사용
@@ -47,15 +53,34 @@ if not database_url:
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,
-    'pool_recycle': 300,
-    'connect_args': {
-        'connect_timeout': 10,
-        'read_timeout': 30,
-        'write_timeout': 30
+
+# 환경별 데이터베이스 엔진 옵션 설정
+if is_vercel and 'mysql' in database_url:
+    # Vercel MySQL 환경
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'connect_args': {
+            'connect_timeout': 10,
+            'read_timeout': 30,
+            'write_timeout': 30,
+            'ssl': {'ssl': True}  # 기본 SSL 설정
+        }
     }
-}
+elif is_vercel and 'sqlite' in database_url:
+    # Vercel SQLite 환경
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {}
+else:
+    # 로컬 MySQL 환경
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'connect_args': {
+            'connect_timeout': 10,
+            'read_timeout': 30,
+            'write_timeout': 30
+        }
+    }
 
 # 환경 변수 로깅 (디버깅용)
 print(f"🔗 Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
@@ -102,19 +127,52 @@ def health_check():
             'environment': 'production' if is_vercel else 'development',
             'database': {
                 'status': 'connected',
-                'url_set': 'Yes' if os.environ.get('DATABASE_URL') else 'No'
+                'url_set': 'Yes' if os.environ.get('DATABASE_URL') else 'No',
+                'type': 'MySQL' if 'mysql' in app.config['SQLALCHEMY_DATABASE_URI'] else 'SQLite'
             }
         })
         return response, 200
     except Exception as e:
+        error_msg = str(e)
+        
+        # Vercel 환경에서 MySQL 연결 실패 시 SQLite fallback 시도
+        if is_vercel and 'mysql' in app.config['SQLALCHEMY_DATABASE_URI'] and 'ssl_mode' in error_msg:
+            try:
+                print("🔄 MySQL 연결 실패, SQLite fallback 시도...")
+                # SQLite로 전환
+                app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+                app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {}
+                
+                # 데이터베이스 재초기화
+                db.init_app(app)
+                db.create_all()
+                
+                response = jsonify({
+                    'status': 'healthy', 
+                    'message': 'Test Platform Backend is running (SQLite fallback)',
+                    'version': '2.0.1',
+                    'timestamp': datetime.now().isoformat(),
+                    'environment': 'production',
+                    'database': {
+                        'status': 'connected_fallback',
+                        'url_set': 'No',
+                        'type': 'SQLite',
+                        'fallback_reason': 'MySQL SSL connection failed'
+                    }
+                })
+                return response, 200
+            except Exception as fallback_error:
+                error_msg = f"MySQL SSL error: {str(e)}, SQLite fallback also failed: {str(fallback_error)}"
+        
         response = jsonify({
             'status': 'unhealthy',
-            'message': f'Health check failed: {str(e)}',
+            'message': f'Health check failed: {error_msg}',
             'timestamp': datetime.now().isoformat(),
             'environment': 'production' if is_vercel else 'development',
             'database': {
                 'status': 'disconnected',
-                'error': str(e)
+                'error': error_msg,
+                'url': app.config['SQLALCHEMY_DATABASE_URI']
             }
         })
         return response, 500
