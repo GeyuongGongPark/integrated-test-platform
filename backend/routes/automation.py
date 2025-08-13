@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, send_from_directory
-from models import db, AutomationTest, AutomationTestResult
+from models import db, AutomationTest, TestResult
 from utils.cors import add_cors_headers
 from datetime import datetime
 import time
@@ -152,7 +152,7 @@ def execute_automation_test(id):
         error_message = None
         
         # 결과 저장
-        result = AutomationTestResult(
+        result = TestResult(
             automation_test_id=test.id,
             status=status,
             execution_start=execution_start,
@@ -182,7 +182,7 @@ def execute_automation_test(id):
 def get_automation_test_results(id):
     """자동화 테스트의 실행 결과 조회"""
     try:
-        results = AutomationTestResult.query.filter_by(automation_test_id=id).order_by(AutomationTestResult.execution_start.desc()).all()
+        results = TestResult.query.filter_by(automation_test_id=id).order_by(TestResult.execution_start.desc()).all()
         
         result_list = []
         for result in results:
@@ -212,7 +212,7 @@ def get_automation_test_results(id):
 def get_automation_test_result_detail(id, result_id):
     """특정 자동화 테스트 실행 결과 상세 조회"""
     try:
-        result = AutomationTestResult.query.filter_by(
+        result = TestResult.query.filter_by(
             automation_test_id=id, 
             id=result_id
         ).first_or_404()

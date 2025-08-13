@@ -8,6 +8,10 @@ from sqlalchemy import text
 from models import db, Project, DashboardSummary, User, Folder, TestCase, PerformanceTest, AutomationTest, TestResult
 from routes.testcases_extended import testcases_extended_bp
 from routes.dashboard_extended import dashboard_extended_bp
+from routes.automation import automation_bp
+from routes.performance import performance_bp
+from routes.folders import folders_bp
+from routes.users import users_bp
 from utils.cors import setup_cors
 
 # .env 파일 로드 (절대 경로 사용)
@@ -107,6 +111,10 @@ migrate = Migrate(app, db)
 # Blueprint 등록
 app.register_blueprint(testcases_extended_bp)
 app.register_blueprint(dashboard_extended_bp)
+app.register_blueprint(automation_bp)
+app.register_blueprint(performance_bp)
+app.register_blueprint(folders_bp)
+app.register_blueprint(users_bp)
 
 # 기본 라우트들
 @app.route('/health', methods=['GET', 'OPTIONS'])

@@ -1,8 +1,11 @@
 from flask import Blueprint, request, jsonify
-from models import db, PerformanceTest, PerformanceTestResult, TestExecution
+from models import db, PerformanceTest, TestResult, TestExecution
 from utils.cors import add_cors_headers
 from engines.k6_engine import k6_engine
 import json
+from datetime import datetime
+import time
+import os
 
 # Blueprint 생성
 performance_bp = Blueprint('performance', __name__)
@@ -109,7 +112,7 @@ def execute_performance_test(id):
     
     if result.get('status') == 'Pass':
         # 성능 테스트 결과 저장
-        perf_result = PerformanceTestResult(
+        perf_result = TestResult(
             performance_test_id=pt.id,
             status=result.get('status'),
             response_time_avg=result.get('response_time_avg'),
@@ -131,7 +134,7 @@ def execute_performance_test(id):
 
 @performance_bp.route('/performance-tests/<int:id>/results', methods=['GET'])
 def get_performance_test_results(id):
-    results = PerformanceTestResult.query.filter_by(performance_test_id=id).all()
+    results = TestResult.query.filter_by(performance_test_id=id).all()
     data = [{
         'id': r.id,
         'performance_test_id': r.performance_test_id,
