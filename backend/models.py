@@ -1,18 +1,64 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+import secrets
 
 db = SQLAlchemy()
 
-# 사용자 모델
 class User(db.Model):
-    __tablename__ = 'users'
+    __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    role = db.Column(db.String(20), default='User')
+    password_hash = db.Column(db.String(255), nullable=False)
+    first_name = db.Column(db.String(50))
+    last_name = db.Column(db.String(50))
+    role = db.Column(db.String(20), default='user')  # admin, user, tester
+    is_active = db.Column(db.Boolean, default=True)
+    last_login = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 관계 설정
+    test_cases = db.relationship('TestCase', backref='creator', lazy='dynamic')
+    automation_tests = db.relationship('AutomationTest', backref='creator', lazy='dynamic')
+    performance_tests = db.relationship('PerformanceTest', backref='creator', lazy='dynamic')
+    
+    def set_password(self, password):
+        """비밀번호 해시화"""
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        """비밀번호 검증"""
+        return check_password_hash(self.password_hash, password)
+    
+    def to_dict(self):
+        """사용자 정보를 딕셔너리로 변환"""
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'role': self.role,
+            'is_active': self.is_active,
+            'last_login': self.last_login.isoformat() if self.last_login else None,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+class UserSession(db.Model):
+    __tablename__ = 'UserSessions'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    session_token = db.Column(db.String(255), unique=True, nullable=False)
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    
+    user = db.relationship('User', backref='sessions')
 
 # 프로젝트 모델
 class Project(db.Model):
@@ -20,6 +66,8 @@ class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 # 폴더 모델
 class Folder(db.Model):
@@ -37,46 +85,69 @@ class Folder(db.Model):
 class TestCase(db.Model):
     __tablename__ = 'TestCases'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    test_type = db.Column(db.String(50))
-    script_path = db.Column(db.String(500))
-    folder_id = db.Column(db.Integer, db.ForeignKey('Folders.id'), nullable=True)
-    main_category = db.Column(db.String(100))
-    sub_category = db.Column(db.String(100))
-    detail_category = db.Column(db.String(100))
-    pre_condition = db.Column(db.Text)
-    expected_result = db.Column(db.Text)
-    remark = db.Column(db.Text)
-    automation_code_path = db.Column(db.String(500))
-    environment = db.Column(db.String(50), default='dev')
+    test_type = db.Column(db.String(50))  # functional, performance, security
+    priority = db.Column(db.String(20))  # low, medium, high, critical
+    status = db.Column(db.String(20), default='draft')  # draft, active, inactive
+    environment = db.Column(db.String(50))  # prod, staging, dev
+    script_path = db.Column(db.String(500))  # 스크립트 경로
+    folder_id = db.Column(db.Integer, db.ForeignKey('Folders.id'), nullable=True)  # 폴더 ID
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    creator_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)  # 프로젝트 ID
+    
+    # 추가 컬럼들
+    main_category = db.Column(db.String(100))  # 메인 카테고리
+    sub_category = db.Column(db.String(100))  # 서브 카테고리
+    detail_category = db.Column(db.String(100))  # 상세 카테고리
+    pre_condition = db.Column(db.Text)  # 사전 조건
+    expected_result = db.Column(db.Text)  # 예상 결과
+    remark = db.Column(db.Text)  # 비고
+    automation_code_path = db.Column(db.String(500))  # 자동화 코드 경로
+    automation_code_type = db.Column(db.String(50))  # 자동화 코드 타입
+    result_status = db.Column(db.String(20), default='pending')  # pending, passed, failed, blocked
+    
+    # 관계 설정
+    folder = db.relationship('Folder', backref='test_cases')
+    project = db.relationship('Project', backref='test_cases')
 
 # 성능 테스트 모델
 class PerformanceTest(db.Model):
     __tablename__ = 'PerformanceTests'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    script_path = db.Column(db.String(500))
-    environment = db.Column(db.String(100))
-    parameters = db.Column(db.Text)
+    test_type = db.Column(db.String(50))  # load, stress, spike, soak
+    script_path = db.Column(db.String(255))
+    environment = db.Column(db.String(50))
+    parameters = db.Column(db.Text)  # JSON 형태로 저장
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    creator_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)  # 프로젝트 ID
+    
+    # 관계 설정
+    project = db.relationship('Project', backref='performance_tests')
 
 # 자동화 테스트 모델
 class AutomationTest(db.Model):
     __tablename__ = 'AutomationTests'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    test_type = db.Column(db.String(50))  # playwright, selenium 등
-    script_path = db.Column(db.String(500))
-    environment = db.Column(db.String(50), default='dev')
+    test_type = db.Column(db.String(50))  # functional, ui, api
+    script_path = db.Column(db.String(255))
+    environment = db.Column(db.String(50))
     parameters = db.Column(db.Text)  # JSON 형태로 저장
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    creator_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)  # 프로젝트 ID
+    
+    # 관계 설정
+    project = db.relationship('Project', backref='automation_tests')
 
 # 테스트 결과 모델
 class TestResult(db.Model):

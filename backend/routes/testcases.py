@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, send_file
 from models import db, TestCase, TestResult, Screenshot, Project, Folder
 from utils.cors import add_cors_headers
+from utils.auth_decorators import admin_required, user_required, guest_allowed
 from datetime import datetime
 import pandas as pd
 from io import BytesIO
@@ -25,6 +26,7 @@ def get_projects():
     return add_cors_headers(response), 200
 
 @testcases_bp.route('/projects', methods=['POST'])
+@admin_required
 def create_project():
     data = request.get_json()
     project = Project(
@@ -37,6 +39,7 @@ def create_project():
     return add_cors_headers(response), 201
 
 @testcases_bp.route('/testcases', methods=['GET'])
+@guest_allowed
 def get_testcases():
     try:
         testcases = TestCase.query.all()
@@ -54,6 +57,7 @@ def get_testcases():
         
         data = [{
             'id': tc.id,
+            'name': tc.name,
             'project_id': tc.project_id,
             'main_category': tc.main_category,
             'sub_category': tc.sub_category,
@@ -83,12 +87,14 @@ def get_testcases():
         return add_cors_headers(response), 500
 
 @testcases_bp.route('/testcases/<int:id>', methods=['GET'])
+@guest_allowed
 def get_testcase(id):
     tc = TestCase.query.get_or_404(id)
     screenshots = Screenshot.query.filter_by(test_case_id=id).all()
     screenshot_data = [{'id': ss.id, 'screenshot_path': ss.screenshot_path, 'timestamp': ss.timestamp} for ss in screenshots]
     data = {
         'id': tc.id,
+        'name': tc.name,
         'project_id': tc.project_id,
         'main_category': tc.main_category,
         'sub_category': tc.sub_category,
@@ -105,6 +111,7 @@ def get_testcase(id):
     return add_cors_headers(response), 200
 
 @testcases_bp.route('/testcases', methods=['POST'])
+@user_required
 def create_testcase():
     data = request.get_json()
     print("Received data:", data)
@@ -161,6 +168,7 @@ def create_testcase():
         return add_cors_headers(response), 500
 
 @testcases_bp.route('/testcases/<int:id>/status', methods=['PUT'])
+@user_required
 def update_testcase_status(id):
     tc = TestCase.query.get_or_404(id)
     data = request.get_json()
@@ -170,6 +178,7 @@ def update_testcase_status(id):
     return add_cors_headers(response), 200
 
 @testcases_bp.route('/testcases/<int:id>', methods=['PUT'])
+@user_required
 def update_testcase(id):
     tc = TestCase.query.get_or_404(id)
     data = request.get_json()
@@ -189,6 +198,7 @@ def update_testcase(id):
     return add_cors_headers(response), 200
 
 @testcases_bp.route('/testcases/<int:id>', methods=['DELETE'])
+@admin_required
 def delete_testcase(id):
     tc = TestCase.query.get_or_404(id)
     db.session.delete(tc)
@@ -261,6 +271,7 @@ def get_screenshot(filename):
         return add_cors_headers(response), 500
 
 @testcases_bp.route('/testresults', methods=['POST'])
+@user_required
 def create_test_result():
     data = request.get_json()
     result = TestResult(
@@ -275,6 +286,7 @@ def create_test_result():
 
 # 엑셀 업로드 API
 @testcases_bp.route('/testcases/upload', methods=['POST'])
+@admin_required
 def upload_testcases_excel():
     """엑셀 파일에서 테스트 케이스 업로드"""
     try:

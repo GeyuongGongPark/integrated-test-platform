@@ -20,6 +20,39 @@
   font-size: 1.8em;
 }
 
+.user-role-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.user-role-info span:first-child {
+  color: #666;
+  font-size: 14px;
+}
+
+.role-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: white;
+}
+
+.role-badge.admin {
+  background: #dc3545;
+}
+
+.role-badge.user {
+  background: #007bff;
+}
+
+.role-badge.guest {
+  background: #6c757d;
+}
+
 .settings-content {
   display: grid;
   grid-template-columns: 1fr 300px;

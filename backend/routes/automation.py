@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, send_from_directory
 from models import db, AutomationTest, TestResult
 from utils.cors import add_cors_headers
+from utils.auth_decorators import guest_allowed
 from datetime import datetime
 import time
 import os
@@ -17,6 +18,7 @@ SCREENSHOT_BASE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirn
 
 # 자동화 테스트 API
 @automation_bp.route('/automation-tests', methods=['GET'])
+@guest_allowed
 def get_automation_tests():
     """모든 자동화 테스트 조회"""
     try:
@@ -67,6 +69,7 @@ def create_automation_test():
         return add_cors_headers(response), 500
 
 @automation_bp.route('/automation-tests/<int:id>', methods=['GET'])
+@guest_allowed
 def get_automation_test(id):
     """특정 자동화 테스트 조회"""
     try:

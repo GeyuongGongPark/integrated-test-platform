@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import db, Folder, TestCase
 from utils.cors import add_cors_headers
+from utils.auth_decorators import guest_allowed
 from datetime import datetime
 
 # Blueprint 생성
@@ -8,6 +9,7 @@ folders_bp = Blueprint('folders', __name__)
 
 # 폴더 관리 API
 @folders_bp.route('/folders', methods=['GET'])
+@guest_allowed
 def get_folders():
     try:
         folders = Folder.query.all()
@@ -64,6 +66,7 @@ def create_folder():
         return add_cors_headers(response), 500
 
 @folders_bp.route('/folders/<int:id>', methods=['GET'])
+@guest_allowed
 def get_folder(id):
     try:
         folder = Folder.query.get_or_404(id)
@@ -138,6 +141,7 @@ def delete_folder(id):
 
 # 폴더 트리 구조 API
 @folders_bp.route('/folders/tree', methods=['GET'])
+@guest_allowed
 def get_folder_tree():
     """환경별 → 배포일자별 → 기능명별 폴더 트리 구조 반환"""
     try:

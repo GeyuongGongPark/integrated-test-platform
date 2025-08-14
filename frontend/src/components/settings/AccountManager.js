@@ -1,35 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
+import { useAuth } from '../../contexts/AuthContext';
 import './AccountManager.css';
 
 axios.defaults.baseURL = config.apiUrl;
 
 const AccountManager = () => {
+  const { user: currentUser, token } = useAuth();
   const [users, setUsers] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // axios 기본 설정 - 모든 요청에 토큰 자동 포함
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+  }, [token]);
 
   // 새 사용자 데이터
   const [newUser, setNewUser] = useState({
     username: '',
     email: '',
+    first_name: '',
+    last_name: '',
     password: '',
-    role: 'User'
+    role: 'user'
   });
 
   // 수정할 사용자 데이터
   const [editUser, setEditUser] = useState({
     username: '',
     email: '',
+    first_name: '',
+    last_name: '',
     password: '',
-    role: 'User',
+    role: 'user',
     is_active: true
   });
 
@@ -43,13 +55,23 @@ const AccountManager = () => {
   // 프로필 수정 데이터
   const [profileData, setProfileData] = useState({
     username: '',
-    email: ''
+    email: '',
+    first_name: '',
+    last_name: ''
   });
 
   useEffect(() => {
-    fetchUsers();
-    fetchCurrentUser();
-  }, []);
+    if (currentUser) {
+      fetchUsers();
+      // profileData 업데이트
+      setProfileData({
+        username: currentUser.username || '',
+        email: currentUser.email || '',
+        first_name: currentUser.first_name || '',
+        last_name: currentUser.last_name || ''
+      });
+    }
+  }, [currentUser]);
 
   const fetchUsers = async () => {
     try {
@@ -64,18 +86,7 @@ const AccountManager = () => {
     }
   };
 
-  const fetchCurrentUser = async () => {
-    try {
-      const response = await axios.get('/users/current');
-      setCurrentUser(response.data);
-      setProfileData({
-        username: response.data.username,
-        email: response.data.email
-      });
-    } catch (err) {
-      console.error('Current user fetch error:', err);
-    }
-  };
+
 
   const handleAddUser = async () => {
     if (!newUser.username || !newUser.email) {
@@ -172,37 +183,61 @@ const AccountManager = () => {
     }
 
     try {
-      await axios.put(`/users/${currentUser.id}/change-password`, {
-        current_password: passwordData.currentPassword,
-        new_password: passwordData.newPassword
+      const response = await fetch(`${config.apiUrl}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          current_password: passwordData.currentPassword,
+          new_password: passwordData.newPassword
+        })
       });
-      
-      alert('비밀번호가 성공적으로 변경되었습니다.');
-      setShowPasswordModal(false);
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
+
+      if (response.ok) {
+        alert('비밀번호가 성공적으로 변경되었습니다.');
+        setShowPasswordModal(false);
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        const errorData = await response.json();
+        alert('비밀번호 변경 중 오류가 발생했습니다: ' + (errorData.error || '알 수 없는 오류'));
+      }
     } catch (err) {
-      alert('비밀번호 변경 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+      alert('비밀번호 변경 중 오류가 발생했습니다: ' + err.message);
     }
   };
 
   const handleProfileUpdate = async () => {
-    if (!profileData.username || !profileData.email) {
-      alert('사용자명과 이메일은 필수입니다.');
-      return;
-    }
-
     try {
-      // 실제로는 API 호출
-      // await axios.put('/account/profile', profileData);
-      alert('프로필이 성공적으로 수정되었습니다.');
-      setShowProfileModal(false);
-      fetchCurrentUser();
+      // 프로필 수정 API 호출
+      const response = await fetch(`${config.apiUrl}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          first_name: profileData.first_name,
+          last_name: profileData.last_name
+        })
+      });
+
+      if (response.ok) {
+        alert('프로필이 성공적으로 수정되었습니다.');
+        setShowProfileModal(false);
+        // AuthContext에서 사용자 정보 새로고침
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        alert('프로필 수정 중 오류가 발생했습니다: ' + (errorData.error || '알 수 없는 오류'));
+      }
     } catch (err) {
-      alert('프로필 수정 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+      alert('프로필 수정 중 오류가 발생했습니다: ' + err.message);
     }
   };
 
@@ -211,23 +246,34 @@ const AccountManager = () => {
     setEditUser({
       username: user.username,
       email: user.email,
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
       password: '',
-      role: user.role,
+      role: user.role || 'user',
       is_active: user.is_active
     });
     setShowEditUserModal(true);
   };
 
   const canDeleteUser = (user) => {
-    // Administrator는 모든 사용자를 삭제할 수 있음
-    // User는 자신을 삭제할 수 없음
-    return currentUser?.role === 'Administrator' && user.id !== currentUser?.id;
+    // admin만 사용자 삭제 가능
+    return currentUser?.role === 'admin' && user.id !== currentUser?.id;
   };
 
   const canEditUser = (user) => {
-    // Administrator는 모든 사용자를 수정할 수 있음
-    // User는 자신만 수정할 수 있음
-    return currentUser?.role === 'Administrator' || user.id === currentUser?.id;
+    // admin은 모든 사용자 수정 가능
+    // user는 자신만 수정 가능
+    return currentUser?.role === 'admin' || user.id === currentUser?.id;
+  };
+
+  const canViewUsers = () => {
+    // admin만 사용자 목록 조회 가능
+    return currentUser?.role === 'admin';
+  };
+
+  const canAddUser = () => {
+    // admin만 새 사용자 추가 가능
+    return currentUser?.role === 'admin';
   };
 
   if (loading) {
@@ -242,7 +288,7 @@ const AccountManager = () => {
     <div className="account-container">
       <div className="account-header">
         <h2>계정 관리</h2>
-        {currentUser?.role === 'Administrator' && (
+        {canAddUser() && (
           <button 
             className="btn btn-add"
             onClick={() => setShowAddUserModal(true)}
@@ -256,20 +302,41 @@ const AccountManager = () => {
         {/* 현재 사용자 정보 */}
         <div className="account-section">
           <h3>내 계정 정보</h3>
+          {currentUser?.role === 'guest' && (
+            <div className="guest-notice">
+              <p>⚠️ 게스트 계정으로는 제한된 기능만 사용할 수 있습니다.</p>
+            </div>
+          )}
           <div className="account-info">
             <div className="info-item">
               <label>사용자명:</label>
               <span>{currentUser?.username}</span>
             </div>
+            {currentUser?.first_name && currentUser?.last_name && (
+              <div className="info-item">
+                <label>이름:</label>
+                <span>{currentUser.first_name} {currentUser.last_name}</span>
+              </div>
+            )}
             <div className="info-item">
               <label>이메일:</label>
               <span>{currentUser?.email}</span>
             </div>
             <div className="info-item">
               <label>역할:</label>
-              <span className={`role-badge ${(currentUser?.role || 'User').toLowerCase()}`}>
-                {currentUser?.role || 'User'}
+              <span className={`role-badge ${(currentUser?.role || 'user').toLowerCase()}`}>
+                {currentUser?.role || 'user'}
               </span>
+            </div>
+            <div className="info-item">
+              <label>계정 상태:</label>
+              <span className={`status-badge ${currentUser?.is_active ? 'active' : 'inactive'}`}>
+                {currentUser?.is_active ? '활성' : '비활성'}
+              </span>
+            </div>
+            <div className="info-item">
+              <label>생성일:</label>
+              <span>{currentUser?.created_at ? new Date(currentUser.created_at).toLocaleDateString() : 'N/A'}</span>
             </div>
             <div className="info-item">
               <label>마지막 로그인:</label>
@@ -277,37 +344,61 @@ const AccountManager = () => {
             </div>
           </div>
           <div className="account-actions">
-            <button 
-              className="btn btn-primary"
-              onClick={() => setShowProfileModal(true)}
-            >
-              ✏️ 프로필 수정
-            </button>
-            <button 
-              className="btn btn-secondary"
-              onClick={() => setShowPasswordModal(true)}
-            >
-              🔒 비밀번호 변경
-            </button>
+            {currentUser?.role !== 'guest' && (
+              <>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => setShowProfileModal(true)}
+                >
+                  ✏️ 프로필 수정
+                </button>
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => setShowPasswordModal(true)}
+                >
+                  🔒 비밀번호 변경
+                </button>
+              </>
+            )}
+            {currentUser?.role === 'guest' && (
+              <div className="guest-info">
+                <p>게스트 계정은 읽기 전용입니다.</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* 사용자 목록 (Administrator만 볼 수 있음) */}
-        {currentUser?.role === 'Administrator' && (
+        {/* 사용자 목록 (admin 역할만 볼 수 있음) */}
+        {canViewUsers() && (
           <div className="account-section">
             <h3>사용자 목록</h3>
             <div className="users-list">
               {users.map(user => (
                 <div key={user.id} className="user-item">
                   <div className="user-info">
-                    <div className="user-name">{user.username}</div>
-                    <div className="user-email">{user.email}</div>
-                    <span className={`role-badge ${(user.role || 'User').toLowerCase()}`}>
-                      {user.role || 'User'}
-                    </span>
-                    <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
-                      {user.is_active ? '활성' : '비활성'}
-                    </span>
+                    <div className="user-main">
+                      <div className="user-name">{user.username}</div>
+                      <div className="user-email">{user.email}</div>
+                    </div>
+                    <div className="user-details">
+                      {user.first_name && user.last_name && (
+                        <div className="user-fullname">{user.first_name} {user.last_name}</div>
+                      )}
+                      <div className="user-meta">
+                        <span className={`role-badge ${(user.role || 'user').toLowerCase()}`}>
+                          {user.role || 'user'}
+                        </span>
+                        <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
+                          {user.is_active ? '활성' : '비활성'}
+                        </span>
+                      </div>
+                      <div className="user-timestamps">
+                        <small>생성: {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</small>
+                        {user.last_login && (
+                          <small>마지막 로그인: {new Date(user.last_login).toLocaleDateString()}</small>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div className="user-actions">
                     {canEditUser(user) && (
@@ -349,6 +440,24 @@ const AccountManager = () => {
               />
             </div>
             <div className="form-group">
+              <label>이름:</label>
+              <input
+                type="text"
+                value={newUser.first_name}
+                onChange={(e) => setNewUser({...newUser, first_name: e.target.value})}
+                placeholder="이름을 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>성:</label>
+              <input
+                type="text"
+                value={newUser.last_name}
+                onChange={(e) => setNewUser({...newUser, last_name: e.target.value})}
+                placeholder="성을 입력하세요"
+              />
+            </div>
+            <div className="form-group">
               <label>이메일:</label>
               <input
                 type="email"
@@ -363,9 +472,9 @@ const AccountManager = () => {
                 value={newUser.role}
                 onChange={(e) => setNewUser({...newUser, role: e.target.value})}
               >
-                <option value="User">User</option>
-                <option value="Administrator">Administrator</option>
-                <option value="Guest">Guest</option>
+                <option value="user">User (일반 사용자)</option>
+                <option value="admin">Admin (관리자)</option>
+                <option value="guest">Guest (게스트)</option>
               </select>
             </div>
             <div className="form-group">
@@ -400,6 +509,24 @@ const AccountManager = () => {
               />
             </div>
             <div className="form-group">
+              <label>이름:</label>
+              <input
+                type="text"
+                value={editUser.first_name}
+                onChange={(e) => setEditUser({...editUser, first_name: e.target.value})}
+                placeholder="이름을 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>성:</label>
+              <input
+                type="text"
+                value={editUser.last_name}
+                onChange={(e) => setEditUser({...editUser, last_name: e.target.value})}
+                placeholder="성을 입력하세요"
+              />
+            </div>
+            <div className="form-group">
               <label>이메일:</label>
               <input
                 type="email"
@@ -414,9 +541,9 @@ const AccountManager = () => {
                 value={editUser.role}
                 onChange={(e) => setEditUser({...editUser, role: e.target.value})}
               >
-                <option value="User">User</option>
-                <option value="Administrator">Administrator</option>
-                <option value="Guest">Guest</option>
+                <option value="user">User (일반 사용자)</option>
+                <option value="admin">Admin (관리자)</option>
+                <option value="guest">Guest (게스트)</option>
               </select>
             </div>
             <div className="form-group">
@@ -506,6 +633,24 @@ const AccountManager = () => {
                 value={profileData.username}
                 onChange={(e) => setProfileData({...profileData, username: e.target.value})}
                 placeholder="사용자명을 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>이름:</label>
+              <input
+                type="text"
+                value={profileData.first_name}
+                onChange={(e) => setProfileData({...profileData, first_name: e.target.value})}
+                placeholder="이름을 입력하세요"
+              />
+            </div>
+            <div className="form-group">
+              <label>성:</label>
+              <input
+                type="text"
+                value={profileData.last_name}
+                onChange={(e) => setProfileData({...profileData, last_name: e.target.value})}
+                placeholder="성을 입력하세요"
               />
             </div>
             <div className="form-group">

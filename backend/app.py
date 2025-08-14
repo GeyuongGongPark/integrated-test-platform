@@ -6,13 +6,18 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import text
 from models import db, Project, DashboardSummary, User, Folder, TestCase, PerformanceTest, AutomationTest, TestResult
+from utils.auth_decorators import admin_required, user_required, guest_allowed
+from routes.testcases import testcases_bp
 from routes.testcases_extended import testcases_extended_bp
 from routes.dashboard_extended import dashboard_extended_bp
 from routes.automation import automation_bp
 from routes.performance import performance_bp
 from routes.folders import folders_bp
 from routes.users import users_bp
+from routes.auth import auth_bp
 from utils.cors import setup_cors
+from flask_jwt_extended import JWTManager
+from datetime import timedelta
 
 # .env 파일 로드 (절대 경로 사용)
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
@@ -24,36 +29,33 @@ app = Flask(__name__)
 # 기본 설정
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'fallback-secret-key'
 
+# JWT 설정
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)  # 24시간으로 연장
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)  # 30일로 연장
+
 # 환경 확인
 is_vercel = 'vercel.app' in os.environ.get('VERCEL_URL', '') or os.environ.get('VERCEL') == '1'
 is_local = not is_vercel
 
-# 데이터베이스 URL 설정 (환경 변수 우선, 없으면 기본값)
-database_url = os.environ.get('DATABASE_URL')
-
-# Vercel 환경에서는 SSL 모드가 필요할 수 있음
-if database_url and is_vercel:
-    if database_url.startswith('mysql://'):
+# 데이터베이스 URL 설정 (로컬 개발 환경에서는 MySQL 강제 사용)
+if is_vercel:
+    # Vercel 환경에서는 환경 변수 사용
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url and database_url.startswith('mysql://'):
         database_url = database_url.replace('mysql://', 'mysql+pymysql://')
     # ssl_mode 파라미터 제거하고 기본 SSL 설정 사용
-    if '?' in database_url:
+    if database_url and '?' in database_url:
         # 기존 파라미터가 있으면 ssl_mode만 제거
         params = database_url.split('?')[1].split('&')
         filtered_params = [p for p in params if not p.startswith('ssl_mode=')]
         if filtered_params:
             database_url = database_url.split('?')[0] + '?' + '&'.join(filtered_params)
     print("🚀 Vercel 환경에서 MySQL 연결 설정 적용")
-
-if not database_url:
-    # Vercel 환경에서는 SQLite 사용, 로컬에서는 MySQL 사용
-    if is_vercel:
-        # Vercel에서는 임시로 SQLite 사용 (읽기 전용)
-        database_url = 'sqlite:///:memory:'
-        print("🚀 Vercel 환경에서 SQLite 사용")
-    else:
-        # 로컬 개발 환경용 기본값
-        database_url = 'mysql+pymysql://root:1q2w#E$R@127.0.0.1:3306/test_management'
-        print("🏠 로컬 환경에서 MySQL 사용")
+else:
+    # 로컬 개발 환경에서는 MySQL 강제 사용
+    database_url = 'mysql+pymysql://root:1q2w#E$R@127.0.0.1:3306/test_management'
+    print("🏠 로컬 환경에서 MySQL 강제 사용")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -94,27 +96,51 @@ print(f"🚀 Vercel URL: {os.environ.get('VERCEL_URL', 'Not Vercel')}")
 print(f"📁 .env 파일 경로: {env_path}")
 print(f"📁 .env 파일 존재: {os.path.exists(env_path)}")
 
-# CORS 설정 - 환경별로 다르게 적용
+# CORS 설정
 if is_vercel:
-    # Vercel 환경: utils/cors.py의 setup_cors 함수 사용
-    print("🌐 Vercel 환경에서 고급 CORS 설정 적용")
+    from utils.cors import setup_cors
     setup_cors(app)
 else:
-    # 로컬 환경: 기본 CORS 설정만 사용
-    print("🌐 로컬 환경에서 기본 CORS 설정 적용")
-    CORS(app, origins="*", supports_credentials=False, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"])
+    # 로컬 환경에서는 모든 origin 허용
+    CORS(app, origins=["*"], supports_credentials=True)
 
 # 데이터베이스 초기화
 db.init_app(app)
 migrate = Migrate(app, db)
 
+# JWT 초기화
+jwt = JWTManager(app)
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({
+        'message': '토큰이 만료되었습니다.',
+        'error': 'token_expired'
+    }), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({
+        'message': '유효하지 않은 토큰입니다.',
+        'error': 'invalid_token'
+    }), 401
+
+@jwt.unauthorized_loader
+def missing_token_callback(error):
+    return jsonify({
+        'message': '토큰이 필요합니다.',
+        'error': 'authorization_required'
+    }), 401
+
 # Blueprint 등록
+app.register_blueprint(testcases_bp)
 app.register_blueprint(testcases_extended_bp)
 app.register_blueprint(dashboard_extended_bp)
 app.register_blueprint(automation_bp)
 app.register_blueprint(performance_bp)
 app.register_blueprint(folders_bp)
 app.register_blueprint(users_bp)
+app.register_blueprint(auth_bp, url_prefix='/auth')
 
 # 기본 라우트들
 @app.route('/health', methods=['GET', 'OPTIONS'])
@@ -213,27 +239,41 @@ def init_database():
     
     try:
         with app.app_context():
-            # 기존 테이블 사용 (db.create_all() 제거)
+            # 테이블이 존재하지 않으면 자동 생성
+            db.create_all()
+            print("✅ 데이터베이스 테이블 생성 완료")
             
-            # 샘플 데이터 생성
-            if not Project.query.first():
-                project = Project(name='Default Project', description='Default project for testing')
-                db.session.add(project)
-                db.session.commit()
-            
-            if not DashboardSummary.query.first():
-                summary = DashboardSummary(
-                    environment='production',
-                    total_tests=0,
-                    passed_tests=0,
-                    failed_tests=0,
-                    skipped_tests=0,
-                    pass_rate=0.0,
-                    last_updated=datetime.utcnow()
+            # 기본 사용자 생성 (테스트용)
+            from models import User
+            if not User.query.filter_by(username='admin').first():
+                admin_user = User(
+                    username='admin',
+                    email='admin@test.com',
+                    first_name='관리자',
+                    last_name='시스템',
+                    role='admin',
+                    is_active=True
                 )
-                db.session.add(summary)
+                admin_user.set_password('admin123')
+                db.session.add(admin_user)
+                
+                # 테스트 사용자도 생성
+                test_user = User(
+                    username='testuser',
+                    email='test@test.com',
+                    first_name='테스트',
+                    last_name='사용자',
+                    role='user',
+                    is_active=True
+                )
+                test_user.set_password('test123')
+                db.session.add(test_user)
+                
                 db.session.commit()
-        
+                print("✅ 기본 사용자 생성 완료")
+            else:
+                print("ℹ️ 기본 사용자가 이미 존재합니다")
+            
         response = jsonify({
             'status': 'success',
             'message': 'Database initialized successfully',
@@ -364,6 +404,7 @@ def get_projects():
 
 # 추가 테스트 케이스 API들
 @app.route('/testcases/summary/all', methods=['GET', 'OPTIONS'])
+@guest_allowed
 def get_testcase_summaries():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'preflight_ok'}), 200
@@ -610,6 +651,7 @@ def download_testcases():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/testcases/<int:testcase_id>/execute', methods=['POST', 'OPTIONS'])
+@user_required
 def execute_testcase(testcase_id):
     if request.method == 'OPTIONS':
         return jsonify({'status': 'preflight_ok'}), 200

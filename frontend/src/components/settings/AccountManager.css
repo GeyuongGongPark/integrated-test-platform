@@ -98,6 +98,49 @@
   color: white;
 }
 
+.role-badge.admin {
+  background: #dc3545;
+  color: white;
+}
+
+.role-badge.user {
+  background: #007bff;
+  color: white;
+}
+
+.role-badge.guest {
+  background: #6c757d;
+  color: white;
+}
+
+.guest-notice {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 20px;
+  color: #856404;
+}
+
+.guest-notice p {
+  margin: 0;
+  font-weight: 500;
+}
+
+.guest-info {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 15px;
+  text-align: center;
+  color: #6c757d;
+}
+
+.guest-info p {
+  margin: 0;
+  font-style: italic;
+}
+
 .role-badge.user {
   background: #007bff;
   color: white;

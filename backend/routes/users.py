@@ -1,33 +1,45 @@
 from flask import Blueprint, request, jsonify
 from models import db, User
-from utils.auth import require_permission
+from utils.auth_decorators import admin_required, user_required, owner_required
 from utils.cors import add_cors_headers
+from datetime import datetime
 
 # Blueprint 생성
 users_bp = Blueprint('users', __name__)
 
 # 사용자 관리 API
 @users_bp.route('/users', methods=['GET'])
+@admin_required
 def get_users():
     """사용자 목록 조회"""
     try:
-        # 하드코딩된 사용자 목록 반환 (Users 테이블이 없으므로)
-        users = [{
-            'id': 1,
-            'username': 'admin',
-            'email': 'admin@example.com',
-            'role': 'Administrator',
-            'is_active': True,
-            'created_at': '2025-01-01T00:00:00',
-            'last_login': '2025-08-06T08:00:00'
-        }]
-        response = jsonify(users)
+        # 데이터베이스에서 실제 사용자 목록 조회
+        users = User.query.all()
+        users_data = []
+        
+        for user in users:
+            user_data = {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': user.role,
+                'is_active': user.is_active,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'updated_at': user.updated_at.isoformat() if user.updated_at else None,
+                'last_login': user.last_login.isoformat() if user.last_login else None
+            }
+            users_data.append(user_data)
+        
+        response = jsonify(users_data)
         return add_cors_headers(response), 200
     except Exception as e:
         response = jsonify({'error': str(e)})
         return add_cors_headers(response), 500
 
 @users_bp.route('/users', methods=['POST'])
+@admin_required
 def create_user():
     """새 사용자 생성"""
     try:
@@ -54,7 +66,10 @@ def create_user():
         user = User(
             username=data['username'],
             email=data['email'],
-            role=data.get('role', 'User')
+            first_name=data.get('first_name', ''),
+            last_name=data.get('last_name', ''),
+            role=data.get('role', 'user'),
+            is_active=True
         )
         
         # 비밀번호 설정 (해시화됨)
@@ -68,7 +83,7 @@ def create_user():
             'user_id': user.id,
             'default_password': default_password if not data.get('password') else None
         })
-        return add_cors_headers(response), 201
+        return add_cors_headers(response), 200
         
     except Exception as e:
         db.session.rollback()
@@ -76,7 +91,7 @@ def create_user():
         return add_cors_headers(response), 500
 
 @users_bp.route('/users/<int:user_id>', methods=['PUT'])
-@require_permission('update')
+@owner_required
 def update_user(user_id):
     """사용자 정보 수정"""
     try:
@@ -99,6 +114,20 @@ def update_user(user_id):
                 return add_cors_headers(response), 400
             user.email = data['email']
         
+        if 'first_name' in data:
+            user.first_name = data['first_name']
+        
+        if 'last_name' in data:
+            user.last_name = data['last_name']
+        
+        if 'role' in data:
+            user.role = data['role']
+        
+        if 'is_active' in data:
+            user.is_active = data['is_active']
+        
+        user.updated_at = datetime.utcnow()
+        
         if 'password' in data:
             # 비밀번호 변경
             user.set_password(data['password'])
@@ -120,7 +149,7 @@ def update_user(user_id):
         return add_cors_headers(response), 500
 
 @users_bp.route('/users/<int:user_id>', methods=['DELETE'])
-@require_permission('delete')
+@admin_required
 def delete_user(user_id):
     """사용자 삭제"""
     try:
@@ -137,26 +166,36 @@ def delete_user(user_id):
         return add_cors_headers(response), 500
 
 @users_bp.route('/users/current', methods=['GET'])
+@user_required
 def get_current_user():
     """현재 로그인한 사용자 정보 조회"""
     try:
-        # 하드코딩된 admin 사용자 정보 반환 (Users 테이블이 없으므로)
-        response = jsonify({
-            'id': 1,
-            'username': 'admin',
-            'email': 'admin@example.com',
-            'role': 'Administrator',
-            'is_active': True,
-            'created_at': '2025-01-01T00:00:00',
-            'last_login': '2025-08-06T08:00:00'
-        })
-        return add_cors_headers(response), 200
+        # 임시로 admin 사용자 정보 반환 (실제로는 JWT 토큰에서 사용자 ID를 가져와야 함)
+        admin_user = User.query.filter_by(username='admin').first()
+        if admin_user:
+            response = jsonify({
+                'id': admin_user.id,
+                'username': admin_user.username,
+                'email': admin_user.email,
+                'first_name': admin_user.first_name,
+                'last_name': admin_user.last_name,
+                'role': admin_user.role,
+                'is_active': admin_user.is_active,
+                'created_at': admin_user.created_at.isoformat() if admin_user.created_at else None,
+                'updated_at': admin_user.updated_at.isoformat() if admin_user.updated_at else None,
+                'last_login': admin_user.last_login.isoformat() if admin_user.last_login else None
+            })
+            return add_cors_headers(response), 200
+        else:
+            response = jsonify({'error': 'admin 사용자를 찾을 수 없습니다.'})
+            return add_cors_headers(response), 404
         
     except Exception as e:
         response = jsonify({'error': str(e)})
         return add_cors_headers(response), 500
 
 @users_bp.route('/users/<int:user_id>/change-password', methods=['PUT'])
+@owner_required
 def change_password(user_id):
     """사용자 비밀번호 변경"""
     try:

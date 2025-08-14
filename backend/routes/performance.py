@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import db, PerformanceTest, TestResult, TestExecution
 from utils.cors import add_cors_headers
+from utils.auth_decorators import guest_allowed
 from engines.k6_engine import k6_engine
 import json
 from datetime import datetime
@@ -12,6 +13,7 @@ performance_bp = Blueprint('performance', __name__)
 
 # 새로운 성능 테스트 API 엔드포인트들
 @performance_bp.route('/performance-tests', methods=['GET'])
+@guest_allowed
 def get_performance_tests():
     tests = PerformanceTest.query.all()
     data = [{
@@ -50,6 +52,7 @@ def create_performance_test():
         return add_cors_headers(response), 500
 
 @performance_bp.route('/performance-tests/<int:id>', methods=['GET'])
+@guest_allowed
 def get_performance_test(id):
     pt = PerformanceTest.query.get_or_404(id)
     data = {

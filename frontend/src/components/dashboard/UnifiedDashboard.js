@@ -394,7 +394,7 @@ const UnifiedDashboard = ({ setActiveTab }) => {
           <div className="card-content">
             {testCases.slice(0, 5).map(testCase => (
               <div key={testCase.id} className="test-item">
-                <span className="test-name">{testCase.description}</span>
+                <span className="test-name">{testCase.name || '이름 없음'}</span>
                 <span className={`test-status ${(testCase.result_status || 'N/A').toLowerCase().replace('/', '-')}`}>
                   {testCase.result_status || 'N/A'}
                 </span>

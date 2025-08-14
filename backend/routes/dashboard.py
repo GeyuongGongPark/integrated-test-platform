@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import db, DashboardSummary, TestResult, TestCase
 from utils.cors import add_cors_headers
+from utils.auth_decorators import guest_allowed
 from datetime import datetime
 
 # Blueprint 생성
@@ -8,6 +9,7 @@ dashboard_bp = Blueprint('dashboard', __name__)
 
 # 새로운 대시보드 요약 API
 @dashboard_bp.route('/dashboard-summaries', methods=['GET'])
+@guest_allowed
 def get_dashboard_summaries():
     summaries = DashboardSummary.query.all()
     data = [{
@@ -63,6 +65,7 @@ def delete_dashboard_summary(id):
 
 # 환경별 테스트 결과 요약 API
 @dashboard_bp.route('/test-results/summary/<environment>', methods=['GET'])
+@guest_allowed
 def get_test_results_summary(environment):
     """특정 환경의 테스트 결과 요약"""
     try:
@@ -94,6 +97,7 @@ def get_test_results_summary(environment):
         return add_cors_headers(response), 500
 
 @dashboard_bp.route('/testcases/summary/<environment>', methods=['GET'])
+@guest_allowed
 def get_testcases_summary(environment):
     """특정 환경의 테스트 케이스 상태 요약 (Pass, Fail, N/T, N/A, Block)"""
     try:
