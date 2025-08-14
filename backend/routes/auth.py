@@ -6,9 +6,18 @@ import secrets
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/register', methods=['POST'])
+@auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
     """사용자 회원가입"""
+    # OPTIONS 요청 처리 (CORS preflight)
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'preflight_ok'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin'
+        response.headers['Access-Control-Max-Age'] = '86400'
+        return response, 200
+    
     try:
         data = request.get_json()
         
@@ -52,9 +61,18 @@ def register():
         db.session.rollback()
         return jsonify({'error': '회원가입 중 오류가 발생했습니다.'}), 500
 
-@auth_bp.route('/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST', 'OPTIONS'])
 def login():
     """사용자 로그인"""
+    # OPTIONS 요청 처리 (CORS preflight)
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'preflight_ok'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin'
+        response.headers['Access-Control-Max-Age'] = '86400'
+        return response, 200
+    
     try:
         print("🔐 로그인 시도 시작")
         data = request.get_json()
@@ -139,9 +157,18 @@ def refresh():
     except Exception as e:
         return jsonify({'error': '토큰 갱신 중 오류가 발생했습니다.'}), 500
 
-@auth_bp.route('/guest', methods=['POST'])
+@auth_bp.route('/guest', methods=['POST', 'OPTIONS'])
 def guest_login():
     """게스트 로그인"""
+    # OPTIONS 요청 처리 (CORS preflight)
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'preflight_ok'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin'
+        response.headers['Access-Control-Max-Age'] = '86400'
+        return response, 200
+    
     try:
         print("🎭 게스트 로그인 시도")
         

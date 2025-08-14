@@ -14,23 +14,7 @@ def setup_cors(app):
     
     print("🌐 Vercel 환경에서 고급 CORS 설정을 적용합니다.")
     
-    # CORS 설정 - 필요한 URL만 포함
-    cors_origins = [
-        'http://localhost:3000',  # 개발 환경
-        'https://frontend-alpha-ten-pi.vercel.app',  # 현재 프론트엔드 URL
-        'https://frontend-alpha-jade-15.vercel.app',  # 이전 프론트엔드 URL
-        # Vercel URL 패턴 (와일드카드로 대체)
-        'https://*.vercel.app'
-    ]
-    
-    # 환경 변수에서 추가 CORS 설정 가져오기
-    env_cors = os.environ.get('CORS_ORIGINS', '')
-    if env_cors:
-        cors_origins.extend(env_cors.split(','))
-    
-    print(f"🌐 CORS Origins: {cors_origins}")
-    
-    # CORS 설정 - 명시적 헤더 설정
+    # CORS 설정 - 모든 origin 허용
     CORS(app, 
          origins=['*'], 
          supports_credentials=False, 
@@ -44,7 +28,7 @@ def setup_cors(app):
     def after_request(response):
         origin = request.headers.get('Origin')
         
-        # 모든 Origin 허용 (더 구체적으로 설정)
+        # 모든 Origin 허용
         if origin:
             response.headers['Access-Control-Allow-Origin'] = origin
         else:
@@ -52,7 +36,7 @@ def setup_cors(app):
         
         # CORS 헤더 설정
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
         response.headers['Access-Control-Allow-Credentials'] = 'false'
         response.headers['Access-Control-Max-Age'] = '86400'
         response.headers['Access-Control-Expose-Headers'] = '*'
