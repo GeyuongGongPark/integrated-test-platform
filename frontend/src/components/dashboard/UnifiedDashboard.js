@@ -72,6 +72,12 @@ const UnifiedDashboard = ({ setActiveTab }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dbInitializing, setDbInitializing] = useState(false);
+  
+  // 페이징 상태 추가
+  const [testCasesPage, setTestCasesPage] = useState(1);
+  const [performanceTestsPage, setPerformanceTestsPage] = useState(1);
+  const [testExecutionsPage, setTestExecutionsPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     fetchDashboardData();
@@ -188,9 +194,33 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       failed: 0,
       nt: 0,
       na: 0,
-      blocked: 0,
-      pass_rate: 0
+      blocked: 0
     };
+  };
+
+  // 페이징 관련 함수들
+  const loadMoreTestCases = () => {
+    setTestCasesPage(prev => prev + 1);
+  };
+
+  const loadMorePerformanceTests = () => {
+    setPerformanceTestsPage(prev => prev + 1);
+  };
+
+  const loadMoreTestExecutions = () => {
+    setTestExecutionsPage(prev => prev + 1);
+  };
+
+  const resetTestCasesPaging = () => {
+    setTestCasesPage(1);
+  };
+
+  const resetPerformanceTestsPaging = () => {
+    setPerformanceTestsPage(1);
+  };
+
+  const resetTestExecutionsPaging = () => {
+    setTestExecutionsPage(1);
   };
 
   const getStatusColor = (passRate) => {
@@ -390,9 +420,18 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       {/* 기존 대시보드 내용 */}
       <div className="dashboard-grid">
         <div className="dashboard-card">
-          <h3>테스트 케이스 ({testCases.length})</h3>
+          <div className="card-header">
+            <h3>테스트 케이스 ({testCases.length})</h3>
+            <button 
+              className="btn-move-to-tab"
+              onClick={() => setActiveTab('testcases')}
+              title="테스트 케이스 상세 보기"
+            >
+              이동 &gt;
+            </button>
+          </div>
           <div className="card-content">
-            {testCases.slice(0, 5).map(testCase => (
+            {testCases.slice(0, testCasesPage * itemsPerPage).map(testCase => (
               <div key={testCase.id} className="test-item">
                 <span className="test-name">{testCase.name || '이름 없음'}</span>
                 <span className={`test-status ${(testCase.result_status || 'N/A').toLowerCase().replace('/', '-')}`}>
@@ -400,41 +439,75 @@ const UnifiedDashboard = ({ setActiveTab }) => {
                 </span>
               </div>
             ))}
-            {testCases.length > 5 && (
+            {testCases.length > testCasesPage * itemsPerPage && (
               <div 
                 className="more-items clickable"
-                onClick={() => setActiveTab('testcases')}
+                onClick={loadMoreTestCases}
               >
-                + {testCases.length - 5} more
+                + {testCases.length - (testCasesPage * itemsPerPage)} more
+              </div>
+            )}
+            {testCasesPage > 1 && (
+              <div 
+                className="reset-paging clickable"
+                onClick={resetTestCasesPaging}
+              >
+                처음부터 보기
               </div>
             )}
           </div>
         </div>
 
         <div className="dashboard-card">
-          <h3>성능 테스트 ({performanceTests.length})</h3>
+          <div className="card-header">
+            <h3>성능 테스트 ({performanceTests.length})</h3>
+            <button 
+              className="btn-move-to-tab"
+              onClick={() => setActiveTab('performance')}
+              title="성능 테스트 상세 보기"
+            >
+              이동 &gt;
+            </button>
+          </div>
           <div className="card-content">
-            {performanceTests.slice(0, 5).map(test => (
+            {performanceTests.slice(0, performanceTestsPage * itemsPerPage).map(test => (
               <div key={test.id} className="test-item">
                 <span className="test-name">{test.name}</span>
                 <span className="test-environment">{test.environment}</span>
               </div>
             ))}
-            {performanceTests.length > 5 && (
+            {performanceTests.length > performanceTestsPage * itemsPerPage && (
               <div 
                 className="more-items clickable"
-                onClick={() => setActiveTab('performance')}
+                onClick={loadMorePerformanceTests}
               >
-                + {performanceTests.length - 5} more
+                + {performanceTests.length - (performanceTestsPage * itemsPerPage)} more
+              </div>
+            )}
+            {performanceTestsPage > 1 && (
+              <div 
+                className="reset-paging clickable"
+                onClick={resetPerformanceTestsPaging}
+              >
+                처음부터 보기
               </div>
             )}
           </div>
         </div>
 
         <div className="dashboard-card">
-          <h3>최근 테스트 실행 ({testExecutions.length})</h3>
+          <div className="card-header">
+            <h3>최근 테스트 실행 ({testExecutions.length})</h3>
+            <button 
+              className="btn-move-to-tab"
+              onClick={() => setActiveTab('testcases')}
+              title="테스트 실행 상세 보기"
+            >
+              이동 &gt;
+            </button>
+          </div>
           <div className="card-content">
-            {testExecutions.slice(0, 5).map(execution => (
+            {testExecutions.slice(0, testExecutionsPage * itemsPerPage).map(execution => (
               <div key={execution.id} className="test-item">
                 <span className="test-name">Test #{execution.id}</span>
                 <span className={`test-status ${(execution.status || 'N/A').toLowerCase().replace('/', '-')}`}>
@@ -442,12 +515,20 @@ const UnifiedDashboard = ({ setActiveTab }) => {
                 </span>
               </div>
             ))}
-            {testExecutions.length > 5 && (
+            {testExecutions.length > testExecutionsPage * itemsPerPage && (
               <div 
                 className="more-items clickable"
-                onClick={() => setActiveTab('testcases')}
+                onClick={loadMoreTestExecutions}
               >
-                + {testExecutions.length - 5} more
+                + {testExecutions.length - (testExecutionsPage * itemsPerPage)} more
+              </div>
+            )}
+            {testExecutionsPage > 1 && (
+              <div 
+                className="reset-paging clickable"
+                onClick={resetTestExecutionsPaging}
+              >
+                처음부터 보기
               </div>
             )}
           </div>

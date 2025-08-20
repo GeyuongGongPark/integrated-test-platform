@@ -99,8 +99,33 @@ def execute_performance_test(id):
     # 환경 변수 설정
     env_vars = data.get('environment_vars', {})
     if pt.parameters:
-        base_params = json.loads(pt.parameters)
-        env_vars.update(base_params)
+        try:
+            base_params = json.loads(pt.parameters)
+            # base_params가 딕셔너리인지 확인하고 안전하게 업데이트
+            if isinstance(base_params, dict):
+                env_vars.update(base_params)
+            else:
+                print(f"Warning: pt.parameters is not a dictionary: {type(base_params)}")
+                print(f"pt.parameters content: {pt.parameters}")
+                # 기본 환경 변수 설정
+                env_vars.update({
+                    'BASE_URL': 'http://localhost:3000',
+                    'ENVIRONMENT': pt.environment or 'dev'
+                })
+        except (json.JSONDecodeError, TypeError) as e:
+            print(f"Error parsing pt.parameters: {e}")
+            print(f"pt.parameters content: {pt.parameters}")
+            # 파싱 실패 시 기본 환경 변수 설정
+            env_vars.update({
+                'BASE_URL': 'http://localhost:3000',
+                'ENVIRONMENT': pt.environment or 'dev'
+            })
+    else:
+        # parameters가 없을 때 기본 환경 변수 설정
+        env_vars.update({
+            'BASE_URL': 'http://localhost:3000',
+            'ENVIRONMENT': pt.environment or 'dev'
+        })
     
     # k6 테스트 실행
     result = k6_engine.execute_test(pt.script_path, env_vars)

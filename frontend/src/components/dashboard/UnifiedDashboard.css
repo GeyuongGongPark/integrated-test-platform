@@ -209,6 +209,13 @@
   padding-bottom: 8px;
 }
 
+/* 카드 헤더가 있을 때는 h3 스타일 조정 */
+.card-header h3 {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
 .card-content {
   max-height: 300px;
   overflow-y: auto;
@@ -267,14 +274,73 @@
   border-radius: 3px;
 }
 
-.more-items {
-  text-align: center;
-  color: #666;
-  font-style: italic;
-  padding: 10px;
-  border-top: 1px solid #e0e0e0;
-  margin-top: 10px;
+/* 카드 헤더 스타일 */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
 }
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.2em;
+  color: #333;
+}
+
+/* 이동 버튼 스타일 */
+.btn-move-to-tab {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-move-to-tab:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 페이징 관련 스타일 */
+.reset-paging {
+  color: #6c757d;
+  font-size: 12px;
+  text-align: center;
+  padding: 8px;
+  margin-top: 8px;
+  border-top: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.reset-paging:hover {
+  color: #495057;
+  text-decoration: underline;
+}
+
+.more-items {
+  color: #007bff;
+  font-size: 12px;
+  text-align: center;
+  padding: 8px;
+  margin-top: 8px;
+  border-top: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.more-items:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+
 
 .more-items.clickable {
   cursor: pointer;

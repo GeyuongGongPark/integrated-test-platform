@@ -4,6 +4,54 @@ import axios from 'axios';
 import config from '../../config';
 import './TestCaseAPP.css';
 
+// axios 인터셉터 설정 - 인증 토큰 자동 추가
+axios.interceptors.request.use(
+  (config) => {
+    // 로컬 스토리지에서 토큰 가져오기
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    // 요청 헤더에 CORS 관련 설정 추가
+    config.headers['Content-Type'] = 'application/json';
+    config.headers['X-Requested-With'] = 'XMLHttpRequest';
+    config.headers['Accept'] = 'application/json';
+    
+    // 개발 환경에서만 로깅
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🌐 API Request:', config.method?.toUpperCase(), config.url);
+      console.log('🔑 Auth Token:', token ? '있음' : '없음');
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// 응답 인터셉터 설정
+axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    console.error('🚨 API Error:', error.response?.status, error.response?.data || error.message);
+    
+    // 401 오류 처리 (인증 실패)
+    if (error.response?.status === 401) {
+      console.error('🔐 인증 오류 발생 - 로그인이 필요합니다');
+      // 로컬 스토리지에서 토큰 제거
+      localStorage.removeItem('token');
+      // 페이지 새로고침하여 로그인 페이지로 이동
+      window.location.reload();
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 // 스크린샷 컴포넌트
 const TestCaseScreenshots = ({ testCaseId }) => {
   const [screenshots, setScreenshots] = useState([]);
@@ -316,11 +364,19 @@ const TestCaseAPP = () => {
 
   const handleStatusChange = async (testCaseId, newStatus) => {
     try {
-      await axios.put(`/testcases/${testCaseId}/status`, { status: newStatus });
-      console.log('테스트 케이스 상태 변경 완료:', newStatus);
+      console.log('🔄 테스트 케이스 상태 변경 시도:', { testCaseId, newStatus });
+      
+      const response = await axios.put(`${config.apiUrl}/testcases/${testCaseId}/status`, { 
+        status: newStatus 
+      });
+      
+      console.log('✅ 테스트 케이스 상태 변경 완료:', newStatus, response.data);
+      alert('테스트 케이스 상태가 성공적으로 변경되었습니다.');
       fetchData(); // 데이터 새로고침
     } catch (err) {
-      alert('테스트 케이스 상태 변경 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+      console.error('❌ 테스트 케이스 상태 변경 실패:', err);
+      const errorMessage = err.response?.data?.error || err.message || '알 수 없는 오류가 발생했습니다.';
+      alert('테스트 케이스 상태 변경 중 오류가 발생했습니다: ' + errorMessage);
     }
   };
 
@@ -381,10 +437,12 @@ const TestCaseAPP = () => {
     }
 
     try {
+      console.log('🔄 폴더 이동 시도:', { selectedTestCases, targetFolderId });
+      
       // 선택된 테스트 케이스들을 대상 폴더로 이동
       await Promise.all(
         selectedTestCases.map(testCaseId =>
-          axios.put(`/testcases/${testCaseId}`, {
+          axios.put(`${config.apiUrl}/testcases/${testCaseId}`, {
             folder_id: targetFolderId
           })
         )
@@ -396,7 +454,9 @@ const TestCaseAPP = () => {
       setTargetFolderId('');
       fetchData(); // 데이터 새로고침
     } catch (err) {
-      alert('폴더 이동 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+      console.error('❌ 폴더 이동 실패:', err);
+      const errorMessage = err.response?.data?.error || err.message || '알 수 없는 오류가 발생했습니다.';
+      alert('폴더 이동 중 오류가 발생했습니다: ' + errorMessage);
     }
   };
 

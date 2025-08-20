@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from sqlalchemy import text
-from models import db, Project, DashboardSummary, User, Folder, TestCase, PerformanceTest, AutomationTest, TestResult
+from models import db, Project, User, Folder, TestCase, PerformanceTest, AutomationTest, TestResult
 from utils.auth_decorators import admin_required, user_required, guest_allowed
 from routes.testcases import testcases_bp
 from routes.testcases_extended import testcases_extended_bp
@@ -392,29 +392,7 @@ def create_testcase():
 
 # 성능 테스트 API는 performance.py Blueprint에서 처리
 
-# 대시보드 API
-@app.route('/dashboard-summaries', methods=['GET', 'OPTIONS'])
-def get_dashboard_summaries():
-    if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
-    
-    try:
-        summaries = DashboardSummary.query.all()
-        data = [{
-            'id': s.id,
-            'environment': s.environment,
-            'total_tests': s.total_tests,
-            'passed_tests': s.passed_tests,
-            'failed_tests': s.failed_tests,
-            'skipped_tests': s.skipped_tests,
-            'pass_rate': s.pass_rate,
-            'last_updated': s.last_updated.strftime('%Y-%m-%d %H:%M:%S')
-        } for s in summaries]
-        response = jsonify(data)
-        return response, 200
-    except Exception as e:
-        response = jsonify({'error': str(e)})
-        return response, 500
+# 대시보드 API는 dashboard_extended.py Blueprint에서 처리
 
 # 폴더 API는 folders.py Blueprint에서 처리
 

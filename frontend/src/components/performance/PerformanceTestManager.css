@@ -464,10 +464,28 @@ summary:hover {
 }
 
 .btn-cancel {
-  background: #6c757d;
+  background: #f44336;
   color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: auto;
+  width: auto;
+  height: 40px;
 }
 
 .btn-cancel:hover {
-  background: #545b62;
+  background: #d32f2f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* 폼 액션 버튼들 */
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
 }

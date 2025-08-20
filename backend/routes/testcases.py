@@ -141,6 +141,14 @@ def create_testcase():
             if default_deployment_folder:
                 folder_id = default_deployment_folder.id
     
+    # 폴더의 환경 정보를 자동으로 가져오기
+    folder_environment = 'dev'  # 기본값
+    if folder_id:
+        folder = Folder.query.get(folder_id)
+        if folder:
+            folder_environment = folder.environment
+            print(f"📁 폴더 '{folder.folder_name}'의 환경: {folder_environment}")
+    
     tc = TestCase(
         project_id=project_id,
         main_category=data.get('main_category', ''),
@@ -150,7 +158,7 @@ def create_testcase():
         expected_result=data.get('expected_result', ''),
         result_status=data.get('result_status', 'N/T'),
         remark=data.get('remark', ''),
-        environment=data.get('environment', 'dev'),
+        environment=folder_environment,  # 폴더의 환경 정보 사용
         folder_id=folder_id,
         automation_code_path=data.get('automation_code_path', ''),
         automation_code_type=data.get('automation_code_type', 'playwright')
@@ -167,44 +175,170 @@ def create_testcase():
         response = jsonify({'error': f'데이터베이스 오류: {str(e)}'})
         return add_cors_headers(response), 500
 
+def update_dashboard_summary_for_environment(environment):
+    """특정 환경의 대시보드 요약 데이터 업데이트"""
+    try:
+        from sqlalchemy import text
+        from datetime import datetime
+        
+        # 해당 환경의 테스트 케이스 통계 조회
+        query = text("""
+            SELECT 
+                result_status,
+                COUNT(*) as count
+            FROM TestCases
+            WHERE environment = :env
+            GROUP BY result_status
+        """)
+        
+        result = db.session.execute(query, {'env': environment})
+        stats = result.fetchall()
+        
+        # 통계 계산
+        status_counts = {row.result_status: row.count for row in stats}
+        total_tests = sum(status_counts.values())
+        passed_tests = status_counts.get('Pass', 0)
+        failed_tests = status_counts.get('Fail', 0)
+        skipped_tests = status_counts.get('N/T', 0) + status_counts.get('N/A', 0)
+        
+        # 통과율 계산
+        pass_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
+        
+        # DashboardSummary 모델 import
+        from models import DashboardSummary
+        
+        # 기존 요약 데이터 확인 및 업데이트
+        existing_summary = DashboardSummary.query.filter_by(environment=environment).first()
+        
+        if existing_summary:
+            existing_summary.total_tests = total_tests
+            existing_summary.passed_tests = passed_tests
+            existing_summary.failed_tests = failed_tests
+            existing_summary.skipped_tests = skipped_tests
+            existing_summary.pass_rate = round(pass_rate, 2)
+            existing_summary.last_updated = datetime.utcnow()
+        else:
+            # 새 요약 데이터 생성
+            new_summary = DashboardSummary(
+                environment=environment,
+                total_tests=total_tests,
+                passed_tests=passed_tests,
+                failed_tests=failed_tests,
+                skipped_tests=skipped_tests,
+                pass_rate=round(pass_rate, 2),
+                last_updated=datetime.utcnow()
+            )
+            db.session.add(new_summary)
+        
+        print(f"🔄 대시보드 요약 데이터 업데이트 완료: {environment}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ 대시보드 요약 데이터 업데이트 실패: {str(e)}")
+        return False
+
 @testcases_bp.route('/testcases/<int:id>/status', methods=['PUT'])
 @user_required
 def update_testcase_status(id):
-    tc = TestCase.query.get_or_404(id)
-    data = request.get_json()
-    tc.result_status = data.get('status', tc.result_status)
-    db.session.commit()
-    response = jsonify({'message': '테스트 케이스 상태 업데이트 완료'})
-    return add_cors_headers(response), 200
+    try:
+        tc = TestCase.query.get_or_404(id)
+        data = request.get_json()
+        
+        old_status = tc.result_status
+        new_status = data.get('status', tc.result_status)
+        
+        print(f"🔄 테스트 케이스 상태 변경: {tc.name} ({old_status} → {new_status})")
+        
+        # 상태 업데이트
+        tc.result_status = new_status
+        db.session.commit()
+        
+        # 대시보드 요약 데이터 자동 업데이트
+        if update_dashboard_summary_for_environment(tc.environment):
+            print(f"✅ 대시보드 요약 데이터 업데이트 성공: {tc.environment}")
+        else:
+            print(f"⚠️ 대시보드 요약 데이터 업데이트 실패: {tc.environment}")
+        
+        response = jsonify({
+            'message': '테스트 케이스 상태 업데이트 완료',
+            'old_status': old_status,
+            'new_status': new_status,
+            'environment': tc.environment
+        })
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        print(f"❌ 테스트 케이스 상태 업데이트 실패: {str(e)}")
+        db.session.rollback()
+        response = jsonify({'error': f'상태 업데이트 중 오류가 발생했습니다: {str(e)}'})
+        return add_cors_headers(response), 500
 
 @testcases_bp.route('/testcases/<int:id>', methods=['PUT'])
 @user_required
 def update_testcase(id):
     tc = TestCase.query.get_or_404(id)
     data = request.get_json()
-    tc.main_category = data.get('main_category', tc.main_category)
-    tc.sub_category = data.get('sub_category', tc.sub_category)
-    tc.detail_category = data.get('detail_category', tc.detail_category)
-    tc.pre_condition = data.get('pre_condition', tc.pre_condition)
-    tc.expected_result = data.get('expected_result', tc.expected_result)
-    tc.result_status = data.get('result_status', tc.result_status)
-    tc.remark = data.get('remark', tc.remark)
-    tc.environment = data.get('environment', tc.environment)
-    tc.folder_id = data.get('folder_id', tc.folder_id)
-    tc.automation_code_path = data.get('automation_code_path', tc.automation_code_path)
-    tc.automation_code_type = data.get('automation_code_type', tc.automation_code_type)
-    db.session.commit()
-    response = jsonify({'message': '테스트 케이스 업데이트 완료'})
-    return add_cors_headers(response), 200
+    
+    # 폴더 ID가 변경되었는지 확인
+    new_folder_id = data.get('folder_id', tc.folder_id)
+    if new_folder_id != tc.folder_id:
+        # 새 폴더의 환경 정보로 자동 업데이트
+        new_folder = Folder.query.get(new_folder_id)
+        if new_folder:
+            tc.environment = new_folder.environment
+            print(f"🔄 폴더 변경으로 인한 환경 정보 업데이트: {tc.environment} → {new_folder.environment}")
+    
+        tc.main_category = data.get('main_category', tc.main_category)
+        tc.sub_category = data.get('sub_category', tc.sub_category)
+        tc.detail_category = data.get('detail_category', tc.detail_category)
+        tc.pre_condition = data.get('pre_condition', tc.pre_condition)
+        tc.expected_result = data.get('expected_result', tc.expected_result)
+        tc.result_status = data.get('result_status', tc.result_status)
+        tc.remark = data.get('remark', tc.remark)
+        # environment는 폴더 변경 시 자동으로 설정되므로 수동 입력 무시
+        tc.folder_id = new_folder_id
+        tc.automation_code_path = data.get('automation_code_path', tc.automation_code_path)
+        tc.automation_code_type = data.get('automation_code_type', tc.automation_code_type)
+        
+        db.session.commit()
+        
+        # 대시보드 요약 데이터 자동 업데이트
+        if update_dashboard_summary_for_environment(tc.environment):
+            print(f"✅ 대시보드 요약 데이터 업데이트 성공: {tc.environment}")
+        else:
+            print(f"⚠️ 대시보드 요약 데이터 업데이트 실패: {tc.environment}")
+        
+        response = jsonify({'message': '테스트 케이스 업데이트 완료'})
+        return add_cors_headers(response), 200
 
 @testcases_bp.route('/testcases/<int:id>', methods=['DELETE'])
 @admin_required
 def delete_testcase(id):
-    tc = TestCase.query.get_or_404(id)
-    db.session.delete(tc)
-    db.session.commit()
-    response = jsonify({'message': '테스트 케이스 삭제 완료'})
-    return add_cors_headers(response), 200
+    try:
+        tc = TestCase.query.get_or_404(id)
+        environment = tc.environment
+        testcase_name = tc.name
+        
+        print(f"🗑️ 테스트 케이스 삭제: {testcase_name} ({environment})")
+        
+        # 테스트 케이스 삭제
+        db.session.delete(tc)
+        db.session.commit()
+        
+        # 대시보드 요약 데이터 자동 업데이트
+        if update_dashboard_summary_for_environment(environment):
+            print(f"✅ 대시보드 요약 데이터 업데이트 성공: {environment}")
+        else:
+            print(f"⚠️ 대시보드 요약 데이터 업데이트 실패: {environment}")
+        
+        response = jsonify({'message': '테스트 케이스 삭제 완료'})
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        print(f"❌ 테스트 케이스 삭제 실패: {str(e)}")
+        db.session.rollback()
+        response = jsonify({'error': f'삭제 중 오류가 발생했습니다: {str(e)}'})
+        return add_cors_headers(response), 500
 
 @testcases_bp.route('/testresults/<int:test_case_id>', methods=['GET'])
 def get_test_results(test_case_id):

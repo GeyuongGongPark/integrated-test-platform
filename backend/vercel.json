@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "git": {
+    "deploymentEnabled": {
+      "alpha": true
+    }
+  },
   "builds": [
     {
       "src": "app.py",

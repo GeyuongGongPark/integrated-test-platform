@@ -17,6 +17,7 @@ const PerformanceTestManager = () => {
     });
     const [editingTest, setEditingTest] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showAddForm, setShowAddForm] = useState(false);
     const [testResults, setTestResults] = useState([]);
     const [executing, setExecuting] = useState(false);
     const [expandedTests, setExpandedTests] = useState(new Set());
@@ -35,15 +36,26 @@ const PerformanceTestManager = () => {
     };
 
     const addPerformanceTest = async () => {
+        // 유효성 검사
+        if (!newTest.name.trim()) {
+            alert('테스트명을 입력해주세요.');
+            return;
+        }
+        if (!newTest.k6_script_path.trim()) {
+            alert('k6 스크립트 경로를 입력해주세요.');
+            return;
+        }
+
         try {
             await axios.post('/performance-tests', {
-                name: newTest.name,
-                description: newTest.description,
-                k6_script_path: newTest.k6_script_path,
+                name: newTest.name.trim(),
+                description: newTest.description.trim(),
+                k6_script_path: newTest.k6_script_path.trim(),
                 environment: newTest.environment,
                 parameters: newTest.parameters
             });
-            fetchPerformanceTests();
+            
+            // 성공 후 폼 초기화 및 숨기기
             setNewTest({
                 name: '',
                 description: '',
@@ -51,8 +63,12 @@ const PerformanceTestManager = () => {
                 environment: 'prod',
                 parameters: {}
             });
+            setShowAddForm(false);
+            fetchPerformanceTests();
+            alert('성능 테스트가 성공적으로 추가되었습니다.');
         } catch (error) {
             console.error('성능 테스트 추가 오류:', error);
+            alert('성능 테스트 추가 중 오류가 발생했습니다: ' + (error.response?.data?.error || error.message));
         }
     };
 
@@ -126,63 +142,115 @@ const PerformanceTestManager = () => {
         });
     };
 
+    const cancelAddTest = () => {
+        setNewTest({
+            name: '',
+            description: '',
+            k6_script_path: '',
+            environment: 'prod',
+            parameters: {}
+        });
+        setShowAddForm(false);
+    };
+
     return (
         <div className="performance-test-manager">
             <div className="performance-header">
                 <h1>Performance Test Manager</h1>
+                {!showAddForm && (
+                    <button 
+                        onClick={() => setShowAddForm(true)}
+                        className="btn btn-add"
+                    >
+                        + Add Performance Test
+                    </button>
+                )}
             </div>
             
-            <div className="add-test-form">
-                <h2>Add Performance Test</h2>
-                <div className="form-row">
-                    <div className="form-group">
-                        <input 
-                            type="text" 
-                            placeholder="Test Name" 
-                            value={newTest.name} 
-                            onChange={(e) => setNewTest({ ...newTest, name: e.target.value })} 
-                            className="form-control"
-                        />
+            {showAddForm && (
+                <div className="add-test-form">
+                    <h2>Add Performance Test</h2>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Test Name *</label>
+                            <input 
+                                type="text" 
+                                placeholder="Test Name" 
+                                value={newTest.name} 
+                                onChange={(e) => setNewTest({ ...newTest, name: e.target.value })} 
+                                className="form-control"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Description</label>
+                            <input 
+                                type="text" 
+                                placeholder="Description" 
+                                value={newTest.description} 
+                                onChange={(e) => setNewTest({ ...newTest, description: e.target.value })} 
+                                className="form-control"
+                            />
+                        </div>
                     </div>
-                    <div className="form-group">
-                        <input 
-                            type="text" 
-                            placeholder="Description" 
-                            value={newTest.description} 
-                            onChange={(e) => setNewTest({ ...newTest, description: e.target.value })} 
-                            className="form-control"
-                        />
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>k6 Script Path *</label>
+                            <input 
+                                type="text" 
+                                placeholder="k6 Script Path" 
+                                value={newTest.k6_script_path} 
+                                onChange={(e) => setNewTest({ ...newTest, k6_script_path: e.target.value })} 
+                                className="form-control"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Environment</label>
+                            <select 
+                                value={newTest.environment} 
+                                onChange={(e) => setNewTest({ ...newTest, environment: e.target.value })}
+                                className="form-control"
+                            >
+                                <option value="prod">Production</option>
+                                <option value="staging">Staging</option>
+                                <option value="dev">Development</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
-                <div className="form-row">
-                    <div className="form-group">
-                        <input 
-                            type="text" 
-                            placeholder="k6 Script Path" 
-                            value={newTest.k6_script_path} 
-                            onChange={(e) => setNewTest({ ...newTest, k6_script_path: e.target.value })} 
-                            className="form-control"
-                        />
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Parameters (JSON)</label>
+                            <textarea 
+                                placeholder='{"timeout": 30, "retries": 3}' 
+                                value={newTest.parameters ? JSON.stringify(newTest.parameters, null, 2) : ''} 
+                                onChange={(e) => {
+                                    try {
+                                        const params = e.target.value ? JSON.parse(e.target.value) : {};
+                                        setNewTest({ ...newTest, parameters: params });
+                                    } catch (err) {
+                                        // JSON 파싱 오류 무시
+                                    }
+                                }} 
+                                className="form-control"
+                                rows="3"
+                            />
+                        </div>
                     </div>
-                    <div className="form-group">
-                        <select 
-                            value={newTest.environment} 
-                            onChange={(e) => setNewTest({ ...newTest, environment: e.target.value })}
-                            className="form-control"
+                    <div className="form-actions">
+                        <button 
+                            onClick={addPerformanceTest}
+                            className="btn btn-add"
                         >
-                            <option value="prod">Production</option>
-                            <option value="staging">Staging</option>
-                            <option value="dev">Development</option>
-                        </select>
+                            Create Performance Test
+                        </button>
+                        <button 
+                            onClick={cancelAddTest}
+                            className="btn btn-cancel"
+                        >
+                            Cancel
+                        </button>
                     </div>
                 </div>
-                <button 
-                    onClick={addPerformanceTest}
-                    className="btn btn-add"
-                >
-                    Add Performance Test
-                </button>
-            </div>
+            )}
 
             <h2>Performance Tests</h2>
             <div className="test-list">
