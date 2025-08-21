@@ -47,15 +47,14 @@ def upgrade():
         op.create_table('UserSessions',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('session_token', sa.String(length=255), nullable=False),
+        sa.Column('session_token', sa.String(length=500), nullable=False),  # 500자로 증가
         sa.Column('ip_address', sa.String(length=45), nullable=True),
         sa.Column('user_agent', sa.Text(), nullable=True),
-        sa.Column('is_active', sa.Boolean(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=True),
+        sa.Column('is_active', sa.Boolean(), nullable=False, default=True),
+        sa.Column('created_at', sa.DateTime(), nullable=False, default=sa.func.now()),
         sa.Column('expires_at', sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
         sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('session_token')
+        sa.ForeignKeyConstraint(['user_id'], ['Users.id'], ondelete='CASCADE')
         )
     except:
         pass  # 이미 존재하는 경우 무시

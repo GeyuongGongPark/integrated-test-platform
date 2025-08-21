@@ -876,6 +876,78 @@ def reorganize_testcases():
 
 # 데이터베이스 연결 상태 확인 API (기존 /health 라우트와 통합됨)
 
+@app.route('/db-status', methods=['GET', 'OPTIONS'])
+def check_database_status():
+    if request.method == 'OPTIONS':
+        return handle_options_request()
+    
+    try:
+        # 데이터베이스 연결 상태 확인
+        db.session.execute(text('SELECT 1'))
+        
+        # Users 테이블 구조 확인
+        try:
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            columns = inspector.get_columns('Users')
+            
+            table_info = {
+                'table_name': 'Users',
+                'columns': [],
+                'last_login_exists': False
+            }
+            
+            for col in columns:
+                col_info = {
+                    'name': col['name'],
+                    'type': str(col['type']),
+                    'nullable': col.get('nullable', 'unknown'),
+                    'default': col.get('default', 'unknown')
+                }
+                table_info['columns'].append(col_info)
+                
+                if col['name'] == 'last_login':
+                    table_info['last_login_exists'] = True
+                    table_info['last_login_info'] = col_info
+            
+            # 샘플 사용자 데이터 확인
+            try:
+                from models import User
+                sample_user = User.query.first()
+                if sample_user:
+                    table_info['sample_user'] = {
+                        'id': sample_user.id,
+                        'username': sample_user.username,
+                        'last_login': sample_user.last_login.isoformat() if sample_user.last_login else None,
+                        'created_at': sample_user.created_at.isoformat() if sample_user.created_at else None
+                    }
+            except Exception as user_error:
+                table_info['user_query_error'] = str(user_error)
+            
+            return jsonify({
+                'status': 'success',
+                'database_connected': True,
+                'table_info': table_info,
+                'environment': 'production' if is_vercel else 'development',
+                'database_url': app.config['SQLALCHEMY_DATABASE_URI'][:50] + '...' if len(app.config['SQLALCHEMY_DATABASE_URI']) > 50 else app.config['SQLALCHEMY_DATABASE_URI']
+            }), 200
+            
+        except Exception as inspect_error:
+            return jsonify({
+                'status': 'error',
+                'database_connected': True,
+                'inspect_error': str(inspect_error),
+                'environment': 'production' if is_vercel else 'development'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'database_connected': False,
+            'error': str(e),
+            'environment': 'production' if is_vercel else 'development'
+        }), 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

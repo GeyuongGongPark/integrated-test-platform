@@ -104,6 +104,9 @@ def login():
         
         # 마지막 로그인 시간 업데이트 (먼저 처리)
         print(f"🕐 last_login 업데이트 전: {user.last_login}")
+        print(f"🌍 현재 환경: {'Vercel' if 'vercel.app' in request.host_url else 'Local'}")
+        print(f"🗄️ 데이터베이스 URL: {current_app.config.get('SQLALCHEMY_DATABASE_URI', 'Not Set')[:50]}...")
+        
         user.last_login = datetime.utcnow()
         print(f"🕐 last_login 업데이트 후: {user.last_login}")
         
@@ -134,6 +137,20 @@ def login():
         
         # last_login 업데이트와 커밋을 try 밖에서 처리
         try:
+            # 데이터베이스 테이블 구조 확인
+            try:
+                from sqlalchemy import inspect
+                inspector = inspect(db.engine)
+                columns = inspector.get_columns('Users')
+                last_login_exists = any(col['name'] == 'last_login' for col in columns)
+                print(f"🔍 Users 테이블 last_login 컬럼 존재: {last_login_exists}")
+                if last_login_exists:
+                    for col in columns:
+                        if col['name'] == 'last_login':
+                            print(f"🔍 last_login 컬럼 타입: {col['type']}, nullable: {col.get('nullable', 'unknown')}")
+            except Exception as inspect_error:
+                print(f"⚠️ 테이블 구조 확인 실패: {inspect_error}")
+            
             db.session.commit()
             print(f"✅ 데이터베이스 커밋 완료")
             print(f"🕐 커밋 후 last_login 확인: {user.last_login}")
