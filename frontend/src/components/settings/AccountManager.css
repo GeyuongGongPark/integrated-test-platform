@@ -85,7 +85,9 @@
   color: #333;
 }
 
-.role-badge {
+/* 공통 배지 스타일 */
+.role-badge,
+.status-badge {
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 12px;
@@ -93,11 +95,7 @@
   text-transform: uppercase;
 }
 
-.role-badge.administrator {
-  background: #dc3545;
-  color: white;
-}
-
+.role-badge.administrator,
 .role-badge.admin {
   background: #dc3545;
   color: white;
@@ -111,6 +109,23 @@
 .role-badge.guest {
   background: #6c757d;
   color: white;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.inactive {
+  background: #f8d7da;
+  color: #721c24;
 }
 
 .guest-notice {
@@ -141,39 +156,13 @@
   font-style: italic;
 }
 
-.role-badge.user {
-  background: #007bff;
-  color: white;
-}
-
-.role-badge.guest {
-  background: #6c757d;
-  color: white;
-}
-
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.status-badge.active {
-  background: #d4edda;
-  color: #155724;
-}
-
-.status-badge.inactive {
-  background: #f8d7da;
-  color: #721c24;
-}
-
 .account-actions {
   display: flex;
   gap: 15px;
   flex-wrap: wrap;
 }
 
+/* 공통 버튼 스타일 */
 .btn {
   padding: 10px 20px;
   border: none;
@@ -293,17 +282,84 @@
 
 .modal {
   background: white;
-  border-radius: 8px;
-  padding: 30px;
+  border-radius: 12px;
+  padding: 0;
   min-width: 400px;
   max-width: 500px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.modal h3 {
-  margin-bottom: 20px;
+.modal-wide {
+  min-width: 600px;
+  max-width: 800px;
+}
+
+.modal-header {
+  background: transparent;
   color: #333;
-  font-size: 1.3em;
+  padding: 25px 30px;
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.4em;
+  font-weight: 600;
+  text-align: center;
+}
+
+.modal-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  padding: 30px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.modal-section h4 {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-size: 1.1em;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 8px;
+  font-weight: 600;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.form-help {
+  color: #6c757d;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
+}
+
+.modal-body {
+  padding: 30px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  background: transparent;
+  padding: 20px 30px;
+  border-radius: 0 0 12px 12px;
+  /* border-top: 1px solid #e9ecef; */
 }
 
 .form-group {
@@ -330,15 +386,15 @@
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }
 
 .modal-actions {
   display: flex;
   gap: 15px;
   justify-content: flex-end;
-  margin-top: 30px;
+  margin: 0;
 }
 
 /* 로딩 및 에러 상태 */
@@ -389,5 +445,47 @@
   .modal {
     min-width: 90%;
     margin: 20px;
+  }
+  
+  .modal-wide {
+    min-width: 90%;
+    max-width: 90%;
+  }
+  
+  .modal-header {
+    padding: 20px;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.2em;
+  }
+  
+  .modal-content-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  .modal-body {
+    padding: 20px;
+  }
+  
+  .modal-footer {
+    padding: 15px 20px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .modal-actions .btn {
+    width: 100%;
+    justify-content: center;
   }
 } 

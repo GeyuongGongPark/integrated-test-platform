@@ -99,6 +99,7 @@ else:
 # 환경 변수 로깅 (디버깅용)
 print(f"🔗 Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
 print(f"🔑 Secret Key: {app.config['SECRET_KEY']}")
+print(f"🔑 JWT Secret Key: {app.config['JWT_SECRET_KEY']}")
 print(f"🌍 Environment: {'production' if is_vercel else 'development'}")
 print(f"🚀 Vercel URL: {os.environ.get('VERCEL_URL', 'Not Vercel')}")
 print(f"📁 .env 파일 경로: {env_path}")
@@ -121,6 +122,7 @@ jwt = JWTManager(app)
 
 @jwt.expired_token_loader
 def expired_token_callback(jwt_header, jwt_payload):
+    print(f"❌ 토큰 만료: header={jwt_header}, payload={jwt_payload}")
     return jsonify({
         'message': '토큰이 만료되었습니다.',
         'error': 'token_expired'
@@ -128,6 +130,7 @@ def expired_token_callback(jwt_header, jwt_payload):
 
 @jwt.invalid_token_loader
 def invalid_token_callback(error):
+    print(f"❌ 유효하지 않은 토큰: {error}")
     return jsonify({
         'message': '유효하지 않은 토큰입니다.',
         'error': 'invalid_token'
@@ -135,6 +138,7 @@ def invalid_token_callback(error):
 
 @jwt.unauthorized_loader
 def missing_token_callback(error):
+    print(f"❌ 토큰 누락: {error}")
     return jsonify({
         'message': '토큰이 필요합니다.',
         'error': 'authorization_required'
@@ -150,22 +154,83 @@ app.register_blueprint(folders_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(auth_bp, url_prefix='/auth')
 
-# 전역 OPTIONS 핸들러 추가 (Blueprint 등록 후)
-@app.route('/<path:path>', methods=['OPTIONS'])
-def handle_options(path):
-    """모든 경로에 대한 OPTIONS 요청 처리"""
-    response = jsonify({'status': 'preflight_ok'})
+# 헬퍼 함수들
+def create_cors_response(data=None, status_code=200):
+    """CORS 헤더가 포함된 응답 생성"""
+    if data is None:
+        data = {'status': 'preflight_ok'}
+    response = jsonify(data)
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
     response.headers['Access-Control-Max-Age'] = '86400'
-    return response, 200
+    return response, status_code
+
+def handle_options_request():
+    """OPTIONS 요청 처리"""
+    return create_cors_response()
+
+def get_environment_folders(env):
+    """환경별 폴더 ID 목록 반환"""
+    if env == 'dev':
+        return [1, 4, 7, 8, 9, 10, 11, 12, 13]
+    elif env == 'alpha':
+        return [2, 5]
+    else:  # production
+        return [3, 6]
+
+def calculate_test_results(env_folders):
+    """환경별 테스트 결과 계산"""
+    try:
+        passed_tests = db.session.query(TestResult).join(TestCase).filter(
+            TestCase.folder_id.in_(env_folders),
+            TestResult.status == 'Pass'
+        ).count()
+        failed_tests = db.session.query(TestResult).join(TestCase).filter(
+            TestCase.folder_id.in_(env_folders),
+            TestResult.status == 'Fail'
+        ).count()
+        nt_tests = db.session.query(TestResult).join(TestCase).filter(
+            TestCase.folder_id.in_(env_folders),
+            TestResult.status == 'N/T'
+        ).count()
+        na_tests = db.session.query(TestResult).join(TestCase).filter(
+            TestCase.folder_id.in_(env_folders),
+            TestResult.status == 'N/A'
+        ).count()
+        blocked_tests = db.session.query(TestResult).join(TestCase).filter(
+            TestCase.folder_id.in_(env_folders),
+            TestResult.status == 'Block'
+        ).count()
+        return passed_tests, failed_tests, nt_tests, na_tests, blocked_tests
+    except Exception:
+        return 0, 0, 0, 0, 0
+
+def generate_realistic_test_distribution(total_testcases):
+    """현실적인 테스트 분포 생성"""
+    nt_tests = int(total_testcases * 0.7)  # 70%는 아직 테스트하지 않음
+    na_tests = int(total_testcases * 0.1)  # 10%는 N/A
+    passed_tests = int(total_testcases * 0.15)  # 15%는 Pass
+    failed_tests = int(total_testcases * 0.03)  # 3%는 Fail
+    blocked_tests = int(total_testcases * 0.02)  # 2%는 Block
+    
+    # 남은 테스트 케이스들을 N/T에 추가
+    remaining = total_testcases - (nt_tests + na_tests + passed_tests + failed_tests + blocked_tests)
+    nt_tests += remaining
+    
+    return passed_tests, failed_tests, nt_tests, na_tests, blocked_tests
+
+# 전역 OPTIONS 핸들러 추가 (Blueprint 등록 후)
+@app.route('/<path:path>', methods=['OPTIONS'])
+def handle_options(path):
+    """모든 경로에 대한 OPTIONS 요청 처리"""
+    return handle_options_request()
 
 # 기본 라우트들
 @app.route('/health', methods=['GET', 'OPTIONS'])
 def health_check():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         # 데이터베이스 연결 테스트
@@ -216,7 +281,7 @@ def health_check():
 @app.route('/cors-test', methods=['GET', 'OPTIONS'])
 def cors_test():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         response = jsonify({
@@ -238,12 +303,7 @@ def cors_test():
 def simple_cors_test():
     """간단한 CORS 테스트 엔드포인트"""
     if request.method == 'OPTIONS':
-        # OPTIONS 요청에 대한 응답
-        response = jsonify({'status': 'preflight_ok'})
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        return response, 200
+        return handle_options_request()
     
     # 실제 요청에 대한 응답
     response = jsonify({
@@ -258,11 +318,7 @@ def simple_cors_test():
 def ping():
     """가장 간단한 ping 엔드포인트 (데이터베이스 연결 없음)"""
     if request.method == 'OPTIONS':
-        response = jsonify({'status': 'preflight_ok'})
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        return response, 200
+        return handle_options_request()
     
     return jsonify({
         'status': 'success',
@@ -274,7 +330,7 @@ def ping():
 @app.route('/init-db', methods=['GET', 'POST', 'OPTIONS'])
 def init_database():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         with app.app_context():
@@ -320,10 +376,17 @@ def init_database():
         })
         return response, 200
     except Exception as e:
+        print(f"❌ init-db 오류 발생: {str(e)}")
+        print(f"🔍 오류 타입: {type(e)}")
+        import traceback
+        print(f"📋 상세 오류: {traceback.format_exc()}")
+        
         response = jsonify({
             'status': 'error',
             'message': f'Database initialization failed: {str(e)}',
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'error_type': str(type(e)),
+            'traceback': traceback.format_exc()
         })
         return response, 500
 
@@ -331,7 +394,7 @@ def init_database():
 @app.route('/testcases', methods=['GET', 'OPTIONS'])
 def get_testcases():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         testcases = TestCase.query.all()
@@ -362,7 +425,7 @@ def get_testcases():
 @app.route('/testcases', methods=['POST', 'OPTIONS'])
 def create_testcase():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         data = request.get_json()
@@ -402,7 +465,7 @@ def create_testcase():
 @app.route('/projects', methods=['GET', 'OPTIONS'])
 def get_projects():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         projects = Project.query.all()
@@ -424,7 +487,7 @@ def get_projects():
 @guest_allowed
 def get_testcase_summaries():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         # 환경별 테스트 케이스 요약 데이터 생성
@@ -433,100 +496,19 @@ def get_testcase_summaries():
         
         for env in environments:
             # 해당 환경의 테스트 케이스 수 계산
-            if env == 'dev':
-                # DEV 환경: folder_id 1, 4, 7-13
-                dev_folders = [1, 4, 7, 8, 9, 10, 11, 12, 13]
-                total_testcases = TestCase.query.filter(TestCase.folder_id.in_(dev_folders)).count()
-            elif env == 'alpha':
-                # ALPHA 환경: folder_id 2, 5
-                alpha_folders = [2, 5]
-                total_testcases = TestCase.query.filter(TestCase.folder_id.in_(alpha_folders)).count()
-            else:  # production
-                # PRODUCTION 환경: folder_id 3, 6
-                production_folders = [3, 6]
-                total_testcases = TestCase.query.filter(TestCase.folder_id.in_(production_folders)).count()
+            env_folders = get_environment_folders(env)
+            total_testcases = TestCase.query.filter(TestCase.folder_id.in_(env_folders)).count()
             
             # TestResult 테이블에서 해당 환경의 테스트 케이스 결과 조회
             try:
-                if env == 'dev':
-                    passed_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(dev_folders),
-                        TestResult.status == 'Pass'
-                    ).count()
-                    failed_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(dev_folders),
-                        TestResult.status == 'Fail'
-                    ).count()
-                    nt_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(dev_folders),
-                        TestResult.status == 'N/T'
-                    ).count()
-                    na_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(dev_folders),
-                        TestResult.status == 'N/A'
-                    ).count()
-                    blocked_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(dev_folders),
-                        TestResult.status == 'Block'
-                    ).count()
-                elif env == 'alpha':
-                    passed_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(alpha_folders),
-                        TestResult.status == 'Pass'
-                    ).count()
-                    failed_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(alpha_folders),
-                        TestResult.status == 'Fail'
-                    ).count()
-                    nt_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(alpha_folders),
-                        TestResult.status == 'N/T'
-                    ).count()
-                    na_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(alpha_folders),
-                        TestResult.status == 'N/A'
-                    ).count()
-                    blocked_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(alpha_folders),
-                        TestResult.status == 'Block'
-                    ).count()
-                else:  # production
-                    passed_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(production_folders),
-                        TestResult.status == 'Pass'
-                    ).count()
-                    failed_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(production_folders),
-                        TestResult.status == 'Fail'
-                    ).count()
-                    na_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(production_folders),
-                        TestResult.status == 'N/A'
-                    ).count()
-                    blocked_tests = db.session.query(TestResult).join(TestCase).filter(
-                        TestCase.folder_id.in_(production_folders),
-                        TestResult.status == 'Block'
-                    ).count()
+                passed_tests, failed_tests, nt_tests, na_tests, blocked_tests = calculate_test_results(env_folders)
             except Exception:
                 # TestResult 테이블이 없거나 조인 실패 시 기본값 사용
-                passed_tests = 0
-                failed_tests = 0
-                nt_tests = 0
-                na_tests = 0
-                blocked_tests = 0
+                passed_tests, failed_tests, nt_tests, na_tests, blocked_tests = 0, 0, 0, 0, 0
             
             # TestResult 테이블에 데이터가 없으면 기본값으로 현실적인 분포 생성
             if total_testcases > 0 and (passed_tests + failed_tests + nt_tests + na_tests + blocked_tests) == 0:
-                # 전체 테스트 케이스 중 일부는 N/T (Not Tested) 상태로 설정
-                nt_tests = int(total_testcases * 0.7)  # 70%는 아직 테스트하지 않음
-                na_tests = int(total_testcases * 0.1)  # 10%는 N/A
-                passed_tests = int(total_testcases * 0.15)  # 15%는 Pass
-                failed_tests = int(total_testcases * 0.03)  # 3%는 Fail
-                blocked_tests = int(total_testcases * 0.02)  # 2%는 Block
-                
-                # 남은 테스트 케이스들을 N/T에 추가
-                remaining = total_testcases - (nt_tests + na_tests + passed_tests + failed_tests + blocked_tests)
-                nt_tests += remaining
+                passed_tests, failed_tests, nt_tests, na_tests, blocked_tests = generate_realistic_test_distribution(total_testcases)
             
             # 프론트엔드에서 기대하는 형식으로 데이터 구성
             summary = {
@@ -552,7 +534,7 @@ def get_testcase_summaries():
 @app.route('/testcases/<int:testcase_id>', methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
 def manage_testcase(testcase_id):
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         testcase = TestCase.query.get_or_404(testcase_id)
@@ -600,7 +582,7 @@ def manage_testcase(testcase_id):
 @app.route('/testcases/<int:testcase_id>/status', methods=['PUT', 'OPTIONS'])
 def update_testcase_status(testcase_id):
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         testcase = TestCase.query.get_or_404(testcase_id)
@@ -625,7 +607,7 @@ def update_testcase_status(testcase_id):
 @app.route('/testcases/<int:testcase_id>/screenshots', methods=['GET', 'OPTIONS'])
 def get_testcase_screenshots(testcase_id):
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         # 테스트 결과의 스크린샷 조회
@@ -648,7 +630,7 @@ def get_testcase_screenshots(testcase_id):
 @app.route('/testcases/upload', methods=['POST', 'OPTIONS'])
 def upload_testcases():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         # 파일 업로드 처리 (실제 구현은 파일 처리 로직 필요)
@@ -659,7 +641,7 @@ def upload_testcases():
 @app.route('/testcases/download', methods=['GET', 'OPTIONS'])
 def download_testcases():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         # 테스트 케이스 다운로드 처리 (실제 구현은 파일 생성 로직 필요)
@@ -671,7 +653,7 @@ def download_testcases():
 @user_required
 def execute_testcase(testcase_id):
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         testcase = TestCase.query.get_or_404(testcase_id)
@@ -698,7 +680,7 @@ def execute_testcase(testcase_id):
 @app.route('/test', methods=['GET', 'OPTIONS'])
 def get_test_data():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         # 테스트 데이터 반환 - status 컬럼이 없을 경우를 대비
@@ -729,7 +711,7 @@ def get_test_data():
 @app.route('/test-executions', methods=['GET', 'OPTIONS'])
 def get_test_executions():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         # 테스트 실행 결과 조회 - status 컬럼이 없을 경우를 대비
@@ -763,7 +745,7 @@ def get_test_executions():
 @app.route('/testresults/<int:testcase_id>', methods=['GET', 'OPTIONS'])
 def get_test_results(testcase_id):
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         # 특정 테스트 케이스의 결과 조회
@@ -784,7 +766,7 @@ def get_test_results(testcase_id):
 @app.route('/folders/feature', methods=['POST', 'OPTIONS'])
 def add_feature_folders():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         # 기존 날짜 폴더들에 기능 폴더 추가
@@ -838,7 +820,7 @@ def add_feature_folders():
 @app.route('/testcases/reorganize', methods=['POST', 'OPTIONS'])
 def reorganize_testcases():
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'preflight_ok'}), 200
+        return handle_options_request()
     
     try:
         # 테스트 케이스 이름에 따라 적절한 기능 폴더로 이동

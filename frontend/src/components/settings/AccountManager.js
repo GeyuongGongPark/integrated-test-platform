@@ -428,67 +428,82 @@ const AccountManager = () => {
       {/* 새 사용자 추가 모달 */}
       {showAddUserModal && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h3>새 사용자 추가</h3>
-            <div className="form-group">
-              <label>사용자명:</label>
-              <input
-                type="text"
-                value={newUser.username}
-                onChange={(e) => setNewUser({...newUser, username: e.target.value})}
-                placeholder="사용자명을 입력하세요"
-              />
+          <div className="modal modal-wide">
+            <div className="modal-header">
+              <h3>새 사용자 추가</h3>
             </div>
-            <div className="form-group">
-              <label>이름:</label>
-              <input
-                type="text"
-                value={newUser.first_name}
-                onChange={(e) => setNewUser({...newUser, first_name: e.target.value})}
-                placeholder="이름을 입력하세요"
-              />
+            <div className="modal-content-grid">
+              <div className="modal-section">
+                <h4>기본 정보</h4>
+                <div className="form-group">
+                  <label>사용자명:</label>
+                  <input
+                    type="text"
+                    value={newUser.username}
+                    onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                    placeholder="사용자명을 입력하세요"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>이메일:</label>
+                  <input
+                    type="email"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                    placeholder="이메일을 입력하세요"
+                  />
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>이름:</label>
+                    <input
+                      type="text"
+                      value={newUser.first_name}
+                      onChange={(e) => setNewUser({...newUser, first_name: e.target.value})}
+                      placeholder="이름을 입력하세요"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>성:</label>
+                    <input
+                      type="text"
+                      value={newUser.last_name}
+                      onChange={(e) => setNewUser({...newUser, last_name: e.target.value})}
+                      placeholder="성을 입력하세요"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="modal-section">
+                <h4>계정 설정</h4>
+                <div className="form-group">
+                  <label>역할:</label>
+                  <select
+                    value={newUser.role}
+                    onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                  >
+                    <option value="user">User (일반 사용자)</option>
+                    <option value="admin">Admin (관리자)</option>
+                    <option value="guest">Guest (게스트)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <small className="form-help">
+                    * 비밀번호는 기본값(1q2w#E$R)으로 설정됩니다.
+                  </small>
+                </div>
+              </div>
             </div>
-            <div className="form-group">
-              <label>성:</label>
-              <input
-                type="text"
-                value={newUser.last_name}
-                onChange={(e) => setNewUser({...newUser, last_name: e.target.value})}
-                placeholder="성을 입력하세요"
-              />
-            </div>
-            <div className="form-group">
-              <label>이메일:</label>
-              <input
-                type="email"
-                value={newUser.email}
-                onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                placeholder="이메일을 입력하세요"
-              />
-            </div>
-            <div className="form-group">
-              <label>역할:</label>
-              <select
-                value={newUser.role}
-                onChange={(e) => setNewUser({...newUser, role: e.target.value})}
-              >
-                <option value="user">User (일반 사용자)</option>
-                <option value="admin">Admin (관리자)</option>
-                <option value="guest">Guest (게스트)</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <small className="form-help">
-                * 비밀번호는 기본값(1q2w#E$R)으로 설정됩니다.
-              </small>
-            </div>
-            <div className="modal-actions">
-              <button className="btn btn-primary" onClick={handleAddUser}>
-                추가
-              </button>
-              <button className="btn btn-secondary" onClick={() => setShowAddUserModal(false)}>
-                취소
-              </button>
+            <div className="modal-footer">
+              <div className="modal-actions">
+                <button className="btn btn-primary" onClick={handleAddUser}>
+                  추가
+                </button>
+                <button className="btn btn-secondary" onClick={() => setShowAddUserModal(false)}>
+                  취소
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -497,81 +512,99 @@ const AccountManager = () => {
       {/* 사용자 수정 모달 */}
       {showEditUserModal && selectedUser && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h3>사용자 정보 수정</h3>
-            <div className="form-group">
-              <label>사용자명:</label>
-              <input
-                type="text"
-                value={editUser.username}
-                onChange={(e) => setEditUser({...editUser, username: e.target.value})}
-                placeholder="사용자명을 입력하세요"
-              />
+          <div className="modal modal-wide">
+            <div className="modal-header">
+              <h3>사용자 정보 수정</h3>
             </div>
-            <div className="form-group">
-              <label>이름:</label>
-              <input
-                type="text"
-                value={editUser.first_name}
-                onChange={(e) => setEditUser({...editUser, first_name: e.target.value})}
-                placeholder="이름을 입력하세요"
-              />
+            <div className="modal-content-grid">
+              <div className="modal-section">
+                <h4>기본 정보</h4>
+                <div className="form-group">
+                  <label>사용자명:</label>
+                  <input
+                    type="text"
+                    value={editUser.username}
+                    onChange={(e) => setEditUser({...editUser, username: e.target.value})}
+                    placeholder="사용자명을 입력하세요"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>이메일:</label>
+                  <input
+                    type="email"
+                    value={editUser.email}
+                    onChange={(e) => setEditUser({...editUser, email: e.target.value})}
+                    placeholder="이메일을 입력하세요"
+                  />
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>이름:</label>
+                    <input
+                      type="text"
+                      value={editUser.first_name}
+                      onChange={(e) => setEditUser({...editUser, first_name: e.target.value})}
+                      placeholder="이름을 입력하세요"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>성:</label>
+                    <input
+                      type="text"
+                      value={editUser.last_name}
+                      onChange={(e) => setEditUser({...editUser, last_name: e.target.value})}
+                      placeholder="성을 입력하세요"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="modal-section">
+                <h4>계정 설정</h4>
+                <div className="form-group">
+                  <label>역할:</label>
+                  <select
+                    value={editUser.role}
+                    onChange={(e) => setEditUser({...editUser, role: e.target.value})}
+                  >
+                    <option value="user">User (일반 사용자)</option>
+                    <option value="admin">Admin (관리자)</option>
+                    <option value="guest">Guest (게스트)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>계정 상태:</label>
+                  <select
+                    value={editUser.is_active}
+                    onChange={(e) => setEditUser({...editUser, is_active: e.target.value === 'true'})}
+                  >
+                    <option value={true}>활성</option>
+                    <option value={false}>비활성</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>새 비밀번호 (선택사항):</label>
+                  <input
+                    type="password"
+                    value={editUser.password}
+                    onChange={(e) => setEditUser({...editUser, password: e.target.value})}
+                    placeholder="변경하지 않으려면 비워두세요"
+                  />
+                  <small className="form-help">
+                    비밀번호를 입력하면 기존 비밀번호가 변경됩니다.
+                  </small>
+                </div>
+              </div>
             </div>
-            <div className="form-group">
-              <label>성:</label>
-              <input
-                type="text"
-                value={editUser.last_name}
-                onChange={(e) => setEditUser({...editUser, last_name: e.target.value})}
-                placeholder="성을 입력하세요"
-              />
-            </div>
-            <div className="form-group">
-              <label>이메일:</label>
-              <input
-                type="email"
-                value={editUser.email}
-                onChange={(e) => setEditUser({...editUser, email: e.target.value})}
-                placeholder="이메일을 입력하세요"
-              />
-            </div>
-            <div className="form-group">
-              <label>역할:</label>
-              <select
-                value={editUser.role}
-                onChange={(e) => setEditUser({...editUser, role: e.target.value})}
-              >
-                <option value="user">User (일반 사용자)</option>
-                <option value="admin">Admin (관리자)</option>
-                <option value="guest">Guest (게스트)</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>새 비밀번호 (선택사항):</label>
-              <input
-                type="password"
-                value={editUser.password}
-                onChange={(e) => setEditUser({...editUser, password: e.target.value})}
-                placeholder="새 비밀번호를 입력하세요 (변경하지 않으려면 비워두세요)"
-              />
-            </div>
-            <div className="form-group">
-              <label>상태:</label>
-              <select
-                value={editUser.is_active}
-                onChange={(e) => setEditUser({...editUser, is_active: e.target.value === 'true'})}
-              >
-                <option value={true}>활성</option>
-                <option value={false}>비활성</option>
-              </select>
-            </div>
-            <div className="modal-actions">
-              <button className="btn btn-primary" onClick={handleEditUser}>
-                수정
-              </button>
-              <button className="btn btn-secondary" onClick={() => setShowEditUserModal(false)}>
-                취소
-              </button>
+            <div className="modal-footer">
+              <div className="modal-actions">
+                <button className="btn btn-primary" onClick={handleEditUser}>
+                  수정
+                </button>
+                <button className="btn btn-secondary" onClick={() => setShowEditUserModal(false)}>
+                  취소
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -581,7 +614,10 @@ const AccountManager = () => {
       {showPasswordModal && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>비밀번호 변경</h3>
+            <div className="modal-header">
+              <h3>비밀번호 변경</h3>
+            </div>
+            <div className="modal-body">
             <div className="form-group">
               <label>현재 비밀번호:</label>
               <input
@@ -609,13 +645,16 @@ const AccountManager = () => {
                 placeholder="새 비밀번호를 다시 입력하세요"
               />
             </div>
-            <div className="modal-actions">
-              <button className="btn btn-primary" onClick={handlePasswordChange}>
-                변경
-              </button>
-              <button className="btn btn-secondary" onClick={() => setShowPasswordModal(false)}>
-                취소
-              </button>
+            </div>
+            <div className="modal-footer">
+              <div className="modal-actions">
+                <button className="btn btn-primary" onClick={handlePasswordChange}>
+                  변경
+                </button>
+                <button className="btn btn-secondary" onClick={() => setShowPasswordModal(false)}>
+                  취소
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -624,51 +663,66 @@ const AccountManager = () => {
       {/* 프로필 수정 모달 */}
       {showProfileModal && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h3>프로필 수정</h3>
-            <div className="form-group">
-              <label>사용자명:</label>
-              <input
-                type="text"
-                value={profileData.username}
-                onChange={(e) => setProfileData({...profileData, username: e.target.value})}
-                placeholder="사용자명을 입력하세요"
-              />
+          <div className="modal modal-wide">
+            <div className="modal-header">
+              <h3>프로필 수정</h3>
             </div>
-            <div className="form-group">
-              <label>이름:</label>
-              <input
-                type="text"
-                value={profileData.first_name}
-                onChange={(e) => setProfileData({...profileData, first_name: e.target.value})}
-                placeholder="이름을 입력하세요"
-              />
+            <div className="modal-content-grid">
+              <div className="modal-section">
+                <h4>기본 정보</h4>
+                <div className="form-group">
+                  <label>사용자명:</label>
+                  <input
+                    type="text"
+                    value={profileData.username}
+                    onChange={(e) => setProfileData({...profileData, username: e.target.value})}
+                    placeholder="사용자명을 입력하세요"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>이메일:</label>
+                  <input
+                    type="email"
+                    value={profileData.email}
+                    onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                    placeholder="이메일을 입력하세요"
+                  />
+                </div>
+              </div>
+              
+              <div className="modal-section">
+                <h4>개인 정보</h4>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>이름:</label>
+                    <input
+                      type="text"
+                      value={profileData.first_name}
+                      onChange={(e) => setProfileData({...profileData, first_name: e.target.value})}
+                      placeholder="이름을 입력하세요"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>성:</label>
+                    <input
+                      type="text"
+                      value={profileData.last_name}
+                      onChange={(e) => setProfileData({...profileData, last_name: e.target.value})}
+                      placeholder="성을 입력하세요"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="form-group">
-              <label>성:</label>
-              <input
-                type="text"
-                value={profileData.last_name}
-                onChange={(e) => setProfileData({...profileData, last_name: e.target.value})}
-                placeholder="성을 입력하세요"
-              />
-            </div>
-            <div className="form-group">
-              <label>이메일:</label>
-              <input
-                type="email"
-                value={profileData.email}
-                onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-                placeholder="이메일을 입력하세요"
-              />
-            </div>
-            <div className="modal-actions">
-              <button className="btn btn-primary" onClick={handleProfileUpdate}>
-                수정
-              </button>
-              <button className="btn btn-secondary" onClick={() => setShowProfileModal(false)}>
-                취소
-              </button>
+            <div className="modal-footer">
+              <div className="modal-actions">
+                <button className="btn btn-primary" onClick={handleProfileUpdate}>
+                  수정
+                </button>
+                <button className="btn btn-secondary" onClick={() => setShowProfileModal(false)}>
+                  취소
+                </button>
+              </div>
             </div>
           </div>
         </div>

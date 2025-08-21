@@ -1,8 +1,9 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from models import db, User, UserSession
 from datetime import datetime, timedelta
 import secrets
+import os
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -101,10 +102,19 @@ def login():
         
         print(f"✅ 비밀번호 검증 성공")
         
+        # 마지막 로그인 시간 업데이트 (먼저 처리)
+        print(f"🕐 last_login 업데이트 전: {user.last_login}")
+        user.last_login = datetime.utcnow()
+        print(f"🕐 last_login 업데이트 후: {user.last_login}")
+        
         # JWT 토큰 생성 (identity는 문자열이어야 함)
+        print(f"🆔 토큰 생성 전 사용자 ID: {user.id}, 타입: {type(user.id)}")
+        print(f"🔑 토큰 생성 시 JWT_SECRET_KEY: {current_app.config.get('JWT_SECRET_KEY', 'Not Set')}")
         access_token = create_access_token(identity=str(user.id))
         refresh_token = create_refresh_token(identity=str(user.id))
         print(f"🎫 JWT 토큰 생성 완료")
+        print(f"🔑 Access Token (첫 50자): {access_token[:50]}...")
+        print(f"🔑 Refresh Token (첫 50자): {refresh_token[:50]}...")
         
         try:
             # 세션 정보 저장
@@ -118,21 +128,45 @@ def login():
             db.session.add(session)
             print(f"💾 세션 정보 저장 완료")
             
-            # 마지막 로그인 시간 업데이트
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-            print(f"✅ 데이터베이스 커밋 완료")
-            
         except Exception as session_error:
             print(f"⚠️ 세션 저장 중 오류: {session_error}")
+            # 세션 저장 실패해도 계속 진행
+        
+        # last_login 업데이트와 커밋을 try 밖에서 처리
+        try:
+            db.session.commit()
+            print(f"✅ 데이터베이스 커밋 완료")
+            print(f"🕐 커밋 후 last_login 확인: {user.last_login}")
+            
+            # 세션 커밋 후 user 객체 새로고침
+            db.session.refresh(user)
+            print(f"🔄 새로고침 후 last_login: {user.last_login}")
+            
+            # 데이터베이스에서 직접 확인
+            db_user = User.query.get(user.id)
+            print(f"🗄️ DB에서 직접 조회한 last_login: {db_user.last_login}")
+            
+        except Exception as commit_error:
+            print(f"⚠️ 커밋 중 오류: {commit_error}")
             db.session.rollback()
-            # 세션 저장 실패해도 로그인은 성공
+            # 롤백 후 최소한 last_login만이라도 업데이트
+            try:
+                user.last_login = datetime.utcnow()
+                db.session.commit()
+                print(f"🔄 last_login만 다시 업데이트 완료")
+            except Exception as e:
+                print(f"❌ last_login 업데이트 실패: {e}")
+                db.session.rollback()
+        
+        # 응답용 사용자 데이터 생성 (last_login 포함)
+        user_response = user.to_dict()
+        print(f"📤 응답용 사용자 데이터 last_login: {user_response.get('last_login')}")
         
         return jsonify({
             'message': '로그인이 성공했습니다.',
             'access_token': access_token,
             'refresh_token': refresh_token,
-            'user': user.to_dict()
+            'user': user_response
         }), 200
         
     except Exception as e:
@@ -233,7 +267,14 @@ def logout():
 def get_profile():
     """사용자 프로필 조회"""
     try:
+        print("🔍 프로필 조회 시작")
+        print(f"📋 Authorization 헤더: {request.headers.get('Authorization', 'None')}")
+        print(f"🔑 환경변수 JWT_SECRET_KEY: {os.environ.get('JWT_SECRET_KEY', 'Not Set')}")
+        print(f"🔑 Flask 앱 JWT_SECRET_KEY: {current_app.config.get('JWT_SECRET_KEY', 'Not Set')}")
+        
         current_user_id = get_jwt_identity()
+        print(f"🆔 JWT에서 추출한 사용자 ID: {current_user_id}")
+        print(f"🆔 사용자 ID 타입: {type(current_user_id)}")
         
         # 게스트 사용자 처리
         if current_user_id == 'guest':
@@ -257,7 +298,12 @@ def get_profile():
         if not user:
             return jsonify({'error': '사용자를 찾을 수 없습니다.'}), 404
         
-        return jsonify(user.to_dict()), 200
+        user_dict = user.to_dict()
+        print(f"👤 프로필 조회 - 사용자 ID: {current_user_id}")
+        print(f"🕐 last_login 값: {user_dict.get('last_login')}")
+        print(f"📅 created_at 값: {user_dict.get('created_at')}")
+        
+        return jsonify(user_dict), 200
         
     except Exception as e:
         return jsonify({'error': '프로필 조회 중 오류가 발생했습니다.'}), 500
