@@ -60,9 +60,14 @@ if is_vercel:
     else:
         print(f"🔗 Vercel 환경에서 데이터베이스 URL 사용: {database_url[:20]}...")
 else:
-    # 로컬 개발 환경에서는 MySQL 강제 사용
-    database_url = 'mysql+pymysql://root:1q2w#E$R@127.0.0.1:3306/test_management'
-    print("🏠 로컬 환경에서 MySQL 강제 사용")
+    # 로컬 개발 환경에서는 환경변수 우선, 없으면 기본 MySQL 사용
+    mysql_database_url = os.environ.get('MYSQL_DATABASE_URL')
+    if mysql_database_url:
+        database_url = mysql_database_url
+        print("🏠 로컬 환경에서 Docker Alpha MySQL 사용")
+    else:
+        database_url = 'mysql+pymysql://root:1q2w#E$R@127.0.0.1:3306/test_management'
+        print("🏠 로컬 환경에서 기본 MySQL 사용")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
