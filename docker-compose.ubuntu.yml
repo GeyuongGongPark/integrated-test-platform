@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  ubuntu-server:
+    image: ubuntu:22.04
+    container_name: ubuntu-mysql-server
+    restart: unless-stopped
+    ports:
+      - "22:22"      # SSH 접속용
+      - "3308:3306"  # MySQL 접속용 (3306 포트 충돌 방지)
+      - "80:80"      # 웹 서버용 (필요시)
+    volumes:
+      - ubuntu_data:/var/lib/mysql
+      - ./ubuntu-setup:/setup
+      - ./mysql-backup:/backup
+    environment:
+      - MYSQL_ROOT_PASSWORD=1q2w#E$R
+      - MYSQL_DATABASE=test_management
+      - MYSQL_USER=vercel_user
+      - MYSQL_PASSWORD=vercel_secure_pass_2025
+    command: >
+      bash -c "
+        # 시스템 업데이트 및 필수 패키지 설치
+        apt-get update && 
+        apt-get install -y mysql-server mysql-client openssh-server curl wget vim &&
+        # SSH 서비스 시작
+        service ssh start &&
+        # MySQL 서비스 시작
+        service mysql start &&
+        # MySQL 외부 접근 허용 설정
+        mysql -e \"CREATE USER IF NOT EXISTS 'vercel_user'@'%' IDENTIFIED BY 'vercel_secure_pass_2025';\" &&
+        mysql -e \"GRANT ALL PRIVILEGES ON test_management.* TO 'vercel_user'@'%';\" &&
+        mysql -e \"FLUSH PRIVILEGES;\" &&
+        # MySQL 설정 파일 수정 (외부 접근 허용)
+        sed -i 's/bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf &&
+        # MySQL 재시작
+        service mysql restart &&
+        # 컨테이너 유지
+        tail -f /dev/null
+      "
+    networks:
+      - ubuntu-network
+
+  # 기존 로컬 MySQL (백업용)
+  mysql-local:
+    image: mysql:8.0
+    container_name: test_management_local
+    restart: unless-stopped
+    ports:
+      - "3307:3306"  # 다른 포트 사용
+    environment:
+      MYSQL_ROOT_PASSWORD: 1q2w#E$R
+      MYSQL_DATABASE: test_management
+      MYSQL_USER: testuser
+      MYSQL_PASSWORD: 1q2w#E$R
+      MYSQL_ROOT_HOST: '%'
+    volumes:
+      - mysql_local_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password --bind-address=0.0.0.0
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1q2w#E$R"]
+      timeout: 20s
+      retries: 10
+    networks:
+      - ubuntu-network
+
+volumes:
+  ubuntu_data:
+  mysql_local_data:
+
+networks:
+  ubuntu-network:
+    driver: bridge
