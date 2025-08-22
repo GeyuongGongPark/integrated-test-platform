@@ -195,8 +195,12 @@ const TestCaseAPP = () => {
     remark: '',
     folder_id: null,
     automation_code_path: '',
-    automation_code_type: 'playwright'
+    automation_code_type: 'playwright',
+    assignee_id: null
   });
+  
+  // 사용자 목록 관련 상태
+  const [users, setUsers] = useState([]);
   
   // 폴더 이동 관련 상태
   const [selectedTestCases, setSelectedTestCases] = useState([]);
@@ -239,6 +243,16 @@ const TestCaseAPP = () => {
       setTestCases(testCasesRes.data);
       setFolderTree(treeRes.data);
       setAllFolders(foldersRes.data);
+      
+      // 사용자 목록도 가져오기
+      try {
+        const usersRes = await axios.get(`${config.apiUrl}/users`);
+        setUsers(usersRes.data);
+        console.log('사용자 목록:', usersRes.data);
+      } catch (userErr) {
+        console.error('사용자 목록 조회 오류:', userErr);
+        setUsers([]);
+      }
     } catch (err) {
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
       console.error('Test case data fetch error:', err);
@@ -323,7 +337,8 @@ const TestCaseAPP = () => {
         remark: '',
         folder_id: null,
         automation_code_path: '',
-        automation_code_type: 'playwright'
+        automation_code_type: 'playwright',
+        assignee_id: null
       });
       fetchData(); // 데이터 새로고침
     } catch (err) {
@@ -883,16 +898,92 @@ const TestCaseAPP = () => {
                 </div>
                 {expandedTestCases.has(testCase.id) && (
                   <div className="testcase-details expanded">
-                    <div className="testcase-info">
-                      <p><strong>대분류:</strong> {testCase.main_category || '없음'}</p>
-                      <p><strong>중분류:</strong> {testCase.sub_category || '없음'}</p>
-                      <p><strong>소분류:</strong> {testCase.detail_category || '없음'}</p>
-                      <p><strong>사전조건:</strong> {testCase.pre_condition || '없음'}</p>
-                      <p><strong>기대결과:</strong> {testCase.expected_result || '없음'}</p>
-                      <p><strong>비고:</strong> {testCase.remark || '없음'}</p>
-                      {testCase.automation_code_path && (
-                        <p><strong>자동화 코드:</strong> {testCase.automation_code_path}</p>
-                      )}
+                    <div className="testcase-info-table">
+                      <h5>📋 테스트 케이스 상세 정보</h5>
+                      <table className="info-table">
+                        <tbody>
+                          <tr>
+                            <th>대분류</th>
+                            <td>{testCase.main_category || '없음'}</td>
+                            <th>중분류</th>
+                            <td>{testCase.sub_category || '없음'}</td>
+                          </tr>
+                          <tr>
+                            <th>소분류</th>
+                            <td>{testCase.detail_category || '없음'}</td>
+                            <th>환경</th>
+                            <td>
+                              <span className={`environment-badge ${testCase.environment || 'dev'}`}>
+                                {testCase.environment || 'dev'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <th>테스트 타입</th>
+                            <td>{testCase.test_type || '없음'}</td>
+                            <th>자동화</th>
+                            <td>
+                              {testCase.automation_code_path ? (
+                                <span className="automation-badge">🤖 자동화</span>
+                              ) : (
+                                <span className="manual-badge">📝 수동</span>
+                              )}
+                            </td>
+                          </tr>
+                          <tr>
+                            <th>작성자</th>
+                            <td>
+                              <span className="creator-badge">
+                                👤 {testCase.creator_name || '없음'}
+                              </span>
+                            </td>
+                            <th>담당자</th>
+                            <td>
+                              <span className="assignee-badge">
+                                👤 {testCase.assignee_name || '없음'}
+                              </span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <th>스크립트 경로</th>
+                            <td colSpan="3" className="script-path">
+                              {testCase.script_path || '없음'}
+                            </td>
+                          </tr>
+                          <tr>
+                            <th>사전조건</th>
+                            <td colSpan="3" className="pre-condition">
+                              {testCase.pre_condition || '없음'}
+                            </td>
+                          </tr>
+                          <tr>
+                            <th>기대결과</th>
+                            <td colSpan="3" className="expected-result">
+                              {testCase.expected_result || '없음'}
+                            </td>
+                          </tr>
+                          <tr>
+                            <th>비고</th>
+                            <td colSpan="3" className="remark">
+                              {testCase.remark || '없음'}
+                            </td>
+                          </tr>
+                          {testCase.automation_code_path && (
+                            <tr>
+                              <th>자동화 코드</th>
+                              <td colSpan="3" className="automation-code">
+                                <code>{testCase.automation_code_path}</code>
+                              </td>
+                            </tr>
+                          )}
+                          <tr>
+                            <th>생성일</th>
+                            <td>{testCase.created_at ? new Date(testCase.created_at).toLocaleString() : '없음'}</td>
+                            <th>수정일</th>
+                            <td>{testCase.updated_at ? new Date(testCase.updated_at).toLocaleString() : '없음'}</td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
                     
                     {/* 스크린샷 영역 */}
@@ -970,7 +1061,10 @@ const TestCaseAPP = () => {
                     expected_result: '',
                     result_status: 'N/T',
                     remark: '',
-                    folder_id: null
+                    folder_id: null,
+                    automation_code_path: '',
+                    automation_code_type: 'playwright',
+                    assignee_id: null
                   });
                 }}
               >
@@ -1065,6 +1159,20 @@ const TestCaseAPP = () => {
                   <option value="k6">k6 (성능 테스트)</option>
                 </select>
               </div>
+              <div className="form-group">
+                <label>담당자</label>
+                <select 
+                  value={newTestCase.assignee_id || ''}
+                  onChange={(e) => setNewTestCase({...newTestCase, assignee_id: e.target.value ? Number(e.target.value) : null})}
+                >
+                  <option value="">담당자를 선택하세요</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.username || user.first_name || user.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="modal-actions">
               <button 
@@ -1085,7 +1193,10 @@ const TestCaseAPP = () => {
                     expected_result: '',
                     result_status: 'N/T',
                     remark: '',
-                    folder_id: null
+                    folder_id: null,
+                    automation_code_path: '',
+                    automation_code_type: 'playwright',
+                    assignee_id: null
                   });
                 }}
               >
@@ -1235,6 +1346,20 @@ const TestCaseAPP = () => {
                   <option value="playwright">Playwright</option>
                   <option value="selenium">Selenium</option>
                   <option value="k6">k6 (성능 테스트)</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>담당자</label>
+                <select 
+                  value={editingTestCase.assignee_id || ''}
+                  onChange={(e) => setEditingTestCase({...editingTestCase, assignee_id: e.target.value ? Number(e.target.value) : null})}
+                >
+                  <option value="">담당자를 선택하세요</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.username || user.first_name || user.email}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

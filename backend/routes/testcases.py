@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, send_file
-from models import db, TestCase, TestResult, Screenshot, Project, Folder
+from models import db, TestCase, TestResult, Screenshot, Project, Folder, User
 from utils.cors import add_cors_headers
 from utils.auth_decorators import admin_required, user_required, guest_allowed
 from datetime import datetime
@@ -70,6 +70,10 @@ def get_testcases():
             'automation_code_path': tc.automation_code_path,
             'automation_code_type': tc.automation_code_type,
             'environment': tc.environment,
+            'creator_id': tc.creator_id,
+            'assignee_id': tc.assignee_id,
+            'creator_name': tc.creator.username if tc.creator else None,
+            'assignee_name': tc.assignee.username if tc.assignee else None,
             'created_at': tc.created_at,
             'updated_at': tc.updated_at
         } for tc in testcases]
@@ -161,7 +165,9 @@ def create_testcase():
         environment=folder_environment,  # 폴더의 환경 정보 사용
         folder_id=folder_id,
         automation_code_path=data.get('automation_code_path', ''),
-        automation_code_type=data.get('automation_code_type', 'playwright')
+        automation_code_type=data.get('automation_code_type', 'playwright'),
+        creator_id=request.user.id, # 현재 로그인한 사용자의 ID
+        assignee_id=request.user.id # 현재 로그인한 사용자의 ID
     )
 
     try:
@@ -276,18 +282,20 @@ def update_testcase_status(id):
 @testcases_bp.route('/testcases/<int:id>', methods=['PUT'])
 @user_required
 def update_testcase(id):
-    tc = TestCase.query.get_or_404(id)
-    data = request.get_json()
-    
-    # 폴더 ID가 변경되었는지 확인
-    new_folder_id = data.get('folder_id', tc.folder_id)
-    if new_folder_id != tc.folder_id:
-        # 새 폴더의 환경 정보로 자동 업데이트
-        new_folder = Folder.query.get(new_folder_id)
-        if new_folder:
-            tc.environment = new_folder.environment
-            print(f"🔄 폴더 변경으로 인한 환경 정보 업데이트: {tc.environment} → {new_folder.environment}")
-    
+    try:
+        tc = TestCase.query.get_or_404(id)
+        data = request.get_json()
+        
+        # 폴더 ID가 변경되었는지 확인
+        new_folder_id = data.get('folder_id', tc.folder_id)
+        if new_folder_id != tc.folder_id:
+            # 새 폴더의 환경 정보로 자동 업데이트
+            new_folder = Folder.query.get(new_folder_id)
+            if new_folder:
+                tc.environment = new_folder.environment
+                print(f"🔄 폴더 변경으로 인한 환경 정보 업데이트: {tc.environment} → {new_folder.environment}")
+        
+        # 테스트 케이스 정보 업데이트
         tc.main_category = data.get('main_category', tc.main_category)
         tc.sub_category = data.get('sub_category', tc.sub_category)
         tc.detail_category = data.get('detail_category', tc.detail_category)
@@ -295,10 +303,13 @@ def update_testcase(id):
         tc.expected_result = data.get('expected_result', tc.expected_result)
         tc.result_status = data.get('result_status', tc.result_status)
         tc.remark = data.get('remark', tc.remark)
-        # environment는 폴더 변경 시 자동으로 설정되므로 수동 입력 무시
         tc.folder_id = new_folder_id
         tc.automation_code_path = data.get('automation_code_path', tc.automation_code_path)
         tc.automation_code_type = data.get('automation_code_type', tc.automation_code_type)
+        
+        # 담당자 정보 업데이트 (새로 추가)
+        if 'assignee_id' in data:
+            tc.assignee_id = data.get('assignee_id')
         
         db.session.commit()
         
@@ -310,6 +321,12 @@ def update_testcase(id):
         
         response = jsonify({'message': '테스트 케이스 업데이트 완료'})
         return add_cors_headers(response), 200
+        
+    except Exception as e:
+        print(f"❌ 테스트 케이스 업데이트 실패: {str(e)}")
+        db.session.rollback()
+        response = jsonify({'error': f'업데이트 중 오류가 발생했습니다: {str(e)}'})
+        return add_cors_headers(response), 500
 
 @testcases_bp.route('/testcases/<int:id>', methods=['DELETE'])
 @admin_required

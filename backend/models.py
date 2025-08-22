@@ -19,10 +19,11 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # 관계 설정
-    test_cases = db.relationship('TestCase', backref='creator', lazy='dynamic')
-    automation_tests = db.relationship('AutomationTest', backref='creator', lazy='dynamic')
-    performance_tests = db.relationship('PerformanceTest', backref='creator', lazy='dynamic')
+    # 관계 설정 - 외래키 충돌 방지를 위해 명시적으로 설정
+    created_test_cases = db.relationship('TestCase', foreign_keys='TestCase.creator_id', backref='creator', lazy='dynamic')
+    assigned_test_cases = db.relationship('TestCase', foreign_keys='TestCase.assignee_id', backref='assignee', lazy='dynamic')
+    automation_tests = db.relationship('AutomationTest', foreign_keys='AutomationTest.creator_id', backref='creator', lazy='dynamic')
+    performance_tests = db.relationship('PerformanceTest', foreign_keys='PerformanceTest.creator_id', backref='creator', lazy='dynamic')
     
     def set_password(self, password):
         """비밀번호 해시화"""
@@ -96,6 +97,7 @@ class TestCase(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     creator_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
+    assignee_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)  # 프로젝트 ID
     
     # 추가 컬럼들
@@ -112,6 +114,7 @@ class TestCase(db.Model):
     # 관계 설정
     folder = db.relationship('Folder', backref='test_cases')
     project = db.relationship('Project', backref='test_cases')
+    # creator와 assignee 관계는 User 모델에서 이미 설정됨
 
 # 성능 테스트 모델
 class PerformanceTest(db.Model):

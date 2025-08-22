@@ -1093,3 +1093,147 @@
   color: #666;
   font-style: italic;
 } 
+
+/* 테스트 케이스 정보 테이블 */
+.testcase-info-table {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.testcase-info-table h5 {
+  color: #333;
+  margin: 0 0 20px 0;
+  font-size: 1.2em;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 10px;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.info-table th,
+.info-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: top;
+}
+
+.info-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  width: 120px;
+  min-width: 120px;
+}
+
+.info-table td {
+  color: #333;
+  background: white;
+}
+
+.info-table tr:hover td {
+  background: #f8f9fa;
+}
+
+.info-table .script-path,
+.info-table .pre-condition,
+.info-table .expected-result,
+.info-table .remark,
+.info-table .automation-code {
+  font-family: 'Courier New', monospace;
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+.info-table .automation-code code {
+  background: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+/* 환경 및 자동화 배지 */
+.environment-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.environment-badge.dev {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.environment-badge.alpha {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.environment-badge.prod {
+  background: #d4edda;
+  color: #155724;
+}
+
+.automation-badge {
+  background: #d1ecf1;
+  color: #0c5460;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.manual-badge {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.creator-badge {
+  background: #e2e3e5;
+  color: #383d41;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.assignee-badge {
+  background: #e2e3e5;
+  color: #383d41;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 테이블 반응형 디자인 */
+@media (max-width: 768px) {
+  .info-table {
+    font-size: 12px;
+  }
+  
+  .info-table th,
+  .info-table td {
+    padding: 8px;
+  }
+  
+  .info-table th {
+    width: 100px;
+    min-width: 100px;
+  }
+} 
