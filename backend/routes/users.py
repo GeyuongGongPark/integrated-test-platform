@@ -11,7 +11,7 @@ users_bp = Blueprint('users', __name__)
 @users_bp.route('/users', methods=['GET'])
 @admin_required
 def get_users():
-    """사용자 목록 조회"""
+    """사용자 목록 조회 (관리자 전용)"""
     try:
         # 데이터베이스에서 실제 사용자 목록 조회
         users = User.query.all()
@@ -29,6 +29,32 @@ def get_users():
                 'created_at': user.created_at.isoformat() if user.created_at else None,
                 'updated_at': user.updated_at.isoformat() if user.updated_at else None,
                 'last_login': user.last_login.isoformat() if user.last_login else None
+            }
+            users_data.append(user_data)
+        
+        response = jsonify(users_data)
+        return add_cors_headers(response), 200
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@users_bp.route('/users/list', methods=['GET'])
+@user_required
+def get_users_list():
+    """사용자 목록 조회 (일반 사용자용 - 담당자 선택용)"""
+    try:
+        # 활성 사용자만 조회 (비밀번호 등 민감한 정보 제외)
+        users = User.query.filter_by(is_active=True).all()
+        users_data = []
+        
+        for user in users:
+            user_data = {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': user.role
             }
             users_data.append(user_data)
         

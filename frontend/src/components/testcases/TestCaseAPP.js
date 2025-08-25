@@ -246,7 +246,7 @@ const TestCaseAPP = () => {
       
       // 사용자 목록도 가져오기
       try {
-        const usersRes = await axios.get(`${config.apiUrl}/users`);
+        const usersRes = await axios.get(`${config.apiUrl}/users/list`);
         setUsers(usersRes.data);
         console.log('사용자 목록:', usersRes.data);
       } catch (userErr) {

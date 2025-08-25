@@ -291,46 +291,74 @@ const AutomationTestDetail = ({ test, onClose, onRefresh }) => {
       <div className="detail-content">
         <div className="detail-section">
           <h3>기본 정보</h3>
-          <div className="info-grid">
-            <div className="info-item">
-              <label>테스트명:</label>
-              <span>{test.name}</span>
-            </div>
-            <div className="info-item">
-              <label>설명:</label>
-              <span>{test.description || '설명 없음'}</span>
-            </div>
-            <div className="info-item">
-              <label>테스트 타입:</label>
-              <span className="test-type-badge">{test.test_type}</span>
-            </div>
-            <div className="info-item">
-              <label>환경:</label>
-              <span className="environment-badge">{test.environment}</span>
-            </div>
-            <div className="info-item">
-              <label>스크립트 경로:</label>
-              <span className="script-path">{test.script_path}</span>
-            </div>
-            <div className="info-item">
-              <label>생성일:</label>
-              <span>{formatUTCToKST(test.created_at)}</span>
-            </div>
-            <div className="info-item">
-              <label>수정일:</label>
-              <span>{formatUTCToKST(test.updated_at)}</span>
-            </div>
+          <div className="automation-info-table">
+            <h5>📋 자동화 테스트 상세 정보</h5>
+            <table className="info-table">
+              <tbody>
+                <tr>
+                  <th>테스트명</th>
+                  <td>{test.name}</td>
+                  <th>테스트 타입</th>
+                  <td>
+                    <span className="test-type-badge">{test.test_type}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <th>환경</th>
+                  <td>
+                    <span className="environment-badge">{test.environment}</span>
+                  </td>
+                  <th>자동화</th>
+                  <td>
+                    <span className="automation-badge">🤖 자동화</span>
+                  </td>
+                </tr>
+                <tr>
+                  <th>작성자</th>
+                  <td>
+                    <span className="creator-badge">
+                      👤 {test.creator_name || '없음'}
+                    </span>
+                  </td>
+                  <th>담당자</th>
+                  <td>
+                    <span className="assignee-badge">
+                      👤 {test.assignee_name || '없음'}
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <th>스크립트 경로</th>
+                  <td colSpan="3" className="script-path">
+                    {test.script_path || '없음'}
+                  </td>
+                </tr>
+                <tr>
+                  <th>설명</th>
+                  <td colSpan="3" className="description">
+                    {test.description || '설명 없음'}
+                  </td>
+                </tr>
+                {test.parameters && (
+                  <tr>
+                    <th>매개변수</th>
+                    <td colSpan="3" className="parameters">
+                      <pre className="parameters-json">{test.parameters}</pre>
+                    </td>
+                  </tr>
+                )}
+                <tr>
+                  <th>생성일</th>
+                  <td>{formatUTCToKST(test.created_at)}</td>
+                  <th>수정일</th>
+                  <td>{test.updated_at ? formatUTCToKST(test.updated_at) : 'N/A'}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {test.parameters && (
-          <div className="detail-section">
-            <h3>매개변수</h3>
-            <div className="parameters-container">
-              <pre className="parameters-json">{test.parameters}</pre>
-            </div>
-          </div>
-        )}
+        {/* 매개변수는 기본 정보 표에 통합됨 */}
 
         <div className="detail-section">
           <h3 

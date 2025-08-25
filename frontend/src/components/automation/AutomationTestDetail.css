@@ -416,6 +416,113 @@
   border-radius: 0;
 }
 
+/* 자동화 테스트 정보 표 스타일 */
+.automation-info-table {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.automation-info-table h5 {
+  color: #333;
+  margin: 0 0 20px 0;
+  font-size: 1.2em;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 10px;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.info-table th,
+.info-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: top;
+}
+
+.info-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  width: 120px;
+  min-width: 120px;
+}
+
+.info-table td {
+  color: #333;
+  background: white;
+}
+
+.info-table tr:hover td {
+  background: #f8f9fa;
+}
+
+/* 배지 스타일 */
+.test-type-badge {
+  background: #007bff;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  display: inline-block;
+}
+
+.environment-badge {
+  background: #28a745;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  display: inline-block;
+}
+
+.automation-badge {
+  background: #ffc107;
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  display: inline-block;
+}
+
+.creator-badge,
+.assignee-badge {
+  background: #6c757d;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  display: inline-block;
+}
+
+/* 특수 컬럼 스타일 */
+.script-path,
+.description,
+.parameters {
+  font-family: 'Courier New', monospace;
+  background: #f8f9fa;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  word-break: break-all;
+}
+
+.parameters-json {
+  margin: 0;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 /* 버튼 스타일 통일 */
 .detail-actions {
   padding: 20px;

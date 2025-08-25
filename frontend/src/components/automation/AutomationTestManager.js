@@ -15,13 +15,15 @@ const AutomationTestManager = () => {
   const [editingTest, setEditingTest] = useState(null);
   const [selectedTest, setSelectedTest] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [users, setUsers] = useState([]);
   const [newTest, setNewTest] = useState({
     name: '',
     description: '',
     test_type: 'playwright',
     script_path: '',
     environment: 'dev',
-    parameters: ''
+    parameters: '',
+    assignee_id: null
   });
 
   useEffect(() => {
@@ -31,8 +33,12 @@ const AutomationTestManager = () => {
   const fetchAutomationTests = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/automation-tests');
-      setAutomationTests(response.data);
+      const [automationRes, usersRes] = await Promise.all([
+        axios.get('/automation-tests'),
+        axios.get('/users/list')
+      ]);
+      setAutomationTests(automationRes.data);
+      setUsers(usersRes.data);
     } catch (err) {
       setError('자동화 테스트 목록을 불러오는 중 오류가 발생했습니다.');
       console.error('Automation test fetch error:', err);
@@ -57,7 +63,8 @@ const AutomationTestManager = () => {
         test_type: 'selenium',
         script_path: '',
         environment: 'dev',
-        parameters: ''
+        parameters: '',
+        assignee_id: null
       });
       fetchAutomationTests();
     } catch (err) {
@@ -80,6 +87,14 @@ const AutomationTestManager = () => {
     } catch (err) {
       alert('자동화 테스트 수정 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
     }
+  };
+
+  const handleEditClick = (test) => {
+    setEditingTest({
+      ...test,
+      assignee_id: test.assignee_id || null
+    });
+    setShowEditModal(true);
   };
 
   const handleDeleteTest = async (testId) => {
@@ -113,6 +128,7 @@ const AutomationTestManager = () => {
       setSelectedTest(null);
     } else {
       // 다른 테스트를 클릭하거나 처음 클릭하는 경우 열기
+      console.log('선택된 테스트 데이터:', test); // 디버깅
       setSelectedTest(test);
       setShowDetail(true);
     }
@@ -157,14 +173,9 @@ const AutomationTestManager = () => {
         ) : (
           automationTests.map(test => (
             <div key={test.id} className="automation-item">
-              <div className="automation-info">
+              <div className="automation-header">
                 <h3 className="automation-name">{test.name}</h3>
                 <p className="automation-description">{test.description}</p>
-                <div className="automation-details">
-                  <span className="test-type">{test.test_type}</span>
-                  <span className="environment">{test.environment}</span>
-                  <span className="script-path">{test.script_path}</span>
-                </div>
               </div>
               <div className="automation-actions">
                 <button 
@@ -183,10 +194,7 @@ const AutomationTestManager = () => {
                 </button>
                 <button 
                   className="btn btn-edit-icon btn-icon"
-                  onClick={() => {
-                    setEditingTest(test);
-                    setShowEditModal(true);
-                  }}
+                  onClick={() => handleEditClick(test)}
                   title="수정"
                 >
                   ✏️
@@ -294,6 +302,21 @@ const AutomationTestManager = () => {
                   rows="5"
                 />
               </div>
+              <div className="form-group">
+                <label>담당자</label>
+                <select
+                  className="form-control"
+                  value={newTest.assignee_id || ''}
+                  onChange={(e) => setNewTest({...newTest, assignee_id: e.target.value ? Number(e.target.value) : null})}
+                >
+                  <option value="">담당자를 선택하세요</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.username || user.first_name || user.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="modal-actions">
               <button 
@@ -387,6 +410,21 @@ const AutomationTestManager = () => {
                   onChange={(e) => setEditingTest({...editingTest, parameters: e.target.value})}
                   rows="5"
                 />
+              </div>
+              <div className="form-group">
+                <label>담당자</label>
+                <select
+                  className="form-control"
+                  value={editingTest.assignee_id || ''}
+                  onChange={(e) => setEditingTest({...editingTest, assignee_id: e.target.value ? Number(e.target.value) : null})}
+                >
+                  <option value="">담당자를 선택하세요</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.username || user.first_name || user.email}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="modal-actions">
