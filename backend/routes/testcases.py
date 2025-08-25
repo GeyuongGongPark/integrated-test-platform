@@ -437,7 +437,7 @@ def create_test_result():
 
 # 엑셀 업로드 API
 @testcases_bp.route('/testcases/upload', methods=['POST'])
-@admin_required
+@user_required
 def upload_testcases_excel():
     """엑셀 파일에서 테스트 케이스 업로드"""
     try:

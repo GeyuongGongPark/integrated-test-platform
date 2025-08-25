@@ -80,15 +80,18 @@ function AppContent() {
   };
 
   const canAccessAutomation = () => {
-    return user && (user.role === 'admin' || user.role === 'user');
+    // 게스트도 자동화 테스트 조회 가능
+    return user;
   };
 
   const canAccessPerformance = () => {
-    return user && (user.role === 'admin' || user.role === 'user');
+    // 게스트도 성능 테스트 조회 가능
+    return user;
   };
 
   const canAccessFolders = () => {
-    return user && (user.role === 'admin' || user.role === 'user');
+    // 게스트도 폴더 조회 가능
+    return user;
   };
 
   return (

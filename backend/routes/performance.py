@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import db, PerformanceTest, TestResult, TestExecution
 from utils.cors import add_cors_headers
-from utils.auth_decorators import guest_allowed
+from utils.auth_decorators import guest_allowed, user_required, admin_required
 from engines.k6_engine import k6_engine
 import json
 from datetime import datetime
@@ -30,6 +30,7 @@ def get_performance_tests():
     return add_cors_headers(response), 200
 
 @performance_bp.route('/performance-tests', methods=['POST'])
+@user_required
 def create_performance_test():
     data = request.get_json()
     
@@ -69,6 +70,7 @@ def get_performance_test(id):
     return add_cors_headers(response), 200
 
 @performance_bp.route('/performance-tests/<int:id>', methods=['PUT'])
+@user_required
 def update_performance_test(id):
     pt = PerformanceTest.query.get_or_404(id)
     data = request.get_json()
@@ -84,6 +86,7 @@ def update_performance_test(id):
     return add_cors_headers(response), 200
 
 @performance_bp.route('/performance-tests/<int:id>', methods=['DELETE'])
+@admin_required
 def delete_performance_test(id):
     pt = PerformanceTest.query.get_or_404(id)
     db.session.delete(pt)
@@ -92,6 +95,7 @@ def delete_performance_test(id):
     return add_cors_headers(response), 200
 
 @performance_bp.route('/performance-tests/<int:id>/execute', methods=['POST'])
+@user_required
 def execute_performance_test(id):
     pt = PerformanceTest.query.get_or_404(id)
     data = request.get_json()

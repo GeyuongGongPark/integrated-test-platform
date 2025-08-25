@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
+import { useAuth } from '../../contexts/AuthContext';
 import AutomationTestDetail from './AutomationTestDetail';
 import './AutomationTestManager.css';
 
 axios.defaults.baseURL = config.apiUrl;
 
 const AutomationTestManager = () => {
+  const { user } = useAuth();
   const [automationTests, setAutomationTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,12 +35,23 @@ const AutomationTestManager = () => {
   const fetchAutomationTests = async () => {
     try {
       setLoading(true);
-      const [automationRes, usersRes] = await Promise.all([
-        axios.get('/automation-tests'),
-        axios.get('/users/list')
-      ]);
+      
+      // 자동화 테스트 목록은 항상 가져오기
+      const automationRes = await axios.get('/automation-tests');
       setAutomationTests(automationRes.data);
-      setUsers(usersRes.data);
+      
+      // 사용자 목록은 admin이나 user만 가져오기 (게스트는 제외)
+      if (user && (user.role === 'admin' || user.role === 'user')) {
+        try {
+          const usersRes = await axios.get('/users/list');
+          setUsers(usersRes.data);
+        } catch (userErr) {
+          console.error('사용자 목록 조회 오류:', userErr);
+          setUsers([]);
+        }
+      } else {
+        setUsers([]);
+      }
     } catch (err) {
       setError('자동화 테스트 목록을 불러오는 중 오류가 발생했습니다.');
       console.error('Automation test fetch error:', err);
@@ -151,24 +164,28 @@ const AutomationTestManager = () => {
     <div className="automation-test-manager">
       <div className="automation-header">
         <h2>자동화 테스트 관리</h2>
-        <button 
-          className="btn btn-add"
-          onClick={() => setShowAddModal(true)}
-        >
-          ➕ 자동화 테스트 추가
-        </button>
+        {user && (user.role === 'admin' || user.role === 'user') && (
+          <button 
+            className="btn btn-add"
+            onClick={() => setShowAddModal(true)}
+          >
+            ➕ 자동화 테스트 추가
+          </button>
+        )}
       </div>
 
       <div className="automation-list">
         {automationTests.length === 0 ? (
           <div className="empty-state">
             <p>등록된 자동화 테스트가 없습니다.</p>
-            <button 
-              className="btn btn-primary"
-              onClick={() => setShowAddModal(true)}
-            >
-              첫 번째 자동화 테스트 추가하기
-            </button>
+            {user && (user.role === 'admin' || user.role === 'user') && (
+              <button 
+                className="btn btn-primary"
+                onClick={() => setShowAddModal(true)}
+              >
+                첫 번째 자동화 테스트 추가하기
+              </button>
+            )}
           </div>
         ) : (
           automationTests.map(test => (
@@ -178,13 +195,15 @@ const AutomationTestManager = () => {
                 <p className="automation-description">{test.description}</p>
               </div>
               <div className="automation-actions">
-                <button 
-                  className="btn btn-automation btn-icon"
-                  onClick={() => handleExecuteTest(test.id)}
-                  title="자동화 실행"
-                >
-                  🤖
-                </button>
+                {user && (user.role === 'admin' || user.role === 'user') && (
+                  <button 
+                    className="btn btn-automation btn-icon"
+                    onClick={() => handleExecuteTest(test.id)}
+                    title="자동화 실행"
+                  >
+                    🤖
+                  </button>
+                )}
                 <button 
                   className="btn btn-details btn-icon"
                   onClick={() => handleViewDetail(test)}
@@ -192,20 +211,24 @@ const AutomationTestManager = () => {
                 >
                   {showDetail && selectedTest?.id === test.id ? '📋' : '📄'}
                 </button>
-                <button 
-                  className="btn btn-edit-icon btn-icon"
-                  onClick={() => handleEditClick(test)}
-                  title="수정"
-                >
-                  ✏️
-                </button>
-                <button 
-                  className="btn btn-delete-icon btn-icon"
-                  onClick={() => handleDeleteTest(test.id)}
-                  title="삭제"
-                >
-                  ✕
-                </button>
+                {user && (user.role === 'admin' || user.role === 'user') && (
+                  <button 
+                    className="btn btn-edit-icon btn-icon"
+                    onClick={() => handleEditClick(test)}
+                    title="수정"
+                  >
+                    ✏️
+                  </button>
+                )}
+                {user && user.role === 'admin' && (
+                  <button 
+                    className="btn btn-delete-icon btn-icon"
+                    onClick={() => handleDeleteTest(test.id)}
+                    title="삭제"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
               
               {/* 상세 정보 인라인 표시 */}
@@ -302,21 +325,23 @@ const AutomationTestManager = () => {
                   rows="5"
                 />
               </div>
-              <div className="form-group">
-                <label>담당자</label>
-                <select
-                  className="form-control"
-                  value={newTest.assignee_id || ''}
-                  onChange={(e) => setNewTest({...newTest, assignee_id: e.target.value ? Number(e.target.value) : null})}
-                >
-                  <option value="">담당자를 선택하세요</option>
-                  {users.map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.username || user.first_name || user.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {user && (user.role === 'admin' || user.role === 'user') && (
+                <div className="form-group">
+                  <label>담당자</label>
+                  <select
+                    className="form-control"
+                    value={newTest.assignee_id || ''}
+                    onChange={(e) => setNewTest({...newTest, assignee_id: e.target.value ? Number(e.target.value) : null})}
+                  >
+                    <option value="">담당자를 선택하세요</option>
+                    {users.map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.username || user.first_name || user.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="modal-actions">
               <button 
@@ -411,21 +436,23 @@ const AutomationTestManager = () => {
                   rows="5"
                 />
               </div>
-              <div className="form-group">
-                <label>담당자</label>
-                <select
-                  className="form-control"
-                  value={editingTest.assignee_id || ''}
-                  onChange={(e) => setEditingTest({...editingTest, assignee_id: e.target.value ? Number(e.target.value) : null})}
-                >
-                  <option value="">담당자를 선택하세요</option>
-                  {users.map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.username || user.first_name || user.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {user && (user.role === 'admin' || user.role === 'user') && (
+                <div className="form-group">
+                  <label>담당자</label>
+                  <select
+                    className="form-control"
+                    value={editingTest.assignee_id || ''}
+                    onChange={(e) => setEditingTest({...editingTest, assignee_id: e.target.value ? Number(e.target.value) : null})}
+                  >
+                    <option value="">담당자를 선택하세요</option>
+                    {users.map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.username || user.first_name || user.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="modal-actions">
               <button 

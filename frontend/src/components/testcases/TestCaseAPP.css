@@ -12,8 +12,6 @@
   align-items: center;
   margin-bottom: 30px;
   padding: 20px;
-  background: white;
-  border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
@@ -29,18 +27,9 @@
   flex-wrap: wrap;
 }
 
+/* 기본 버튼 스타일 제거 - 구체적인 버튼 타입별 스타일 사용 */
 .btn {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
+  /* 기본 스타일 제거 */
 }
 
 .btn:hover {
@@ -97,8 +86,6 @@
 
 /* 폴더 트리 */
 .folder-tree {
-  background: white;
-  border-radius: 8px;
   padding: 25px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   height: fit-content;
@@ -257,8 +244,6 @@
 
 /* 테스트 케이스 목록 */
 .testcase-list {
-  background: white;
-  border-radius: 8px;
   padding: 25px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -316,19 +301,20 @@
   margin-left: 10px;
 }
 
-/* 테스트 케이스 리스트 아이템 */
+/* 테스트 케이스 리스트 아이템 - 오른쪽 기준 통일 */
 .testcase-list-item {
+  background: #f8f9fa;
   border: 1px solid #e9ecef;
   border-radius: 8px;
   margin-bottom: 10px;
-  background: #f8f9fa;
-  transition: all 0.2s ease;
   overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 25px;
 }
 
 .testcase-list-item:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   border-color: #007bff;
 }
 
@@ -336,12 +322,9 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  padding: 15px;
+  padding: 0;
   border-bottom: 1px solid #eee;
-  background: white;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 15px;
 }
 
 .testcase-checkbox {
@@ -377,8 +360,8 @@
 }
 
 .environment-badge {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: #28a745;
+  color: white;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 11px;
@@ -387,8 +370,8 @@
 }
 
 .automation-badge {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: #ffc107;
+  color: #333;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 11px;
@@ -438,19 +421,61 @@
   color: #856404;
 }
 
-/* 아이콘 버튼들 */
-.btn-details,
-.btn-edit-icon,
-.btn-delete-icon,
+/* 아이콘 버튼들 - 오른쪽 기준 통일 */
+.btn-icon {
+  min-width: 40px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-details {
+  background: #17a2b8 !important;
+  color: white !important;
+}
+
+.btn-details:hover {
+  background: #138496 !important;
+  color: white !important;
+}
+
+.btn-edit-icon {
+  background: #17a2b8 !important;
+  color: white !important;
+}
+
+.btn-edit-icon:hover {
+  background: #138496 !important;
+  color: white !important;
+}
+
+.btn-delete-icon {
+  background: #dc3545 !important;
+  color: white !important;
+}
+
+.btn-delete-icon:hover {
+  background: #c82333 !important;
+  color: white !important;
+}
+
 .btn-automation {
+  background: #ffc107;
+  color: #333;
   padding: 8px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
-  background: transparent;
-  color: #666;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -458,24 +483,9 @@
   height: 36px;
 }
 
-.btn-details:hover {
-  background: #f8f9fa;
-  color: #333;
-}
-
-.btn-edit-icon:hover {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.btn-delete-icon:hover {
-  background: #ffebee;
-  color: #d32f2f;
-}
-
 .btn-automation:hover {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: #e0a800;
+  color: #333;
 }
 
 
@@ -483,7 +493,7 @@
 /* 테스트 케이스 상세 정보 */
 .testcase-details {
   padding: 20px;
-  background: #f8f9fa;
+  background: #f8f9ff;
   border-top: 1px solid #e9ecef;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -493,6 +503,8 @@
   max-height: 0;
   padding-top: 0;
   padding-bottom: 0;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .testcase-details.expanded {
@@ -553,7 +565,6 @@
 }
 
 .modal {
-  background: white;
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
@@ -640,7 +651,6 @@
 
 /* 기존 모달 스타일을 전체화면 모달에서 무시 */
 .modal-overlay.fullscreen-modal .modal {
-  position: static !important;
   top: auto !important;
   left: auto !important;
   right: auto !important;
@@ -845,7 +855,6 @@
   }
   
   .modal {
-    min-width: 90%;
     margin: 20px;
   }
 
@@ -906,8 +915,6 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 12px;
-  background: white;
-  cursor: pointer;
   min-width: 80px;
 }
 
@@ -928,7 +935,7 @@
 /* 테스트 케이스 상세 정보 스타일 */
 .testcase-info {
   margin-bottom: 20px;
-  padding: 15px;
+  padding: 0;
   background: #f8f9fa;
   border-radius: 6px;
   border-left: 4px solid #007bff;
@@ -959,8 +966,6 @@
 }
 
 .screenshot-item {
-  background: white;
-  border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   transition: transform 0.2s ease;
@@ -1014,9 +1019,7 @@
 }
 
 .result-item {
-  background: white;
-  border-radius: 8px;
-  padding: 15px;
+  padding: 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border-left: 4px solid #007bff;
 }
@@ -1096,7 +1099,6 @@
 
 /* 테스트 케이스 정보 테이블 */
 .testcase-info-table {
-  background: white;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
@@ -1134,8 +1136,8 @@
 }
 
 .info-table td {
+  background: #f8f9fa;
   color: #333;
-  background: white;
 }
 
 .info-table tr:hover td {

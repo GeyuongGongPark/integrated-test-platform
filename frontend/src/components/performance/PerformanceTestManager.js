@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
+import { useAuth } from '../../contexts/AuthContext';
 import './PerformanceTestManager.css';
 
 // axios 기본 설정
 axios.defaults.baseURL = config.apiUrl;
 
 const PerformanceTestManager = () => {
+    const { user } = useAuth();
     const [performanceTests, setPerformanceTests] = useState([]);
     const [newTest, setNewTest] = useState({
         name: '',
@@ -157,7 +159,7 @@ const PerformanceTestManager = () => {
         <div className="performance-test-manager">
             <div className="performance-header">
                 <h1>Performance Test Manager</h1>
-                {!showAddForm && (
+                {user && (user.role === 'admin' || user.role === 'user') && !showAddForm && (
                     <button 
                         onClick={() => setShowAddForm(true)}
                         className="btn btn-add"
@@ -167,7 +169,7 @@ const PerformanceTestManager = () => {
                 )}
             </div>
             
-            {showAddForm && (
+            {user && (user.role === 'admin' || user.role === 'user') && showAddForm && (
                 <div className="add-test-form">
                     <h2>Add Performance Test</h2>
                     <div className="form-row">
@@ -265,14 +267,16 @@ const PerformanceTestManager = () => {
                             </div>
                         </div>
                         <div className="test-actions">
-                            <button 
-                                onClick={() => executePerformanceTest(test.id)}
-                                disabled={executing}
-                                className="btn btn-automation btn-icon"
-                                title="Execute Test"
-                            >
-                                {executing ? '⏳' : '▶️'}
-                            </button>
+                            {user && (user.role === 'admin' || user.role === 'user') && (
+                                <button 
+                                    onClick={() => executePerformanceTest(test.id)}
+                                    disabled={executing}
+                                    className="btn btn-automation btn-icon"
+                                    title="Execute Test"
+                                >
+                                    {executing ? '⏳' : '▶️'}
+                                </button>
+                            )}
                             <button 
                                 onClick={() => toggleTestDetails(test.id)}
                                 className="btn btn-details btn-icon"
@@ -280,23 +284,27 @@ const PerformanceTestManager = () => {
                             >
                                 {expandedTests.has(test.id) ? '📋' : '📄'}
                             </button>
-                            <button 
-                                onClick={() => {
-                                    setEditingTest(test);
-                                    setShowEditModal(true);
-                                }}
-                                className="btn btn-edit-icon btn-icon"
-                                title="수정"
-                            >
-                                ✏️
-                            </button>
-                            <button 
-                                onClick={() => deletePerformanceTest(test.id)}
-                                className="btn btn-delete-icon btn-icon"
-                                title="Delete Test"
-                            >
-                                ✕
-                            </button>
+                            {user && (user.role === 'admin' || user.role === 'user') && (
+                                <button 
+                                    onClick={() => {
+                                        setEditingTest(test);
+                                        setShowEditModal(true);
+                                    }}
+                                    className="btn btn-edit-icon btn-icon"
+                                    title="수정"
+                                >
+                                    ✏️
+                                </button>
+                            )}
+                            {user && user.role === 'admin' && (
+                                <button 
+                                    onClick={() => deletePerformanceTest(test.id)}
+                                    className="btn btn-delete-icon btn-icon"
+                                    title="Delete Test"
+                                >
+                                    ✕
+                                </button>
+                            )}
                         </div>
                         
                         {/* 아코디언 형태의 상세보기 */}

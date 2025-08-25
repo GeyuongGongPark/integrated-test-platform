@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import config from '../../config';
+import { useAuth } from '../../contexts/AuthContext';
 import './TestCaseAPP.css';
 
 // axios 인터셉터 설정 - 인증 토큰 자동 추가
@@ -175,6 +176,7 @@ const TestCaseExecutionResults = ({ testCaseId }) => {
 axios.defaults.baseURL = config.apiUrl;
 
 const TestCaseAPP = () => {
+  const { user } = useAuth();
   const [testCases, setTestCases] = useState([]);
   const [folderTree, setFolderTree] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState(null);
@@ -738,25 +740,29 @@ const TestCaseAPP = () => {
       <div className="testcase-header">
         <h1>테스트 케이스 관리</h1>
         <div className="header-actions">
-          <button 
-            className="btn btn-add"
-            onClick={() => setShowAddModal(true)}
-          >
-            ➕ 테스트 케이스 추가
-          </button>
-          <button 
-            className="btn btn-upload"
-            onClick={() => setShowUploadModal(true)}
-          >
-            📤 엑셀 업로드
-          </button>
+          {user && (user.role === 'admin' || user.role === 'user') && (
+            <button 
+              className="btn btn-add"
+              onClick={() => setShowAddModal(true)}
+            >
+              ➕ 테스트 케이스 추가
+            </button>
+          )}
+          {user && (user.role === 'admin' || user.role === 'user') && (
+            <button 
+              className="btn btn-upload"
+              onClick={() => setShowUploadModal(true)}
+            >
+              📤 엑셀 업로드
+            </button>
+          )}
           <button 
             className="btn btn-download"
             onClick={handleDownload}
           >
             📥 엑셀 다운로드
           </button>
-          {selectedTestCases.length > 0 && (
+          {user && (user.role === 'admin' || user.role === 'user') && selectedTestCases.length > 0 && (
             <button 
               className="btn btn-execute"
               onClick={() => setShowMoveModal(true)}
@@ -872,29 +878,33 @@ const TestCaseAPP = () => {
                   )}
                   {/* 아코디언 버튼 */}
                   <button 
-                    className="btn btn-details"
+                    className="btn btn-details btn-icon"
                     onClick={() => toggleTestCaseDetails(testCase.id)}
                     title="상세보기"
                   >
                     {expandedTestCases.has(testCase.id) ? '📋' : '📄'}
                   </button>
-                  <button 
-                    className="btn btn-edit-icon"
-                    onClick={() => {
-                      setEditingTestCase(testCase);
-                      setShowEditModal(true);
-                    }}
-                    title="수정"
-                  >
-                    ✏️
-                  </button>
-                  <button 
-                    className="btn btn-delete-icon"
-                    onClick={() => handleDeleteTestCase(testCase.id)}
-                    title="삭제"
-                  >
-                    ✕
-                  </button>
+                  {user && (user.role === 'admin' || user.role === 'user') && (
+                    <button 
+                      className="btn btn-edit-icon btn-icon"
+                      onClick={() => {
+                        setEditingTestCase(testCase);
+                        setShowEditModal(true);
+                      }}
+                      title="수정"
+                    >
+                      ✏️
+                    </button>
+                  )}
+                  {user && user.role === 'admin' && (
+                    <button 
+                      className="btn btn-delete-icon btn-icon"
+                      onClick={() => handleDeleteTestCase(testCase.id)}
+                      title="삭제"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
                 {expandedTestCases.has(testCase.id) && (
                   <div className="testcase-details expanded">

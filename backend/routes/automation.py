@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, send_from_directory
 from models import db, AutomationTest, TestResult
 from utils.cors import add_cors_headers
-from utils.auth_decorators import guest_allowed
+from utils.auth_decorators import guest_allowed, user_required, admin_required
 from datetime import datetime
 import time
 import os
@@ -40,6 +40,7 @@ def get_automation_tests():
         return add_cors_headers(response), 500
 
 @automation_bp.route('/automation-tests', methods=['POST'])
+@user_required
 def create_automation_test():
     """자동화 테스트 생성"""
     try:
@@ -91,6 +92,7 @@ def get_automation_test(id):
         return add_cors_headers(response), 500
 
 @automation_bp.route('/automation-tests/<int:id>', methods=['PUT'])
+@user_required
 def update_automation_test(id):
     """자동화 테스트 수정"""
     try:
@@ -117,6 +119,7 @@ def update_automation_test(id):
         return add_cors_headers(response), 500
 
 @automation_bp.route('/automation-tests/<int:id>', methods=['DELETE'])
+@admin_required
 def delete_automation_test(id):
     """자동화 테스트 삭제"""
     try:
@@ -134,6 +137,7 @@ def delete_automation_test(id):
         return add_cors_headers(response), 500
 
 @automation_bp.route('/automation-tests/<int:id>/execute', methods=['POST'])
+@user_required
 def execute_automation_test(id):
     """자동화 테스트 실행"""
     try:

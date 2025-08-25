@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useAuth } from '../../contexts/AuthContext';
 import './FolderManager.css';
 
 const FolderManager = () => {
+  const { user } = useAuth();
   const [folders, setFolders] = useState([]);
   const [folderTree, setFolderTree] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -119,31 +121,33 @@ const FolderManager = () => {
           </span>
           <span className="folder-name">{node.name}</span>
           <div className="folder-actions">
-                         {node.type !== 'test_case' && (
-               <>
-                 <button 
-                   className="btn-edit"
-                   onClick={() => {
-                     setEditingFolder(node);
-                     setEditFormData({
-                       folder_name: node.name,
-                       parent_folder_id: node.parent_folder_id || null,
-                       folder_type: node.type,
-                       environment: node.environment || 'dev',
-                       deployment_date: node.deployment_date || ''
-                     });
-                   }}
-                 >
-                   수정
-                 </button>
-                 <button 
-                   className="btn-delete"
-                   onClick={() => handleDeleteFolder(node.id)}
-                 >
-                   삭제
-                 </button>
-               </>
-             )}
+            {user && (user.role === 'admin' || user.role === 'user') && node.type !== 'test_case' && (
+              <>
+                <button 
+                  className="btn-edit"
+                  onClick={() => {
+                    setEditingFolder(node);
+                    setEditFormData({
+                      folder_name: node.name,
+                      parent_folder_id: node.parent_folder_id || null,
+                      folder_type: node.type,
+                      environment: node.environment || 'dev',
+                      deployment_date: node.deployment_date || ''
+                    });
+                  }}
+                >
+                  수정
+                </button>
+                {user && user.role === 'admin' && (
+                  <button 
+                    className="btn-delete"
+                    onClick={() => handleDeleteFolder(node.id)}
+                  >
+                    삭제
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
         {node.children && node.children.length > 0 && (
@@ -163,12 +167,14 @@ const FolderManager = () => {
     <div className="folder-manager">
       <div className="folder-header">
         <h2>📁 폴더 관리</h2>
-        <button 
-          className="btn-create"
-          onClick={() => setShowCreateForm(true)}
-        >
-          + 새 폴더 생성
-        </button>
+        {user && (user.role === 'admin' || user.role === 'user') && (
+          <button 
+            className="btn-create"
+            onClick={() => setShowCreateForm(true)}
+          >
+            + 새 폴더 생성
+          </button>
+        )}
       </div>
 
       {error && (
@@ -178,7 +184,7 @@ const FolderManager = () => {
         </div>
       )}
 
-      {showCreateForm && (
+      {user && (user.role === 'admin' || user.role === 'user') && showCreateForm && (
         <div className="modal-overlay fullscreen-modal">
           <div className="modal fullscreen-modal-content">
             <div className="modal-header">
@@ -412,27 +418,31 @@ const FolderManager = () => {
                   <td>{folder.environment}</td>
                   <td>{folder.deployment_date || '-'}</td>
                   <td>
-                                       <button 
-                     className="btn-edit-small"
-                     onClick={() => {
-                       setEditingFolder(folder);
-                       setEditFormData({
-                         folder_name: folder.folder_name,
-                         parent_folder_id: folder.parent_folder_id,
-                         folder_type: folder.folder_type,
-                         environment: folder.environment,
-                         deployment_date: folder.deployment_date || ''
-                       });
-                     }}
-                   >
-                     수정
-                   </button>
-                    <button 
-                      className="btn-delete-small"
-                      onClick={() => handleDeleteFolder(folder.id)}
-                    >
-                      삭제
-                    </button>
+                    {user && (user.role === 'admin' || user.role === 'user') && (
+                      <button 
+                        className="btn-edit-small"
+                        onClick={() => {
+                          setEditingFolder(folder);
+                          setEditFormData({
+                            folder_name: folder.folder_name,
+                            parent_folder_id: folder.parent_folder_id,
+                            folder_type: folder.folder_type,
+                            environment: folder.environment,
+                            deployment_date: folder.deployment_date || ''
+                          });
+                        }}
+                      >
+                        수정
+                      </button>
+                    )}
+                    {user && user.role === 'admin' && (
+                      <button 
+                        className="btn-delete-small"
+                        onClick={() => handleDeleteFolder(folder.id)}
+                      >
+                        삭제
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

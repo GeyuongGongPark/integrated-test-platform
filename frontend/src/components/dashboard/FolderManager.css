@@ -204,6 +204,18 @@
   background: #d32f2f;
 }
 
+/* 게스트용 기본 버튼 스타일 */
+.btn-details {
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #e9ecef;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .folder-children {
   margin-left: 20px;
   border-left: 2px solid #e0e0e0;

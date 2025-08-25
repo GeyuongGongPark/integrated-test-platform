@@ -100,6 +100,13 @@
   color: white;
 }
 
+/* 게스트용 기본 버튼 스타일 */
+.btn-details {
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #e9ecef;
+}
+
 .btn-delete-icon:hover {
   background: #c82333;
 }
