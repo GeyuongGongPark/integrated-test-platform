@@ -1,0 +1,547 @@
+{
+  "info": {
+    "name": "Integrated Test Platform API v2.0",
+    "description": "# 🚀 통합 테스트 플랫폼 API Postman Collection v2.0\n\n## 📋 준비사항\n\n### 1. Postman 설치\n- [Postman 공식 사이트](https://www.postman.com/downloads/)에서 다운로드\n- 계정 생성 (무료)\n\n### 2. 백엔드 서버 실행\n```bash\ncd backend\npython app.py\n```\n\n### 3. Postman 컬렉션 Import\n- `postman_collection_v2.json` 파일을 Postman에 Import\n- `postman_environment_v2.json` 파일도 함께 Import\n\n## 🌐 환경 설정\n\n### 로컬 개발 환경\n- `base_url`: `http://localhost:8000`\n\n### Vercel 프로덕션 환경\n- `base_url`: `https://backend-alpha-liard.vercel.app`\n\n## 📚 API 엔드포인트 그룹 (v2.0 구조)\n\n### 🔐 Authentication & Users\n- **User Registration**: 사용자 회원가입\n- **User Login**: 사용자 로그인\n- **User Profile**: 사용자 프로필 조회/수정\n- **User Management**: 사용자 관리 (관리자용)\n\n### 📁 Projects & Folders\n- **Project Management**: 프로젝트 CRUD\n- **Folder Management**: 폴더 CRUD 및 계층 구조\n- **Folder Tree**: 계층적 폴더 구조 조회\n\n### 🧪 Test Cases\n- **Test Case CRUD**: 테스트 케이스 기본 CRUD\n- **Test Case Extended**: 고급 테스트 케이스 기능\n- **Test Case Import/Export**: Excel 파일 업로드/다운로드\n- **Test Case Execution**: 테스트 케이스 실행 및 결과\n\n### ⚡ Performance Tests\n- **Performance Test CRUD**: 성능 테스트 관리\n- **K6 Engine Integration**: K6 성능 테스트 엔진\n\n### 🤖 Automation Tests\n- **Automation Test CRUD**: 자동화 테스트 관리\n- **Test Script Management**: 테스트 스크립트 관리\n\n### 📊 Dashboard & Analytics\n- **Dashboard Summary**: 대시보드 요약 정보\n- **Test Results**: 테스트 결과 및 통계\n- **Test Executions**: 테스트 실행 기록\n\n### 🔍 System & Health\n- **Health Check**: 서버 상태 확인\n- **CORS Test**: CORS 설정 테스트\n- **Database Status**: 데이터베이스 상태 확인\n\n## 🧪 테스트 시나리오\n\n### 1. 사용자 인증 워크플로우\n1. **회원가입**: 새 사용자 생성\n2. **로그인**: JWT 토큰 획득\n3. **프로필 조회**: 사용자 정보 확인\n4. **권한 테스트**: 역할별 접근 권한 확인\n\n### 2. 프로젝트 관리 워크플로우\n1. **프로젝트 생성**: 새 프로젝트 추가\n2. **폴더 생성**: 프로젝트 내 폴더 구조 생성\n3. **폴더 트리 조회**: 계층 구조 확인\n4. **폴더 수정/삭제**: 구조 변경\n\n### 3. 테스트 케이스 관리 워크플로우\n1. **테스트 케이스 생성**: 기본 정보 입력\n2. **Excel 업로드**: 일괄 등록\n3. **테스트 케이스 조회**: 필터링 및 검색\n4. **테스트 실행**: 실행 및 결과 기록\n5. **Excel 다운로드**: 데이터 내보내기\n\n### 4. 성능/자동화 테스트 워크플로우\n1. **테스트 생성**: 성능/자동화 테스트 설정\n2. **테스트 실행**: 실제 테스트 수행\n3. **결과 분석**: 결과 데이터 확인\n4. **통계 생성**: 대시보드 데이터 업데이트\n\n## 🔧 Postman 고급 기능\n\n### 1. Pre-request Scripts\n- JWT 토큰 자동 설정\n- 환경 변수 동적 생성\n- 요청 데이터 검증\n\n### 2. Tests Scripts\n- 응답 상태 코드 확인\n- 응답 시간 측정\n- 응답 데이터 구조 검증\n- JWT 토큰 자동 저장\n- 환경 변수 자동 업데이트\n\n### 3. Collection Variables\n- 인증 토큰 관리\n- 테스트용 ID 값들\n- 환경별 설정값\n\n## 🚨 문제 해결\n\n### 일반적인 오류\n- **500 Internal Server Error**: 서버 내부 오류, 데이터베이스 연결 문제\n- **401 Unauthorized**: JWT 토큰 만료 또는 잘못된 토큰\n- **403 Forbidden**: 권한 부족\n- **404 Not Found**: 잘못된 URL 또는 존재하지 않는 리소스\n- **422 Validation Error**: 요청 데이터 검증 실패\n\n### 디버깅 방법\n- Postman Console 확인\n- 네트워크 탭 확인\n- 환경 변수 확인\n- JWT 토큰 상태 확인\n\n## 📊 성능 테스트\n\n- 응답 시간 측정\n- 부하 테스트 (Postman Runner 사용)\n- API 성능 모니터링\n\n## 🔒 보안 테스트\n\n- JWT 토큰 인증 테스트\n- 역할별 권한 테스트\n- CORS 정책 테스트\n- 입력 데이터 검증 테스트\n\n---\n\n**마지막 업데이트**: 2025년 8월 13일\n**가이드 버전**: 2.0.0\n**상태**: v2.0 구조에 맞춰 모든 API 엔드포인트 테스트 가능\n\n자세한 사용법은 `POSTMAN_USAGE_GUIDE.md` 파일을 참조하세요.",
+    "version": "2.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "vercel_url",
+      "value": "https://backend-alpha-liard.vercel.app",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "🔐 Authentication & Users",
+      "item": [
+        {
+          "name": "User Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\",\n  \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["register"]
+            },
+            "description": "새 사용자 회원가입"
+          }
+        },
+        {
+          "name": "User Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            },
+            "description": "사용자 로그인 및 JWT 토큰 획득"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "현재 로그인한 사용자 정보 조회"
+          }
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            },
+            "description": "모든 사용자 목록 조회 (관리자 권한 필요)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📁 Projects & Folders",
+      "item": [
+        {
+          "name": "Get All Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/projects",
+              "host": ["{{base_url}}"],
+              "path": ["projects"]
+            },
+            "description": "모든 프로젝트 목록 조회"
+          }
+        },
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Project\",\n  \"description\": \"테스트용 프로젝트\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/projects",
+              "host": ["{{base_url}}"],
+              "path": ["projects"]
+            },
+            "description": "새 프로젝트 생성 (관리자 권한 필요)"
+          }
+        },
+        {
+          "name": "Get All Folders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/folders",
+              "host": ["{{base_url}}"],
+              "path": ["folders"]
+            },
+            "description": "모든 폴더 목록 조회"
+          }
+        },
+        {
+          "name": "Get Folder Tree",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/folders/tree",
+              "host": ["{{base_url}}"],
+              "path": ["folders", "tree"]
+            },
+            "description": "계층적 폴더 구조 조회"
+          }
+        },
+        {
+          "name": "Create Folder",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Folder\",\n  \"description\": \"테스트용 폴더\",\n  \"parent_id\": null,\n  \"folder_type\": \"feature\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/folders",
+              "host": ["{{base_url}}"],
+              "path": ["folders"]
+            },
+            "description": "새 폴더 생성"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧪 Test Cases",
+      "item": [
+        {
+          "name": "Get All Test Cases",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/testcases",
+              "host": ["{{base_url}}"],
+              "path": ["testcases"]
+            },
+            "description": "모든 테스트 케이스 조회"
+          }
+        },
+        {
+          "name": "Get Test Case by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/testcases/{{testcase_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["testcases", "{{testcase_id}}"]
+            },
+            "description": "특정 ID의 테스트 케이스 조회"
+          }
+        },
+        {
+          "name": "Create Test Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Case Example\",\n  \"project_id\": 1,\n  \"main_category\": \"UI\",\n  \"sub_category\": \"Login\",\n  \"detail_category\": \"Valid Login\",\n  \"pre_condition\": \"사용자가 로그인 페이지에 접속한 상태\",\n  \"expected_result\": \"로그인이 성공하고 메인 페이지로 이동\",\n  \"folder_id\": 1,\n  \"environment\": \"development\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/testcases",
+              "host": ["{{base_url}}"],
+              "path": ["testcases"]
+            },
+            "description": "새 테스트 케이스 생성"
+          }
+        },
+        {
+          "name": "Update Test Case",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Test Case\",\n  \"expected_result\": \"업데이트된 예상 결과\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/testcases/{{testcase_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["testcases", "{{testcase_id}}"]
+            },
+            "description": "테스트 케이스 수정"
+          }
+        },
+        {
+          "name": "Delete Test Case",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/testcases/{{testcase_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["testcases", "{{testcase_id}}"]
+            },
+            "description": "테스트 케이스 삭제"
+          }
+        },
+        {
+          "name": "Upload Test Cases (Excel)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/testcases/upload",
+              "host": ["{{base_url}}"],
+              "path": ["testcases", "upload"]
+            },
+            "description": "Excel 파일로 테스트 케이스 일괄 업로드"
+          }
+        },
+        {
+          "name": "Download Test Cases (Excel)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/testcases/download",
+              "host": ["{{base_url}}"],
+              "path": ["testcases", "download"]
+            },
+            "description": "테스트 케이스를 Excel 파일로 다운로드"
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚡ Performance Tests",
+      "item": [
+        {
+          "name": "Get All Performance Tests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/performance",
+              "host": ["{{base_url}}"],
+              "path": ["performance"]
+            },
+            "description": "모든 성능 테스트 조회"
+          }
+        },
+        {
+          "name": "Create Performance Test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Performance Test Example\",\n  \"description\": \"웹사이트 로딩 성능 테스트\",\n  \"test_type\": \"load\",\n  \"target_url\": \"https://example.com\",\n  \"duration\": 300,\n  \"virtual_users\": 100\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/performance",
+              "host": ["{{base_url}}"],
+              "path": ["performance"]
+            },
+            "description": "새 성능 테스트 생성"
+          }
+        },
+        {
+          "name": "Execute Performance Test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/performance/{{performance_test_id}}/execute",
+              "host": ["{{base_url}}"],
+              "path": ["performance", "{{performance_test_id}}", "execute"]
+            },
+            "description": "성능 테스트 실행"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 Automation Tests",
+      "item": [
+        {
+          "name": "Get All Automation Tests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/automation",
+              "host": ["{{base_url}}"],
+              "path": ["automation"]
+            },
+            "description": "모든 자동화 테스트 조회"
+          }
+        },
+        {
+          "name": "Create Automation Test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Automation Test Example\",\n  \"description\": \"로그인 자동화 테스트\",\n  \"test_type\": \"ui\",\n  \"script_path\": \"/scripts/login_test.py\",\n  \"framework\": \"selenium\",\n  \"browser\": \"chrome\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/automation",
+              "host": ["{{base_url}}"],
+              "path": ["automation"]
+            },
+            "description": "새 자동화 테스트 생성"
+          }
+        },
+        {
+          "name": "Execute Automation Test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/automation/{{automation_test_id}}/execute",
+              "host": ["{{base_url}}"],
+              "path": ["automation", "{{automation_test_id}}", "execute"]
+            },
+            "description": "자동화 테스트 실행"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard & Analytics",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/summary",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "summary"]
+            },
+            "description": "대시보드 요약 정보 조회"
+          }
+        },
+        {
+          "name": "Get Test Results by Test Case",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/testcases/{{testcase_id}}/results",
+              "host": ["{{base_url}}"],
+              "path": ["testcases", "{{testcase_id}}", "results"]
+            },
+            "description": "특정 테스트 케이스의 결과 조회"
+          }
+        },
+        {
+          "name": "Get Test Executions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/executions",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "executions"]
+            },
+            "description": "테스트 실행 기록 조회"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔍 System & Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "백엔드 서버 상태 및 데이터베이스 연결 상태 확인"
+          }
+        },
+        {
+          "name": "CORS Test",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cors-test",
+              "host": ["{{base_url}}"],
+              "path": ["cors-test"]
+            },
+            "description": "CORS 설정 테스트"
+          }
+        }
+      ]
+    }
+  ]
+}

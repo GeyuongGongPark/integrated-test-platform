@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
+import { formatUTCToKST, formatUnixTimestampToKST } from '../../utils/dateUtils';
 import './AutomationTestDetail.css';
 
 // 스크린샷 갤러리 컴포넌트
@@ -68,9 +69,9 @@ const ScreenshotGallery = ({ testId, testName }) => {
             />
             <div className="screenshot-info">
               <span className="screenshot-filename">{screenshot.filename}</span>
-              <span className="screenshot-date">
-                {new Date(screenshot.timestamp * 1000).toLocaleString()}
-              </span>
+                          <span className="screenshot-date">
+              {formatUnixTimestampToKST(screenshot.timestamp)}
+            </span>
             </div>
           </div>
         ))}
@@ -90,7 +91,7 @@ const ScreenshotGallery = ({ testId, testName }) => {
               <h3>{selectedScreenshot.filename}</h3>
               <p>경로: {selectedScreenshot.path}</p>
               <p>크기: {(selectedScreenshot.size / 1024).toFixed(1)} KB</p>
-              <p>생성일: {new Date(selectedScreenshot.timestamp * 1000).toLocaleString()}</p>
+              <p>생성일: {formatUnixTimestampToKST(selectedScreenshot.timestamp)}</p>
             </div>
           </div>
         </div>
@@ -160,9 +161,9 @@ const AutomationTestResults = ({ testId }) => {
             {results.map((result, index) => (
               <React.Fragment key={result.id}>
                 <tr className={`result-row ${(result.result || 'N/A').toLowerCase()}`}>
-                  <td>
-                    {result.executed_at ? new Date(result.executed_at).toLocaleString() : 'N/A'}
-                  </td>
+                                  <td>
+                  {result.executed_at ? formatUTCToKST(result.executed_at) : 'N/A'}
+                </td>
                   <td>
                     <span className={`status-${(result.result || 'N/A').toLowerCase()}`}>
                       {result.result || 'N/A'}
@@ -205,7 +206,7 @@ const AutomationTestResults = ({ testId }) => {
                               <strong>테스트 ID:</strong> {result.automation_test_id}
                             </div>
                             <div className="detail-item">
-                              <strong>실행 시작:</strong> {result.executed_at ? new Date(result.executed_at).toLocaleString() : 'N/A'}
+                              <strong>실행 시작:</strong> {result.executed_at ? formatUTCToKST(result.executed_at) : 'N/A'}
                             </div>
                             <div className="detail-item">
                               <strong>실행 시간:</strong> {result.execution_time ? `${result.execution_time}ms` : 'N/A'}
@@ -313,11 +314,11 @@ const AutomationTestDetail = ({ test, onClose, onRefresh }) => {
             </div>
             <div className="info-item">
               <label>생성일:</label>
-              <span>{new Date(test.created_at).toLocaleString()}</span>
+              <span>{formatUTCToKST(test.created_at)}</span>
             </div>
             <div className="info-item">
               <label>수정일:</label>
-              <span>{new Date(test.updated_at).toLocaleString()}</span>
+              <span>{formatUTCToKST(test.updated_at)}</span>
             </div>
           </div>
         </div>

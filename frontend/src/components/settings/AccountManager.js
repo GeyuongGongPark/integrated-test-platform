@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatUTCToKST } from '../../utils/dateUtils';
 import './AccountManager.css';
 
 axios.defaults.baseURL = config.apiUrl;
@@ -340,7 +341,7 @@ const AccountManager = () => {
             </div>
             <div className="info-item">
               <label>마지막 로그인:</label>
-              <span>{currentUser?.last_login ? new Date(currentUser.last_login).toLocaleString() : '없음'}</span>
+              <span>{currentUser?.last_login ? formatUTCToKST(currentUser.last_login) : '없음'}</span>
             </div>
           </div>
           <div className="account-actions">
@@ -393,9 +394,9 @@ const AccountManager = () => {
                         </span>
                       </div>
                       <div className="user-timestamps">
-                        <small>생성: {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</small>
+                        <small>생성: {user.created_at ? formatUTCToKST(user.created_at) : 'N/A'}</small>
                         {user.last_login && (
-                          <small>마지막 로그인: {new Date(user.last_login).toLocaleDateString()}</small>
+                          <small>마지막 로그인: {formatUTCToKST(user.last_login)}</small>
                         )}
                       </div>
                     </div>

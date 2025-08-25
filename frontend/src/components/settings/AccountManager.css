@@ -65,7 +65,8 @@
   margin-bottom: 20px;
 }
 
-.info-item {
+/* 페이지 상단 사용자 정보 스타일 */
+.account-info .info-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -93,6 +94,120 @@
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+/* 사용자 목록 스타일 */
+.users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.user-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.user-item:hover {
+  background: #e9ecef;
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+}
+
+/* 사용자 목록의 user-info만 스타일링 */
+.users-list .user-item .user-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-main {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.user-email {
+  color: #666;
+  font-size: 14px;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-fullname {
+  color: #555;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.user-meta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.user-timestamps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-timestamps small {
+  color: #666;
+  font-size: 12px;
+}
+
+.user-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.user-actions .btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.user-actions .btn-edit {
+  background: #17a2b8;
+  color: white;
+}
+
+.user-actions .btn-edit:hover {
+  background: #138496;
+  transform: translateY(-1px);
+}
+
+.user-actions .btn-delete {
+  background: #dc3545;
+  color: white;
+}
+
+.user-actions .btn-delete:hover {
+  background: #c82333;
+  transform: translateY(-1px);
 }
 
 .role-badge.administrator,
