@@ -107,8 +107,15 @@ const AutomationTestManager = () => {
   };
 
   const handleViewDetail = (test) => {
-    setSelectedTest(test);
-    setShowDetail(true);
+    // 이미 열린 테스트를 다시 클릭하면 접기
+    if (showDetail && selectedTest?.id === test.id) {
+      setShowDetail(false);
+      setSelectedTest(null);
+    } else {
+      // 다른 테스트를 클릭하거나 처음 클릭하는 경우 열기
+      setSelectedTest(test);
+      setShowDetail(true);
+    }
   };
 
   const handleCloseDetail = () => {
@@ -172,7 +179,7 @@ const AutomationTestManager = () => {
                   onClick={() => handleViewDetail(test)}
                   title="상세보기"
                 >
-                  📄
+                  {showDetail && selectedTest?.id === test.id ? '📋' : '📄'}
                 </button>
                 <button 
                   className="btn btn-edit-icon btn-icon"
@@ -192,6 +199,17 @@ const AutomationTestManager = () => {
                   ✕
                 </button>
               </div>
+              
+              {/* 상세 정보 인라인 표시 */}
+              {showDetail && selectedTest?.id === test.id && (
+                <div className="automation-detail-inline">
+                  <AutomationTestDetail 
+                    test={selectedTest}
+                    onClose={handleCloseDetail}
+                    onRefresh={fetchAutomationTests}
+                  />
+                </div>
+              )}
             </div>
           ))
         )}
@@ -389,18 +407,7 @@ const AutomationTestManager = () => {
         </div>
       )}
 
-      {/* 상세 화면 */}
-      {showDetail && selectedTest && (
-        <div className="modal-overlay fullscreen-modal">
-          <div className="modal fullscreen-modal-content">
-            <AutomationTestDetail 
-              test={selectedTest}
-              onClose={handleCloseDetail}
-              onRefresh={fetchAutomationTests}
-            />
-          </div>
-        </div>
-      )}
+      {/* 상세 화면 - 모달 제거하고 인라인 표시 */}
     </div>
   );
 };

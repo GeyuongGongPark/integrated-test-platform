@@ -202,29 +202,40 @@
   margin-bottom: 20px;
 }
 
-/* 모달 스타일 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+/* 모달 스타일 - 전체화면 모달 제거 */
+
+/* 인라인 상세 정보 스타일 */
+.automation-detail-inline {
+  margin-top: 20px;
+  border-top: 2px solid #e9ecef;
+  padding-top: 20px;
+  background: #f8f9ff;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  animation: slideDown 0.3s ease-out;
 }
 
-.modal {
-  background: white;
-  border-radius: 8px;
-  padding: 30px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: none;
+    transform: translateY(0);
+  }
+}
+
+/* 자동화 테스트 아이템 선택 상태 */
+.automation-item.selected {
+  border-color: #007bff;
+  background: #f8f9ff;
+}
+
+.automation-item.selected .automation-detail-inline {
+  border-top-color: #007bff;
 }
 
 .modal-header {

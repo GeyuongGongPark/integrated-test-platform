@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
 import './AutomationTestDetail.css';
@@ -103,6 +103,7 @@ const ScreenshotGallery = ({ testId, testName }) => {
 const AutomationTestResults = ({ testId }) => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [expandedResults, setExpandedResults] = useState(new Set());
 
   const fetchResults = async () => {
     try {
@@ -122,6 +123,16 @@ const AutomationTestResults = ({ testId }) => {
     }
   }, [testId]);
 
+  const toggleResultDetails = (resultId) => {
+    const newExpanded = new Set(expandedResults);
+    if (newExpanded.has(resultId)) {
+      newExpanded.delete(resultId);
+    } else {
+      newExpanded.add(resultId);
+    }
+    setExpandedResults(newExpanded);
+  };
+
   if (loading) {
     return <div className="results-loading">실행 결과 로딩 중...</div>;
   }
@@ -132,52 +143,103 @@ const AutomationTestResults = ({ testId }) => {
 
   return (
     <div className="automation-results-container">
-      {results.map((result, index) => (
-        <div key={result.id} className={`result-item ${(result.status || 'N/A').toLowerCase()}`}>
-          <div className="result-header">
-            <span className={`result-status ${(result.status || 'N/A').toLowerCase()}`}>
-              {result.status || 'N/A'}
-            </span>
-            <span className="result-timestamp">
-              {new Date(result.execution_start).toLocaleString()}
-            </span>
-          </div>
-          {result.execution_duration && (
-            <div className="result-duration">
-              실행 시간: {result.execution_duration.toFixed(2)}초
-            </div>
-          )}
-          {result.output && (
-            <div className="result-output">
-              <strong>출력:</strong> {result.output}
-            </div>
-          )}
-          {result.error_message && (
-            <div className="result-error">
-              <strong>오류:</strong> {result.error_message}
-            </div>
-          )}
-          {result.screenshot_path && (
-            <div className="result-screenshot">
-              <img 
-                src={`${config.apiUrl}/screenshots/${result.screenshot_path}`}
-                alt="실행 결과 스크린샷"
-                className="result-screenshot-image"
-              />
-            </div>
-          )}
-          {result.notes && (
-            <div className="result-notes">
-              <strong>메모:</strong> {result.notes}
-            </div>
-          )}
-        </div>
-      ))}
+      <div className="results-table-container">
+        <table className="results-table">
+          <thead>
+            <tr>
+              <th>실행 시간</th>
+              <th>상태</th>
+              <th>실행 시간</th>
+              <th>환경</th>
+              <th>실행자</th>
+              <th>메모</th>
+              <th>상세</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.map((result, index) => (
+              <React.Fragment key={result.id}>
+                <tr className={`result-row ${(result.result || 'N/A').toLowerCase()}`}>
+                  <td>
+                    {result.executed_at ? new Date(result.executed_at).toLocaleString() : 'N/A'}
+                  </td>
+                  <td>
+                    <span className={`status-${(result.result || 'N/A').toLowerCase()}`}>
+                      {result.result || 'N/A'}
+                    </span>
+                  </td>
+                  <td>
+                    {result.execution_time ? `${result.execution_time}ms` : 'N/A'}
+                  </td>
+                  <td>{result.environment || 'N/A'}</td>
+                  <td>{result.executed_by || 'N/A'}</td>
+                  <td>
+                    {result.notes ? (
+                      <details>
+                        <summary>결과 보기</summary>
+                        <pre className="result-notes">{result.notes}</pre>
+                      </details>
+                    ) : 'N/A'}
+                  </td>
+                  <td>
+                    <button 
+                      className="btn btn-details btn-icon"
+                      onClick={() => toggleResultDetails(result.id)}
+                      title="상세보기"
+                    >
+                      {expandedResults.has(result.id) ? '📋' : '📄'}
+                    </button>
+                  </td>
+                </tr>
+                {expandedResults.has(result.id) && (
+                  <tr className="result-detail-row">
+                    <td colSpan="7">
+                      <div className="result-details expanded">
+                        <div className="result-detail-content">
+                          <h5>📋 실행 결과 상세 정보</h5>
+                          <div className="detail-grid">
+                            <div className="detail-item">
+                              <strong>실행 ID:</strong> {result.id}
+                            </div>
+                            <div className="detail-item">
+                              <strong>테스트 ID:</strong> {result.automation_test_id}
+                            </div>
+                            <div className="detail-item">
+                              <strong>실행 시작:</strong> {result.executed_at ? new Date(result.executed_at).toLocaleString() : 'N/A'}
+                            </div>
+                            <div className="detail-item">
+                              <strong>실행 시간:</strong> {result.execution_time ? `${result.execution_time}ms` : 'N/A'}
+                            </div>
+                            <div className="detail-item">
+                              <strong>환경:</strong> {result.environment || 'N/A'}
+                            </div>
+                            <div className="detail-item">
+                              <strong>실행자:</strong> {result.executed_by || 'N/A'}
+                            </div>
+                            {result.notes && (
+                              <div className="detail-item full-width">
+                                <strong>상세 메모:</strong>
+                                <pre className="result-notes">{result.notes}</pre>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
 
 const AutomationTestDetail = ({ test, onClose, onRefresh }) => {
+  const [screenshotsExpanded, setScreenshotsExpanded] = useState(true);
+  const [resultsExpanded, setResultsExpanded] = useState(true);
   const [loading, setLoading] = useState(false);
   const [executing, setExecuting] = useState(false);
 
@@ -223,15 +285,7 @@ const AutomationTestDetail = ({ test, onClose, onRefresh }) => {
 
   return (
     <div className="automation-test-detail">
-      <div className="detail-header">
-        <h2>자동화 테스트 상세</h2>
-        <button 
-          className="btn btn-close"
-          onClick={onClose}
-        >
-          ×
-        </button>
-      </div>
+      {/* detail-header 제거 - 상세보기 버튼으로 제어 */}
 
       <div className="detail-content">
         <div className="detail-section">
@@ -278,47 +332,31 @@ const AutomationTestDetail = ({ test, onClose, onRefresh }) => {
         )}
 
         <div className="detail-section">
-          <h3>관련 스크린샷</h3>
-          <ScreenshotGallery testId={test.id} testName={test.name} />
+          <h3 
+            className="collapsible-header"
+            onClick={() => setScreenshotsExpanded(!screenshotsExpanded)}
+          >
+            📸 관련 스크린샷 {screenshotsExpanded ? '▼' : '▶'}
+          </h3>
+          {screenshotsExpanded && (
+            <ScreenshotGallery testId={test.id} testName={test.name} />
+          )}
         </div>
 
-        <div className="detail-section">
-          <h3>실행 결과</h3>
-          <AutomationTestResults testId={test.id} />
-        </div>
+                                <div className="detail-section">
+                          <h3 
+                            className="collapsible-header"
+                            onClick={() => setResultsExpanded(!resultsExpanded)}
+                          >
+                            🤖 실행 결과 {resultsExpanded ? '▼' : '▶'}
+                          </h3>
+                          {resultsExpanded && (
+                            <AutomationTestResults testId={test.id} />
+                          )}
+                        </div>
       </div>
 
-      <div className="detail-actions">
-        <button 
-          className="btn btn-automation"
-          onClick={handleExecuteTest}
-          disabled={executing}
-          title="자동화 실행"
-        >
-          {executing ? '실행 중...' : '🤖'}
-        </button>
-        <button 
-          className="btn btn-edit-icon"
-          onClick={handleEditTest}
-          title="수정"
-        >
-          ✏️
-        </button>
-        <button 
-          className="btn btn-delete-icon"
-          onClick={handleDeleteTest}
-          disabled={loading}
-          title="삭제"
-        >
-          ✕
-        </button>
-        <button 
-          className="btn btn-cancel"
-          onClick={onClose}
-        >
-          닫기
-        </button>
-      </div>
+            {/* detail-actions 제거 - 모든 버튼 제거 */}
     </div>
   );
 };
