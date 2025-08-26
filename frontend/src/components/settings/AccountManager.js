@@ -77,7 +77,12 @@ const AccountManager = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/users');
+      if (!currentUser) {
+        setUsers([]);
+        return;
+      }
+      const url = (currentUser.role === 'admin') ? '/users' : '/users/list';
+      const response = await axios.get(url);
       setUsers(response.data);
     } catch (err) {
       setError('사용자 목록을 불러오는 중 오류가 발생했습니다.');
