@@ -198,11 +198,10 @@ class TestExecution(db.Model):
     started_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime)
 
-# 스크린샷 모델
+# 스크린샷 모델 (alpha DB 스키마에 맞춤)
 class Screenshot(db.Model):
     __tablename__ = 'Screenshots'
     id = db.Column(db.Integer, primary_key=True)
-    test_case_id = db.Column(db.Integer, db.ForeignKey('TestCases.id'), nullable=False)
-    screenshot_path = db.Column(db.String(500), nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    description = db.Column(db.Text)
+    test_result_id = db.Column(db.Integer, db.ForeignKey('TestResults.id'), nullable=False)  # alpha DB는 test_result_id 사용
+    file_path = db.Column(db.String(500), nullable=False)  # alpha DB는 file_path 사용
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # alpha DB는 created_at 사용

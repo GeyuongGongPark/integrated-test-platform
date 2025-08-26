@@ -590,7 +590,7 @@ def get_testcase_screenshots(testcase_id):
         return handle_options_request()
     
     try:
-        # 테스트 결과의 스크린샷 조회
+        # 테스트 결과의 스크린샷 조회 (alpha DB 스키마에 맞춤)
         test_results = TestResult.query.filter_by(test_case_id=testcase_id).all()
         screenshots = []
         
@@ -599,9 +599,11 @@ def get_testcase_screenshots(testcase_id):
             for screenshot in result_screenshots:
                 screenshots.append({
                     'id': screenshot.id,
-                    'file_path': screenshot.file_path,
-                    'created_at': screenshot.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                    'screenshot_path': screenshot.file_path,  # alpha DB는 file_path 사용
+                    'timestamp': screenshot.created_at.strftime('%Y-%m-%d %H:%M:%S') if screenshot.created_at else None  # alpha DB는 created_at 사용
                 })
+        
+        # alpha DB에는 직접 test_case_id로 연결된 스크린샷이 없으므로 제거
         
         return jsonify(screenshots), 200
     except Exception as e:
@@ -927,6 +929,12 @@ def check_database_status():
             'error': str(e),
             'environment': 'production' if is_vercel else 'development'
         }), 500
+
+# 스크린샷 파일 제공 API는 클라우드 전환 시 S3/CDN으로 대체 예정
+# @app.route('/screenshots/<path:filename>', methods=['GET'])
+# def get_screenshot_file(filename):
+#     """스크린샷 파일 직접 제공 - 클라우드 전환 시 S3로 대체"""
+#     pass
 
 if __name__ == '__main__':
     with app.app_context():

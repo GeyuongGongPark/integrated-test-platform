@@ -57,14 +57,17 @@ axios.interceptors.response.use(
 const TestCaseScreenshots = ({ testCaseId }) => {
   const [screenshots, setScreenshots] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const fetchScreenshots = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await axios.get(`${config.apiUrl}/testcases/${testCaseId}/screenshots`);
       setScreenshots(response.data);
     } catch (err) {
       console.error('스크린샷 조회 오류:', err);
+      setError('스크린샷을 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -80,26 +83,36 @@ const TestCaseScreenshots = ({ testCaseId }) => {
     return <div className="screenshots-loading">스크린샷 로딩 중...</div>;
   }
 
+  if (error) {
+    return (
+      <div className="screenshots-error">
+        <p>❌ {error}</p>
+        <button onClick={fetchScreenshots} className="retry-button">
+          다시 시도
+        </button>
+      </div>
+    );
+  }
+
   if (screenshots.length === 0) {
     return <div className="no-screenshots">스크린샷이 없습니다.</div>;
   }
 
   return (
     <div className="screenshots-container">
-      {screenshots.map((screenshot, index) => (
-        <div key={screenshot.id} className="screenshot-item">
-          <img 
-            src={`${config.apiUrl}/screenshots/${screenshot.screenshot_path}`}
-            alt={`스크린샷 ${index + 1}`}
-            className="screenshot-image"
-          />
-          <div className="screenshot-info">
-            <span className="screenshot-timestamp">
-              {new Date(screenshot.timestamp).toLocaleString()}
-            </span>
-          </div>
+      {/* 스크린샷 표시는 클라우드 전환 시 S3/CDN으로 대체 예정 */}
+      <div className="screenshot-placeholder">
+        <p>📸 스크린샷 {screenshots.length}개</p>
+        <small>클라우드 전환 시 S3/CDN으로 이미지 표시 예정</small>
+        <div className="screenshot-paths">
+          {screenshots.map((screenshot, index) => (
+            <div key={screenshot.id} className="screenshot-path-item">
+              <span>• {screenshot.screenshot_path}</span>
+              <small>{screenshot.timestamp ? new Date(screenshot.timestamp).toLocaleString() : '시간 정보 없음'}</small>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 };

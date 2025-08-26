@@ -94,8 +94,14 @@ def get_testcases():
 @guest_allowed
 def get_testcase(id):
     tc = TestCase.query.get_or_404(id)
-    screenshots = Screenshot.query.filter_by(test_case_id=id).all()
-    screenshot_data = [{'id': ss.id, 'screenshot_path': ss.screenshot_path, 'timestamp': ss.timestamp} for ss in screenshots]
+    # alpha DB 스키마에 맞춤: Screenshot은 test_result_id를 통해 연결됨
+    test_results = TestResult.query.filter_by(test_case_id=id).all()
+    screenshots = []
+    for result in test_results:
+        result_screenshots = Screenshot.query.filter_by(test_result_id=result.id).all()
+        screenshots.extend(result_screenshots)
+    
+    screenshot_data = [{'id': ss.id, 'screenshot_path': ss.file_path, 'timestamp': ss.created_at} for ss in screenshots]
     data = {
         'id': tc.id,
         'name': tc.name,
@@ -400,14 +406,19 @@ def get_testcase_screenshots(id):
     """테스트 케이스의 스크린샷 목록 조회"""
     try:
         test_case = TestCase.query.get_or_404(id)
-        screenshots = Screenshot.query.filter_by(test_case_id=id).order_by(Screenshot.timestamp.desc()).all()
+        # alpha DB 스키마에 맞춤: Screenshot은 test_result_id를 통해 연결됨
+        test_results = TestResult.query.filter_by(test_case_id=id).all()
+        screenshots = []
+        for result in test_results:
+            result_screenshots = Screenshot.query.filter_by(test_result_id=result.id).all()
+            screenshots.extend(result_screenshots)
         
         screenshot_list = []
         for screenshot in screenshots:
             screenshot_data = {
                 'id': screenshot.id,
-                'screenshot_path': screenshot.screenshot_path,
-                'timestamp': screenshot.timestamp.isoformat() if screenshot.timestamp else None
+                'screenshot_path': screenshot.file_path,  # alpha DB는 file_path 사용
+                'timestamp': screenshot.created_at.isoformat() if screenshot.created_at else None  # alpha DB는 created_at 사용
             }
             screenshot_list.append(screenshot_data)
         
