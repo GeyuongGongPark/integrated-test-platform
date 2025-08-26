@@ -122,15 +122,25 @@ def create_testcase():
     print("자동화 코드 경로:", data.get('automation_code_path'))
     print("자동화 코드 타입:", data.get('automation_code_type'))
     
-    # project_id가 없으면 기본 프로젝트 사용
+    # name 필드 검증
+    if not data.get('name'):
+        response = jsonify({'error': '테스트 케이스 이름은 필수입니다.'})
+        return add_cors_headers(response), 400
+    
+    # project_id가 없으면 기본 프로젝트 사용 또는 생성
     project_id = data.get('project_id')
     if not project_id:
         default_project = Project.query.filter_by(name='Test Management System').first()
-        if default_project:
-            project_id = default_project.id
-        else:
-            response = jsonify({'error': '기본 프로젝트가 없습니다. 먼저 프로젝트를 생성해주세요.'})
-            return add_cors_headers(response), 400
+        if not default_project:
+            # 기본 프로젝트가 없으면 생성
+            default_project = Project(
+                name='Test Management System',
+                description='기본 테스트 관리 시스템 프로젝트'
+            )
+            db.session.add(default_project)
+            db.session.flush()  # ID 생성을 위해 flush
+            print(f"✅ 기본 프로젝트 생성됨: {default_project.name} (ID: {default_project.id})")
+        project_id = default_project.id
     
     # folder_id가 없으면 기본 폴더 사용
     folder_id = data.get('folder_id')
@@ -154,6 +164,7 @@ def create_testcase():
             print(f"📁 폴더 '{folder.folder_name}'의 환경: {folder_environment}")
     
     tc = TestCase(
+        name=data.get('name'),
         project_id=project_id,
         main_category=data.get('main_category', ''),
         sub_category=data.get('sub_category', ''),
@@ -167,7 +178,7 @@ def create_testcase():
         automation_code_path=data.get('automation_code_path', ''),
         automation_code_type=data.get('automation_code_type', 'playwright'),
         creator_id=request.user.id, # 현재 로그인한 사용자의 ID
-        assignee_id=request.user.id # 현재 로그인한 사용자의 ID
+        assignee_id=data.get('assignee_id') or request.user.id # assignee_id가 있으면 사용, 없으면 현재 사용자
     )
 
     try:

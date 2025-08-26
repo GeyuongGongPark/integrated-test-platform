@@ -188,6 +188,7 @@ const TestCaseAPP = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTestCase, setEditingTestCase] = useState(null);
   const [newTestCase, setNewTestCase] = useState({
+    name: '',
     main_category: '',
     sub_category: '',
     detail_category: '',
@@ -325,11 +326,31 @@ const TestCaseAPP = () => {
     }
 
     try {
-      console.log('전송할 테스트 케이스 데이터:', newTestCase);
-      await axios.post(`${config.apiUrl}/testcases`, newTestCase);
+      // 자동으로 테스트 케이스 이름 생성
+      const autoName = `${newTestCase.main_category} - ${newTestCase.sub_category} - ${newTestCase.detail_category}`;
+      const testCaseData = {
+        ...newTestCase,
+        name: autoName
+      };
+
+      console.log('=== 테스트 케이스 생성 디버깅 ===');
+      console.log('전송할 테스트 케이스 데이터:', testCaseData);
+      console.log('API URL:', `${config.apiUrl}/testcases`);
+      console.log('로컬 스토리지 토큰:', localStorage.getItem('token') ? '있음' : '없음');
+      console.log('토큰 값 (첫 50자):', localStorage.getItem('token')?.substring(0, 50) + '...');
+      
+      // 토큰 확인
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('로그인이 필요합니다. 토큰이 없습니다.');
+        return;
+      }
+
+      await axios.post(`${config.apiUrl}/testcases`, testCaseData);
       alert('테스트 케이스가 성공적으로 추가되었습니다.');
       setShowAddModal(false);
       setNewTestCase({
+        name: '',
         main_category: '',
         sub_category: '',
         detail_category: '',
@@ -344,7 +365,10 @@ const TestCaseAPP = () => {
       });
       fetchData(); // 데이터 새로고침
     } catch (err) {
-      alert('테스트 케이스 추가 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+      console.error('테스트 케이스 생성 오류 상세:', err);
+      console.error('응답 상태:', err.response?.status);
+      console.error('응답 데이터:', err.response?.data);
+      alert('테스트 케이스 추가 중 오류가 발생했습니다: ' + (err.response?.data?.error || err.message));
     }
   };
 

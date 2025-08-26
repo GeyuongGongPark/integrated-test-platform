@@ -144,6 +144,9 @@ def invalid_token_callback(error):
 @jwt.unauthorized_loader
 def missing_token_callback(error):
     print(f"❌ 토큰 누락: {error}")
+    print(f"🔍 요청 헤더: {dict(request.headers)}")
+    print(f"🔍 요청 URL: {request.url}")
+    print(f"🔍 요청 메서드: {request.method}")
     return jsonify({
         'message': '토큰이 필요합니다.',
         'error': 'authorization_required'
@@ -427,36 +430,8 @@ def get_testcases():
         response = jsonify({'error': str(e)})
         return response, 500
 
-@app.route('/testcases', methods=['POST', 'OPTIONS'])
-def create_testcase():
-    if request.method == 'OPTIONS':
-        return handle_options_request()
-    
-    try:
-        data = request.get_json()
-        testcase = TestCase(
-            name=data.get('name'),
-            description=data.get('description'),
-            main_category=data.get('main_category'),
-            sub_category=data.get('sub_category'),
-            detail_category=data.get('detail_category'),
-            pre_condition=data.get('pre_condition'),
-            expected_result=data.get('expected_result'),
-            folder_id=data.get('folder_id'),
-            environment=data.get('environment', 'dev')
-        )
-        db.session.add(testcase)
-        db.session.commit()
-        
-        response = jsonify({
-            'status': 'success',
-            'message': 'Test case created successfully',
-            'id': testcase.id
-        })
-        return response, 201
-    except Exception as e:
-        response = jsonify({'error': str(e)})
-        return response, 500
+# 테스트 케이스 생성은 routes/testcases.py Blueprint에서 처리
+# 중복 제거
 
 # 성능 테스트 API는 performance.py Blueprint에서 처리
 
