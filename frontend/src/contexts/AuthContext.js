@@ -44,6 +44,25 @@ export const AuthProvider = ({ children }) => {
     console.error(`🚨 ${source} 오류:`, error);
   };
 
+  // UTC를 KST로 변환하는 함수
+  const toKST = (timestamp) => {
+    try {
+      const date = new Date(timestamp * 1000);
+      return date.toLocaleString('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    } catch (error) {
+      return '시간 변환 오류';
+    }
+  };
+
   // 토큰 만료 체크 함수
   const isTokenExpired = (token) => {
     try {
@@ -52,8 +71,8 @@ export const AuthProvider = ({ children }) => {
       const expirationTime = payload.exp;
       
       log('⏰ 토큰 만료 시간 체크:', {
-        currentTime: new Date(currentTime * 1000).toISOString(),
-        expirationTime: new Date(expirationTime * 1000).toISOString(),
+        currentTime: toKST(currentTime),
+        expirationTime: toKST(expirationTime),
         isExpired: currentTime >= expirationTime
       });
       
@@ -66,7 +85,18 @@ export const AuthProvider = ({ children }) => {
 
   // 토큰이 있으면 사용자 정보 가져오기
   useEffect(() => {
-    log('🔄 useEffect 실행 - token:', token);
+    const now = new Date().toLocaleString('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    
+    log(`🔄 useEffect 실행 - ${now}`);
     log('🏪 localStorage token:', localStorage.getItem('token') ? '있음' : '없음');
     
     if (token) {
@@ -90,9 +120,22 @@ export const AuthProvider = ({ children }) => {
     if (!token) return;
     
     const checkTokenExpiry = () => {
+      const now = new Date().toLocaleString('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      
       if (isTokenExpired(token)) {
-        log('⏰ 주기적 체크에서 토큰 만료 발견 - 자동 로그아웃');
+        log(`⏰ ${now} - 주기적 체크에서 토큰 만료 발견 - 자동 로그아웃`);
         logout();
+      } else {
+        log(`✅ ${now} - 토큰 유효성 확인 완료`);
       }
     };
     
