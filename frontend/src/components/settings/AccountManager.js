@@ -273,8 +273,8 @@ const AccountManager = () => {
   };
 
   const canViewUsers = () => {
-    // admin만 사용자 목록 조회 가능
-    return currentUser?.role === 'admin';
+    // 모든 인증된 사용자는 사용자 목록 조회 가능 (권한에 따라 다른 정보 표시)
+    return currentUser && currentUser.role !== 'guest';
   };
 
   const canAddUser = () => {
