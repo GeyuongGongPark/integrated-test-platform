@@ -161,11 +161,13 @@ class TestResult(db.Model):
     automation_test_id = db.Column(db.Integer, db.ForeignKey('AutomationTests.id'), nullable=True)  # 자동화 테스트 ID 추가
     performance_test_id = db.Column(db.Integer, db.ForeignKey('PerformanceTests.id'), nullable=True)  # 성능 테스트 ID 추가
     result = db.Column(db.String(20))  # Pass, Fail, Skip, Error
+    status = db.Column(db.String(20))  # Pass, Fail, N/T, N/A, Block (코드와 일치)
     execution_time = db.Column(db.Float)  # 초 단위
     environment = db.Column(db.String(50))
     executed_by = db.Column(db.String(100))
     executed_at = db.Column(db.DateTime, default=get_kst_now)
     notes = db.Column(db.Text)
+    result_data = db.Column(db.Text)  # 결과 데이터 저장용
     
     # test_case_id, automation_test_id, performance_test_id 중 하나는 반드시 있어야 함
     __table_args__ = (

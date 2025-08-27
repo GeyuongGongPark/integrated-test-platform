@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from datetime import datetime
 import os
+import time
 from dotenv import load_dotenv
 from sqlalchemy import text
 from models import db, Project, User, Folder, TestCase, PerformanceTest, AutomationTest, TestResult
@@ -336,12 +337,50 @@ def ping():
         'environment': 'production' if is_vercel else 'development'
     }), 200
 
+def test_database_connection():
+    """데이터베이스 연결 테스트 및 재시도 로직"""
+    max_retries = 3
+    retry_delay = 5 # 초 단위
+    
+    for i in range(max_retries):
+        try:
+            # 데이터베이스 연결 테스트
+            if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
+                db.session.execute(text('SELECT 1'))
+                print(f"✅ SQLite 연결 테스트 성공 (시도 {i+1}/{max_retries})")
+                return True
+            else:
+                db.session.execute(text('SELECT 1'))
+                db.session.commit()
+                print(f"✅ MySQL 연결 테스트 성공 (시도 {i+1}/{max_retries})")
+                return True
+        except Exception as e:
+            print(f"❌ 데이터베이스 연결 실패 (시도 {i+1}/{max_retries}): {e}")
+            if i < max_retries - 1:
+                print(f"🔄 {retry_delay}초 후 다시 시도...")
+                time.sleep(retry_delay)
+            else:
+                print("❌ 데이터베이스 연결 재시도 실패. 앱을 종료합니다.")
+                return False
+    return False
+
 @app.route('/init-db', methods=['GET', 'POST', 'OPTIONS'])
 def init_database():
     if request.method == 'OPTIONS':
         return handle_options_request()
     
     try:
+        # 데이터베이스 연결 테스트 및 재시도
+        if not test_database_connection():
+            return jsonify({
+                'status': 'error',
+                'message': 'Database connection failed after multiple retries',
+                'timestamp': get_kst_isoformat(get_kst_now()),
+                'error_type': 'ConnectionError',
+                'database_url': app.config['SQLALCHEMY_DATABASE_URI'][:50] + '...' if len(app.config['SQLALCHEMY_DATABASE_URI']) > 50 else app.config['SQLALCHEMY_DATABASE_URI'],
+                'environment': 'production' if is_vercel else 'development'
+            }), 500
+        
         with app.app_context():
             # 테이블이 존재하지 않으면 자동 생성
             db.create_all()
