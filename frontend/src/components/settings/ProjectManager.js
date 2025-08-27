@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
+import { useAuth } from '../../contexts/AuthContext';
 import './ProjectManager.css';
 
 axios.defaults.baseURL = config.apiUrl;
 
 const ProjectManager = () => {
+  const { user: currentUser, token } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,18 +19,43 @@ const ProjectManager = () => {
     description: ''
   });
 
+  // 권한 체크 함수들
+  const canAddProject = () => {
+    const can = currentUser?.role === 'admin';
+    console.log('➕ 프로젝트 추가 권한:', can, '사용자 역할:', currentUser?.role);
+    return can;
+  };
+  const canEditProject = () => {
+    const can = currentUser?.role === 'admin';
+    console.log('✏️ 프로젝트 수정 권한:', can, '사용자 역할:', currentUser?.role);
+    return can;
+  };
+  const canDeleteProject = () => {
+    const can = currentUser?.role === 'admin';
+    console.log('🗑️ 프로젝트 삭제 권한:', can, '사용자 역할:', currentUser?.role);
+    return can;
+  };
+
   useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
     fetchProjects();
-  }, []);
+  }, [token]);
 
   const fetchProjects = async () => {
     try {
       setLoading(true);
+      console.log('🔍 프로젝트 조회 시작');
+      console.log('👤 현재 사용자:', currentUser);
+      console.log('🔑 토큰:', token ? '있음' : '없음');
+      
       const response = await axios.get('/projects');
+      console.log('📋 프로젝트 응답:', response.data);
       setProjects(response.data);
     } catch (err) {
+      console.error('❌ 프로젝트 조회 오류:', err);
       setError('프로젝트 목록을 불러오는 중 오류가 발생했습니다.');
-      console.error('Project fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -94,12 +121,14 @@ const ProjectManager = () => {
     <div className="project-manager">
       <div className="project-header">
         <h2>프로젝트 관리</h2>
-        <button 
-          className="btn btn-add"
-          onClick={() => setShowAddModal(true)}
-        >
-          ➕ 새 프로젝트
-        </button>
+        {canAddProject() && (
+          <button 
+            className="btn btn-add"
+            onClick={() => setShowAddModal(true)}
+          >
+            ➕ 새 프로젝트
+          </button>
+        )}
       </div>
 
       <div className="project-list">
@@ -110,21 +139,25 @@ const ProjectManager = () => {
               <p>{project.description || '설명 없음'}</p>
             </div>
             <div className="project-actions">
-              <button 
-                className="btn btn-edit"
-                onClick={() => {
-                  setEditingProject(project);
-                  setShowEditModal(true);
-                }}
-              >
-                ✏️ 수정
-              </button>
-              <button 
-                className="btn btn-delete"
-                onClick={() => handleDeleteProject(project.id)}
-              >
-                🗑️ 삭제
-              </button>
+              {canEditProject() && (
+                <button 
+                  className="btn btn-edit"
+                  onClick={() => {
+                    setEditingProject(project);
+                    setShowEditModal(true);
+                  }}
+                >
+                  ✏️ 수정
+                </button>
+              )}
+              {canDeleteProject() && (
+                <button 
+                  className="btn btn-delete"
+                  onClick={() => handleDeleteProject(project.id)}
+                >
+                  🗑️ 삭제
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -132,12 +165,14 @@ const ProjectManager = () => {
         {projects.length === 0 && (
           <div className="empty-state">
             <p>등록된 프로젝트가 없습니다.</p>
-            <button 
-              className="btn btn-add"
-              onClick={() => setShowAddModal(true)}
-            >
-              첫 번째 프로젝트 추가하기
-            </button>
+            {canAddProject() && (
+              <button 
+                className="btn btn-add"
+                onClick={() => setShowAddModal(true)}
+              >
+                첫 번째 프로젝트 추가하기
+              </button>
+            )}
           </div>
         )}
       </div>

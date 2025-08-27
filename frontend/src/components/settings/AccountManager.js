@@ -77,16 +77,34 @@ const AccountManager = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      console.log('🔍 fetchUsers 실행 시작');
+      console.log('👤 currentUser 전체:', JSON.stringify(currentUser, null, 2));
+      
       if (!currentUser) {
+        console.log('❌ currentUser가 없음');
         setUsers([]);
         return;
       }
+      
+      console.log('🔍 fetchUsers 실행');
+      console.log('👤 currentUser:', currentUser);
+      console.log('🎭 currentUser.role:', currentUser.role);
+      console.log('🔑 token:', token ? '있음' : '없음');
+      console.log('🔍 currentUser.role === "admin":', currentUser.role === 'admin');
+      console.log('🔍 currentUser.role === "user":', currentUser.role === 'user');
+      
       const url = (currentUser.role === 'admin') ? '/users' : '/users/list';
+      console.log('📡 호출할 URL:', url);
+      console.log('📡 URL 결정 로직:', `(${currentUser.role} === 'admin') ? '/users' : '/users/list'`);
+      
       const response = await axios.get(url);
+      console.log('✅ 응답 성공:', response.data);
       setUsers(response.data);
     } catch (err) {
+      console.error('❌ Users fetch error:', err);
+      console.error('❌ 에러 응답:', err.response?.data);
+      console.error('❌ 에러 상태:', err.response?.status);
       setError('사용자 목록을 불러오는 중 오류가 발생했습니다.');
-      console.error('Users fetch error:', err);
     } finally {
       setLoading(false);
     }
