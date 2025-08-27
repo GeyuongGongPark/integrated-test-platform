@@ -54,7 +54,10 @@ def get_users_list():
                 'email': user.email,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
-                'role': user.role
+                'role': user.role,
+                'is_active': user.is_active,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'last_login': user.last_login.isoformat() if user.last_login else None
             }
             users_data.append(user_data)
         
