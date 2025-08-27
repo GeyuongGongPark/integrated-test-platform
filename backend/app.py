@@ -346,8 +346,17 @@ def init_database():
             db.create_all()
             print("✅ 데이터베이스 테이블 생성 완료")
             
+            # 세션 격리 설정
+            db.session.autoflush = False
+            print("🔒 세션 autoflush 비활성화")
+            
             # 기본 사용자 생성 (테스트용)
             from models import User
+            
+            # 각 사용자를 개별적으로 처리하여 세션 충돌 방지
+            users_to_create = []
+            
+            # admin 사용자 체크 및 생성 준비
             if not User.query.filter_by(username='admin').first():
                 admin_user = User(
                     username='admin',
@@ -358,9 +367,13 @@ def init_database():
                     is_active=True
                 )
                 admin_user.set_password('admin123')
-                db.session.add(admin_user)
-                
-                # 테스트 사용자도 생성
+                users_to_create.append(admin_user)
+                print("✅ admin 사용자 생성 준비 완료")
+            else:
+                print("ℹ️ admin 사용자가 이미 존재합니다")
+            
+            # testuser 체크 및 생성 준비
+            if not User.query.filter_by(username='testuser').first():
                 test_user = User(
                     username='testuser',
                     email='test@test.com',
@@ -370,12 +383,25 @@ def init_database():
                     is_active=True
                 )
                 test_user.set_password('test123')
-                db.session.add(test_user)
-                
-                db.session.commit()
-                print("✅ 기본 사용자 생성 완료")
+                users_to_create.append(test_user)
+                print("✅ testuser 생성 준비 완료")
             else:
-                print("ℹ️ 기본 사용자가 이미 존재합니다")
+                print("ℹ️ testuser가 이미 존재합니다")
+            
+            # 준비된 사용자들을 한 번에 추가하고 커밋
+            if users_to_create:
+                for user in users_to_create:
+                    db.session.add(user)
+                db.session.commit()
+                print(f"✅ {len(users_to_create)}명의 사용자 생성 완료")
+            else:
+                print("ℹ️ 생성할 사용자가 없습니다")
+            
+            print("✅ 데이터베이스 초기화 완료")
+            
+            # 세션 정리
+            db.session.close()
+            print("🧹 세션 정리 완료")
             
         response = jsonify({
             'status': 'success',
@@ -388,6 +414,13 @@ def init_database():
         print(f"🔍 오류 타입: {type(e)}")
         import traceback
         print(f"📋 상세 오류: {traceback.format_exc()}")
+        
+        # 세션 롤백
+        try:
+            db.session.rollback()
+            print("🔄 데이터베이스 세션 롤백 완료")
+        except Exception as rollback_error:
+            print(f"⚠️ 롤백 중 오류 발생: {rollback_error}")
         
         response = jsonify({
             'status': 'error',
