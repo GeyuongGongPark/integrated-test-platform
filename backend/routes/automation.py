@@ -105,7 +105,7 @@ def update_automation_test(id):
         test.script_path = data['script_path']
         test.environment = data.get('environment', 'dev')
         test.parameters = data.get('parameters', '')
-        test.updated_at = datetime.utcnow()
+        test.updated_at = get_kst_now()
         
         db.session.commit()
         
@@ -144,14 +144,14 @@ def execute_automation_test(id):
         test = AutomationTest.query.get_or_404(id)
         
         # 실행 시작 시간
-        execution_start = datetime.utcnow()
+        execution_start = get_kst_now()
         
         # 실제로는 여기서 자동화 테스트를 실행
         # 현재는 시뮬레이션
         time.sleep(2)  # 실행 시간 시뮬레이션
         
         # 실행 종료 시간
-        execution_end = datetime.utcnow()
+        execution_end = get_kst_now()
         execution_duration = (execution_end - execution_start).total_seconds()
         
         # 시뮬레이션된 결과 (실제로는 테스트 실행 결과)

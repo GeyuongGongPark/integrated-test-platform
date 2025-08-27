@@ -150,7 +150,7 @@ def execute_performance_test(id):
             execution_time=result.get('execution_time', 0.0),
             environment=pt.environment,
             executed_by='system',
-            executed_at=datetime.utcnow(),
+            executed_at=get_kst_now(),
             notes=json.dumps(result)  # 성능 테스트 결과를 notes에 JSON으로 저장
         )
         db.session.add(perf_result)

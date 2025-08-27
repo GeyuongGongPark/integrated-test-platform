@@ -44,7 +44,7 @@ def manage_testcase(testcase_id):
             testcase.description = data.get('description', testcase.description)
             testcase.project_id = data.get('project_id', testcase.project_id)
             testcase.folder_id = data.get('folder_id', testcase.folder_id)
-            testcase.updated_at = datetime.utcnow()
+            testcase.updated_at = get_kst_now()
             
             db.session.commit()
             response = jsonify({'message': '테스트 케이스가 성공적으로 수정되었습니다'})
@@ -73,7 +73,7 @@ def update_testcase_status(testcase_id):
         # 상태 업데이트 로직
         if 'status' in data:
             testcase.status = data['status']
-            testcase.updated_at = datetime.utcnow()
+            testcase.updated_at = get_kst_now()
             db.session.commit()
             
             response = jsonify({'message': '테스트 케이스 상태가 업데이트되었습니다'})
@@ -224,7 +224,7 @@ def execute_testcase(testcase_id):
             'status': 'executed',
             'environment': environment,
             'parameters': parameters,
-            'executed_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            'executed_at': get_kst_now().strftime('%Y-%m-%d %H:%M:%S')
         }
         
         response = jsonify(execution_result)

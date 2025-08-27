@@ -3,6 +3,7 @@ from models import db, TestCase, TestResult, Screenshot, Project, Folder, User
 from utils.cors import add_cors_headers
 from utils.auth_decorators import admin_required, user_required, guest_allowed
 from datetime import datetime
+from utils.timezone_utils import get_kst_now, get_kst_isoformat
 import pandas as pd
 from io import BytesIO
 import os
@@ -85,7 +86,7 @@ def get_testcases():
         response = jsonify({
             'error': '데이터베이스 연결 오류',
             'message': str(e),
-            'timestamp': datetime.now().isoformat()
+            'timestamp': get_kst_isoformat(get_kst_now())
         })
         
         return add_cors_headers(response), 500
@@ -239,7 +240,7 @@ def update_dashboard_summary_for_environment(environment):
             existing_summary.failed_tests = failed_tests
             existing_summary.skipped_tests = skipped_tests
             existing_summary.pass_rate = round(pass_rate, 2)
-            existing_summary.last_updated = datetime.utcnow()
+            existing_summary.last_updated = get_kst_now()
         else:
             # 새 요약 데이터 생성
             new_summary = DashboardSummary(
@@ -249,7 +250,7 @@ def update_dashboard_summary_for_environment(environment):
                 failed_tests=failed_tests,
                 skipped_tests=skipped_tests,
                 pass_rate=round(pass_rate, 2),
-                last_updated=datetime.utcnow()
+                last_updated=get_kst_now()
             )
             db.session.add(new_summary)
         
@@ -579,7 +580,7 @@ def download_testcases_excel():
             output,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             as_attachment=True,
-            download_name=f'testcases_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+            download_name=f'testcases_{get_kst_datetime_string("%Y%m%d_%H%M%S")}.xlsx'
         )
         
     except Exception as e:
@@ -772,7 +773,7 @@ def execute_automation_code(id):
                     os.makedirs(screenshot_dir, exist_ok=True)
                     
                     # 스크린샷 파일명 생성
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    timestamp = get_kst_datetime_string('%Y%m%d_%H%M%S')
                     screenshot_path = os.path.join(screenshot_dir, f'screenshot_{timestamp}.png')
                     
                     # Playwright 실행 결과에서 스크린샷 복사 (실제 구현에서는 더 복잡)

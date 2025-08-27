@@ -90,7 +90,7 @@ def get_testcases_summary_all():
                 'na': na,
                 'blocked': blocked,
                 'pass_rate': round(pass_rate, 2),
-                'last_updated': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+                'last_updated': get_kst_now().strftime('%Y-%m-%d %H:%M:%S')
             }
             summaries.append(summary)
         

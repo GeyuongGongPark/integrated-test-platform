@@ -18,6 +18,7 @@ from routes.auth import auth_bp
 from utils.cors import setup_cors
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
+from utils.timezone_utils import get_kst_now, get_kst_isoformat
 
 # .env 파일 로드 (절대 경로 사용)
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
@@ -256,7 +257,7 @@ def health_check():
             'status': 'healthy', 
             'message': 'Test Platform Backend is running',
             'version': '2.0.1',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': get_kst_isoformat(get_kst_now()),
             'environment': 'production' if is_vercel else 'development',
             'database': {
                 'status': db_status,
@@ -275,7 +276,7 @@ def health_check():
             'status': 'degraded', 
             'message': 'Test Platform Backend is running (with database issues)',
             'version': '2.0.1',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': get_kst_isoformat(get_kst_now()),
             'environment': 'production' if is_vercel else 'development',
             'database': {
                 'status': 'error',
@@ -295,7 +296,7 @@ def cors_test():
         response = jsonify({
             'status': 'success',
             'message': 'CORS test endpoint is working',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': get_kst_isoformat(get_kst_now()),
             'cors_enabled': True
         })
         return response, 200
@@ -303,7 +304,7 @@ def cors_test():
         response = jsonify({
             'status': 'error',
             'message': f'CORS test failed: {str(e)}',
-            'timestamp': datetime.now().isoformat()
+            'timestamp': get_kst_isoformat(get_kst_now())
         })
         return response, 500
 
@@ -318,7 +319,7 @@ def simple_cors_test():
         'status': 'success',
         'message': 'Simple CORS test successful',
         'method': request.method,
-        'timestamp': datetime.now().isoformat()
+        'timestamp': get_kst_isoformat(get_kst_now())
     })
     return response, 200
 
@@ -331,7 +332,7 @@ def ping():
     return jsonify({
         'status': 'success',
         'message': 'pong',
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': get_kst_isoformat(get_kst_now()),
         'environment': 'production' if is_vercel else 'development'
     }), 200
 
@@ -406,7 +407,7 @@ def init_database():
         response = jsonify({
             'status': 'success',
             'message': 'Database initialized successfully',
-            'timestamp': datetime.now().isoformat()
+            'timestamp': get_kst_isoformat(get_kst_now())
         })
         return response, 200
     except Exception as e:
@@ -425,7 +426,7 @@ def init_database():
         response = jsonify({
             'status': 'error',
             'message': f'Database initialization failed: {str(e)}',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': get_kst_isoformat(get_kst_now()),
             'error_type': str(type(e)),
             'traceback': traceback.format_exc()
         })
@@ -533,7 +534,7 @@ def get_testcase_summaries():
                 'na': na_tests,
                 'blocked': blocked_tests,
                 'pass_rate': round((passed_tests / total_testcases * 100) if total_testcases > 0 else 0, 2),
-                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                'last_updated': get_kst_datetime_string('%Y-%m-%d %H:%M:%S')
             }
             summaries.append(summary)
         
@@ -717,7 +718,7 @@ def get_test_data():
             'running_tests': running_tests,
             'completed_tests': completed_tests,
             'failed_tests': failed_tests,
-            'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            'last_updated': get_kst_datetime_string('%Y-%m-%d %H:%M:%S')
         }
         return jsonify(test_data), 200
     except Exception as e:
@@ -809,7 +810,7 @@ def add_feature_folders():
                 new_folder = Folder(
                     name=feature['name'],
                     parent_id=feature['parent_id'],
-                    created_at=datetime.utcnow()
+                    created_at=get_kst_now()
                 )
                 db.session.add(new_folder)
                 added_folders.append(feature['name'])

@@ -107,7 +107,7 @@ def login():
         print(f"🌍 현재 환경: {'Vercel' if 'vercel.app' in request.host_url else 'Local'}")
         print(f"🗄️ 데이터베이스 URL: {current_app.config.get('SQLALCHEMY_DATABASE_URI', 'Not Set')[:50]}...")
         
-        user.last_login = datetime.utcnow()
+        user.last_login = get_kst_now()
         print(f"🕐 last_login 업데이트 후: {user.last_login}")
         
         # JWT 토큰 생성 (identity는 문자열이어야 함)
@@ -126,7 +126,7 @@ def login():
                 session_token=refresh_token,
                 ip_address=request.remote_addr,
                 user_agent=request.headers.get('User-Agent'),
-                expires_at=datetime.utcnow() + timedelta(days=7)
+                expires_at=get_kst_now() + timedelta(days=7)
             )
             db.session.add(session)
             print(f"💾 세션 정보 저장 완료")
@@ -168,7 +168,7 @@ def login():
             db.session.rollback()
             # 롤백 후 최소한 last_login만이라도 업데이트
             try:
-                user.last_login = datetime.utcnow()
+                user.last_login = get_kst_now()
                 db.session.commit()
                 print(f"🔄 last_login만 다시 업데이트 완료")
             except Exception as e:
@@ -232,8 +232,8 @@ def guest_login():
             'last_name': '사용자',
             'role': 'guest',
             'is_active': True,
-            'created_at': datetime.utcnow().isoformat(),
-            'updated_at': datetime.utcnow().isoformat(),
+            'created_at': get_kst_now().isoformat(),
+            'updated_at': get_kst_now().isoformat(),
             'last_login': None
         }
         
@@ -303,8 +303,8 @@ def get_profile():
                 'last_name': '사용자',
                 'role': 'guest',
                 'is_active': True,
-                'created_at': datetime.utcnow().isoformat(),
-                'updated_at': datetime.utcnow().isoformat(),
+                'created_at': get_kst_now().isoformat(),
+                'updated_at': get_kst_now().isoformat(),
                 'last_login': None
             }
             return jsonify(guest_user), 200
@@ -393,13 +393,13 @@ def health_check():
         db.session.execute('SELECT 1')
         return jsonify({
             'status': 'healthy',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': get_kst_now().isoformat(),
             'database': 'connected'
         }), 200
     except Exception as e:
         return jsonify({
             'status': 'unhealthy',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': get_kst_now().isoformat(),
             'database': 'disconnected',
             'error': str(e)
         }), 500

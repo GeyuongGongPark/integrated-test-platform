@@ -1,4 +1,5 @@
 from datetime import datetime
+from utils.timezone_utils import get_kst_now
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
@@ -16,8 +17,8 @@ class User(db.Model):
     role = db.Column(db.String(20), default='user')  # admin, user, tester
     is_active = db.Column(db.Boolean, default=True)
     last_login = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_kst_now)
+    updated_at = db.Column(db.DateTime, default=get_kst_now, onupdate=get_kst_now)
     
     # 관계 설정 - 외래키 충돌 방지를 위해 명시적으로 설정
     created_test_cases = db.relationship('TestCase', foreign_keys='TestCase.creator_id', backref='creator', lazy='dynamic')
@@ -56,7 +57,7 @@ class UserSession(db.Model):
     ip_address = db.Column(db.String(45))
     user_agent = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_kst_now)
     expires_at = db.Column(db.DateTime, nullable=False)
     
     user = db.relationship('User', backref='sessions')
@@ -67,8 +68,8 @@ class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_kst_now)
+    updated_at = db.Column(db.DateTime, default=get_kst_now, onupdate=get_kst_now)
 
 # 폴더 모델
 class Folder(db.Model):
@@ -80,7 +81,7 @@ class Folder(db.Model):
     deployment_date = db.Column(db.Date, nullable=True)
     parent_folder_id = db.Column(db.Integer, db.ForeignKey('Folders.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_kst_now)
 
 # 테스트 케이스 모델
 class TestCase(db.Model):
@@ -94,8 +95,8 @@ class TestCase(db.Model):
     environment = db.Column(db.String(50))  # prod, staging, dev
     script_path = db.Column(db.String(500))  # 스크립트 경로
     folder_id = db.Column(db.Integer, db.ForeignKey('Folders.id'), nullable=True)  # 폴더 ID
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_kst_now)
+    updated_at = db.Column(db.DateTime, default=get_kst_now, onupdate=get_kst_now)
     creator_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
     assignee_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)  # 프로젝트 ID
@@ -126,8 +127,8 @@ class PerformanceTest(db.Model):
     script_path = db.Column(db.String(255))
     environment = db.Column(db.String(50))
     parameters = db.Column(db.Text)  # JSON 형태로 저장
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_kst_now)
+    updated_at = db.Column(db.DateTime, default=get_kst_now, onupdate=get_kst_now)
     creator_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)  # 프로젝트 ID
     
@@ -144,8 +145,8 @@ class AutomationTest(db.Model):
     script_path = db.Column(db.String(255))
     environment = db.Column(db.String(50))
     parameters = db.Column(db.Text)  # JSON 형태로 저장
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_kst_now)
+    updated_at = db.Column(db.DateTime, default=get_kst_now, onupdate=get_kst_now)
     creator_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)  # 프로젝트 ID
     
@@ -163,7 +164,7 @@ class TestResult(db.Model):
     execution_time = db.Column(db.Float)  # 초 단위
     environment = db.Column(db.String(50))
     executed_by = db.Column(db.String(100))
-    executed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    executed_at = db.Column(db.DateTime, default=get_kst_now)
     notes = db.Column(db.Text)
     
     # test_case_id, automation_test_id, performance_test_id 중 하나는 반드시 있어야 함
@@ -181,7 +182,7 @@ class DashboardSummary(db.Model):
     failed_tests = db.Column(db.Integer, default=0)
     skipped_tests = db.Column(db.Integer, default=0)
     pass_rate = db.Column(db.Float, default=0.0)
-    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+    last_updated = db.Column(db.DateTime, default=get_kst_now)
 
 # 테스트 실행 기록 모델
 class TestExecution(db.Model):
@@ -195,7 +196,7 @@ class TestExecution(db.Model):
     executed_by = db.Column(db.String(100))
     status = db.Column(db.String(20))  # running, completed, failed
     result_summary = db.Column(db.Text)  # JSON 형태로 저장
-    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    started_at = db.Column(db.DateTime, default=get_kst_now)
     completed_at = db.Column(db.DateTime)
 
 # 스크린샷 모델 (alpha DB 스키마에 맞춤)
@@ -204,4 +205,4 @@ class Screenshot(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     test_result_id = db.Column(db.Integer, db.ForeignKey('TestResults.id'), nullable=False)  # alpha DB는 test_result_id 사용
     file_path = db.Column(db.String(500), nullable=False)  # alpha DB는 file_path 사용
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # alpha DB는 created_at 사용
+    created_at = db.Column(db.DateTime, default=get_kst_now)  # alpha DB는 created_at 사용

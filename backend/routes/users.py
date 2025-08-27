@@ -155,7 +155,7 @@ def update_user(user_id):
         if 'is_active' in data:
             user.is_active = data['is_active']
         
-        user.updated_at = datetime.utcnow()
+        user.updated_at = get_kst_now()
         
         if 'password' in data:
             # 비밀번호 변경
