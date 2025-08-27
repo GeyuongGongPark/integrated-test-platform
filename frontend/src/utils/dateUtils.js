@@ -13,9 +13,8 @@ export const convertUTCToKST = (utcTime) => {
   const date = new Date(utcTime);
   if (isNaN(date.getTime())) return null;
   
-  // UTC 시간을 KST로 변환 (UTC+9)
-  const kstTime = new Date(date.getTime() + (9 * 60 * 60 * 1000));
-  return kstTime;
+  // Date 객체를 그대로 반환 (toLocaleString에서 timeZone 옵션으로 처리)
+  return date;
 };
 
 /**
@@ -35,7 +34,7 @@ export const formatUTCToKST = (utcTime) => {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: false
+    hour12: true
   });
 };
 
@@ -70,7 +69,7 @@ export const formatUTCToKSTTime = (utcTime) => {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: false
+    hour12: true
   });
 };
 

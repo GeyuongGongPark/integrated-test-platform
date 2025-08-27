@@ -564,7 +564,7 @@ def download_testcases_excel():
                 'environment': tc.environment,
                 'automation_code_path': tc.automation_code_path,
                 'automation_code_type': tc.automation_code_type,
-                'created_at': tc.created_at.strftime('%Y-%m-%d %H:%M:%S') if tc.created_at else None
+                'created_at': tc.created_at.isoformat() if tc.created_at else None
             })
         
         df = pd.DataFrame(data)

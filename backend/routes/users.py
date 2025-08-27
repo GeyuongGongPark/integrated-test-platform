@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from models import db, User
 from utils.auth_decorators import admin_required, user_required, owner_required
 from utils.cors import add_cors_headers
+from utils.timezone_utils import get_kst_now
 from datetime import datetime
 
 # Blueprint 생성

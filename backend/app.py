@@ -18,7 +18,7 @@ from routes.auth import auth_bp
 from utils.cors import setup_cors
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
-from utils.timezone_utils import get_kst_now, get_kst_isoformat
+from utils.timezone_utils import get_kst_now, get_kst_isoformat, get_kst_datetime_string
 
 # .env 파일 로드 (절대 경로 사용)
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
@@ -455,8 +455,8 @@ def get_testcases():
             'remark': tc.remark,
             'automation_code_path': tc.automation_code_path,
             'environment': tc.environment,
-            'created_at': tc.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'updated_at': tc.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': tc.created_at.isoformat(),
+            'updated_at': tc.updated_at.isoformat()
         } for tc in testcases]
         response = jsonify(data)
         return response, 200
@@ -569,8 +569,8 @@ def manage_testcase(testcase_id):
                 'remark': testcase.remark,
                 'automation_code_path': testcase.automation_code_path,
                 'environment': testcase.environment,
-                'created_at': testcase.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': testcase.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+                            'created_at': testcase.created_at.isoformat(),
+            'updated_at': testcase.updated_at.isoformat()
             }
             return jsonify(data), 200
         
@@ -634,7 +634,7 @@ def get_testcase_screenshots(testcase_id):
                 screenshots.append({
                     'id': screenshot.id,
                     'screenshot_path': screenshot.file_path,  # alpha DB는 file_path 사용
-                    'timestamp': screenshot.created_at.strftime('%Y-%m-%d %H:%M:%S') if screenshot.created_at else None  # alpha DB는 created_at 사용
+                    'timestamp': screenshot.created_at.isoformat() if screenshot.created_at else None  # alpha DB는 created_at 사용
                 })
         
         # alpha DB에는 직접 test_case_id로 연결된 스크린샷이 없으므로 제거
@@ -747,7 +747,7 @@ def get_test_executions():
                     'status': getattr(exe, 'status', 'unknown'),  # status 컬럼이 없으면 'unknown'
                     'execution_time': exe.execution_time,
                     'result_data': exe.result_data,
-                    'created_at': exe.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                    'created_at': exe.created_at.isoformat()
                 }
                 data.append(execution_data)
             except Exception:
@@ -772,7 +772,7 @@ def get_test_results(testcase_id):
             'status': result.status,
             'execution_time': result.execution_time,
             'result_data': result.result_data,
-            'created_at': result.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': result.created_at.isoformat()
         } for result in results]
         return jsonify(data), 200
     except Exception as e:

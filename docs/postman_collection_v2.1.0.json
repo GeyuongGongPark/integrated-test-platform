@@ -1,0 +1,577 @@
+{
+  "info": {
+    "name": "Integrated Test Platform API v2.1.0",
+    "description": "# 🚀 통합 테스트 플랫폼 API Postman Collection v2.1.0\n\n## 🌍 KST 시간대 처리 완료\n\n### 주요 변경사항\n- **모든 API 응답**: KST (한국 표준시) 타임스탬프로 통일\n- **데이터베이스 저장**: 모든 시간 필드를 KST로 저장\n- **파일명 생성**: KST 기반 타임스탬프 사용\n- **timezone_utils.py**: KST 시간 처리 전용 유틸리티 모듈\n\n### 시간 형식 예시\n```json\n{\n  \"created_at\": \"2025-08-27T11:56:46+09:00\",\n  \"updated_at\": \"2025-08-27T11:56:46+09:00\",\n  \"executed_at\": \"2025-08-27T11:56:46+09:00\"\n}\n```\n\n## 📋 준비사항\n\n### 1. Postman 설치\n- [Postman 공식 사이트](https://www.postman.com/downloads/)에서 다운로드\n- 계정 생성 (무료)\n\n### 2. 백엔드 서버 실행\n```bash\ncd backend\npython app.py\n```\n\n### 3. Postman 컬렉션 Import\n- `postman_collection_v2.1.0.json` 파일을 Postman에 Import\n- `postman_environment_v2.1.0.json` 파일도 함께 Import\n\n## 🌐 환경 설정\n\n### 로컬 개발 환경\n- `base_url`: `http://localhost:8000`\n\n### Vercel 프로덕션 환경\n- `base_url`: `https://backend-alpha-liard.vercel.app`\n\n## 📚 API 엔드포인트 그룹 (v2.1.0 구조)\n\n### 🔐 Authentication & Users\n- **User Registration**: 사용자 회원가입\n- **User Login**: 사용자 로그인 및 JWT 토큰 획득\n- **User Profile**: 사용자 프로필 조회/수정\n- **User Management**: 사용자 관리 (관리자용)\n- **Password Change**: 비밀번호 변경\n\n### 📁 Projects & Folders\n- **Project Management**: 프로젝트 CRUD\n- **Folder Management**: 폴더 CRUD 및 계층 구조\n- **Folder Tree**: 계층적 폴더 구조 조회\n- **Folder Types**: 환경별 폴더 타입 관리 (DEV, ALPHA, PRODUCTION)\n\n### 🧪 Test Cases\n- **Test Case CRUD**: 테스트 케이스 기본 CRUD\n- **Test Case Extended**: 고급 테스트 케이스 기능\n- **Test Case Import/Export**: Excel 파일 업로드/다운로드 (KST 타임스탬프)\n- **Test Case Execution**: 테스트 케이스 실행 및 결과\n- **Test Case Filtering**: 폴더별, 환경별 필터링\n\n### ⚡ Performance Tests\n- **Performance Test CRUD**: 성능 테스트 관리\n- **K6 Engine Integration**: K6 성능 테스트 엔진\n- **Test Results**: 성능 테스트 결과 및 통계\n- **Performance Metrics**: 응답 시간, 처리량 등 지표\n\n### 🤖 Automation Tests\n- **Automation Test CRUD**: 자동화 테스트 관리\n- **Test Script Management**: 테스트 스크립트 관리\n- **Playwright Integration**: Playwright 자동화 테스트\n- **Screenshot Management**: 테스트 실행 스크린샷\n\n### 📊 Dashboard & Analytics\n- **Dashboard Summary**: 대시보드 요약 정보\n- **Test Results**: 테스트 결과 및 통계\n- **Test Executions**: 테스트 실행 기록 (KST 시간)\n- **Performance Analytics**: 성능 분석 및 차트\n\n### 🔍 System & Health\n- **Health Check**: 서버 상태 확인\n- **CORS Test**: CORS 설정 테스트\n- **Database Status**: 데이터베이스 상태 확인\n- **Database Initialization**: 데이터베이스 초기화 (`/init-db`)\n\n## 🧪 테스트 시나리오\n\n### 1. 사용자 인증 워크플로우\n1. **회원가입**: 새 사용자 생성\n2. **로그인**: JWT 토큰 획득\n3. **프로필 조회**: 사용자 정보 확인\n4. **권한 테스트**: 역할별 접근 권한 확인\n5. **토큰 갱신**: JWT 토큰 만료 시 재로그인\n\n### 2. 프로젝트 관리 워크플로우\n1. **프로젝트 생성**: 새 프로젝트 추가\n2. **폴더 생성**: 프로젝트 내 폴더 구조 생성\n3. **폴더 트리 조회**: 계층 구조 확인\n4. **폴더 수정/삭제**: 구조 변경\n5. **환경별 폴더**: DEV, ALPHA, PRODUCTION 분리\n\n### 3. 테스트 케이스 관리 워크플로우\n1. **테스트 케이스 생성**: 기본 정보 입력 (KST 시간 자동 설정)\n2. **Excel 업로드**: 일괄 등록 (KST 타임스탬프)\n3. **테스트 케이스 조회**: 필터링 및 검색\n4. **테스트 실행**: 실행 및 결과 기록\n5. **Excel 다운로드**: 데이터 내보내기 (KST 시간 포함)\n6. **스크린샷 첨부**: 테스트 실행 스크린샷 관리\n\n### 4. 성능/자동화 테스트 워크플로우\n1. **테스트 생성**: 성능/자동화 테스트 설정\n2. **테스트 실행**: 실제 테스트 수행\n3. **결과 분석**: 결과 데이터 확인 (KST 시간)\n4. **통계 생성**: 대시보드 데이터 업데이트\n5. **성능 모니터링**: 실시간 성능 지표 확인\n\n## 🔧 Postman 고급 기능\n\n### 1. Pre-request Scripts\n- JWT 토큰 자동 설정\n- 환경 변수 동적 생성\n- 요청 데이터 검증\n- KST 시간 자동 생성\n\n### 2. Tests Scripts\n- 응답 상태 코드 확인\n- 응답 시간 측정\n- 응답 데이터 구조 검증\n- JWT 토큰 자동 저장\n- 환경 변수 자동 업데이트\n- KST 시간 형식 검증\n\n### 3. Collection Variables\n- 인증 토큰 관리\n- 테스트용 ID 값들\n- 환경별 설정값\n- KST 시간대 정보\n\n## 🌍 KST 시간대 처리 테스트\n\n### 시간 형식 검증\n```javascript\n// Tests 탭에서 KST 시간 형식 검증\npm.test(\"KST 시간 형식 확인\", function () {\n    const response = pm.response.json();\n    \n    if (response.created_at) {\n        // KST 시간 형식 검증 (+09:00)\n        pm.expect(response.created_at).to.match(/\\+09:00$/);\n        \n        // ISO 8601 형식 검증\n        pm.expect(response.created_at).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+09:00$/);\n    }\n});\n```\n\n### 시간대 변환 테스트\n```javascript\n// UTC → KST 변환 테스트\npm.test(\"UTC to KST 변환 확인\", function () {\n    const response = pm.response.json();\n    \n    if (response.created_at) {\n        const kstTime = new Date(response.created_at);\n        const utcTime = new Date(response.created_at.replace('+09:00', 'Z'));\n        \n        // KST는 UTC+9이므로 9시간 차이\n        const timeDiff = kstTime.getTime() - utcTime.getTime();\n        pm.expect(timeDiff).to.equal(9 * 60 * 60 * 1000);\n    }\n});\n```\n\n## 🚨 문제 해결\n\n### 일반적인 오류\n- **500 Internal Server Error**: 서버 내부 오류, 데이터베이스 연결 문제\n- **401 Unauthorized**: JWT 토큰 만료 또는 잘못된 토큰\n- **403 Forbidden**: 권한 부족\n- **404 Not Found**: 잘못된 URL 또는 존재하지 않는 리소스\n- **422 Validation Error**: 요청 데이터 검증 실패\n- **Duplicate Entry**: 중복 키 오류 (init-db 시 발생 가능)\n\n### KST 시간대 관련 이슈\n- **시간 형식 오류**: ISO 8601 + KST 형식 확인\n- **시간대 불일치**: 프론트엔드와 백엔드 시간대 통일 확인\n- **파일명 오류**: KST 타임스탬프 기반 파일명 생성 확인\n\n### 디버깅 방법\n- Postman Console 확인\n- 네트워크 탭 확인\n- 환경 변수 확인\n- JWT 토큰 상태 확인\n- KST 시간 형식 검증\n\n## 📊 성능 테스트\n\n- 응답 시간 측정\n- 부하 테스트 (Postman Runner 사용)\n- API 성능 모니터링\n- KST 시간 처리 성능 확인\n\n## 🔒 보안 테스트\n\n- JWT 토큰 인증 테스트\n- 역할별 권한 테스트\n- CORS 정책 테스트\n- 입력 데이터 검증 테스트\n- 민감한 정보 로그 노출 방지 확인\n\n## 🆕 v2.1.0 신규 기능\n\n### 1. KST 시간대 처리\n- 모든 API 응답의 시간을 KST로 통일\n- 데이터베이스 저장 시 KST 시간 사용\n- 파일명 생성 시 KST 타임스탬프 적용\n\n### 2. 보안 강화\n- 프론트엔드 콘솔 로그 최소화\n- 민감한 정보 노출 방지\n- 환경별 로그 레벨 조정\n\n### 3. 데이터베이스 최적화\n- SQLAlchemy 세션 관리 개선\n- 중복 키 오류 방지\n- 트랜잭션 처리 강화\n\n### 4. 파일 정리\n- 일회성 정리 스크립트 제거\n- 중복 파일 정리\n- 프로젝트 구조 최적화\n\n## 📁 파일 구조\n\n```\nintegrated-test-platform/\n├── backend/\n│   ├── app.py                    # KST 시간대 처리 완료\n│   ├── models.py                 # KST 시간 필드\n│   ├── routes/                   # KST API 응답\n│   ├── utils/timezone_utils.py   # KST 유틸리티\n│   └── requirements.txt          # pytz 의존성 추가\n├── frontend/                     # 로그 정리 완료\n└── docs/                         # 문서 최신화\n```\n\n---\n\n**마지막 업데이트**: 2025년 8월 27일\n**가이드 버전**: 2.1.0\n**상태**: v2.1.0 구조에 맞춰 모든 API 엔드포인트 테스트 가능, KST 시간대 처리 완료\n\n자세한 사용법은 `POSTMAN_USAGE_GUIDE.md` 파일을 참조하세요.",
+    "version": "2.1.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "vercel_url",
+      "value": "https://backend-alpha-liard.vercel.app",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "current_user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "current_project_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "current_folder_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "current_testcase_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "🔐 Authentication & Users",
+      "item": [
+        {
+          "name": "User Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\",\n  \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["register"]
+            },
+            "description": "새 사용자 회원가입 (KST 시간 자동 설정)"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\",\n  \"role\": \"user\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/register",
+                  "host": ["{{base_url}}"],
+                  "path": ["register"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"사용자가 성공적으로 생성되었습니다.\",\n  \"user\": {\n    \"id\": 1,\n    \"username\": \"testuser\",\n    \"email\": \"test@example.com\",\n    \"first_name\": \"Test\",\n    \"last_name\": \"User\",\n    \"role\": \"user\",\n    \"is_active\": true,\n    \"created_at\": \"2025-08-27T11:56:46+09:00\",\n    \"updated_at\": \"2025-08-27T11:56:46+09:00\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "User Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            },
+            "description": "사용자 로그인 및 JWT 토큰 획득"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// JWT 토큰 자동 저장",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.access_token) {",
+                  "        pm.environment.set('auth_token', response.access_token);",
+                  "        pm.collectionVariables.set('auth_token', response.access_token);",
+                  "        console.log('JWT 토큰이 저장되었습니다.');",
+                  "    }",
+                  "}",
+                  "",
+                  "// KST 시간 형식 검증",
+                  "pm.test(\"KST 시간 형식 확인\", function () {",
+                  "    const response = pm.response.json();",
+                  "    if (response.user && response.user.created_at) {",
+                  "        pm.expect(response.user.created_at).to.match(/\\+09:00$/);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "현재 로그인한 사용자 정보 조회 (KST 시간 포함)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// KST 시간 형식 검증",
+                  "pm.test(\"KST 시간 형식 확인\", function () {",
+                  "    const response = pm.response.json();",
+                  "    if (response.created_at) {",
+                  "        pm.expect(response.created_at).to.match(/\\+09:00$/);",
+                  "    }",
+                  "    if (response.updated_at) {",
+                  "        pm.expect(response.updated_at).to.match(/\\+09:00$/);",
+                  "    }",
+                  "});",
+                  "",
+                  "// 사용자 ID 저장",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.collectionVariables.set('current_user_id', response.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            },
+            "description": "모든 사용자 목록 조회 (관리자용)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📁 Projects & Folders",
+      "item": [
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Project\",\n  \"description\": \"테스트 프로젝트\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/projects",
+              "host": ["{{base_url}}"],
+              "path": ["projects"]
+            },
+            "description": "새 프로젝트 생성 (KST 시간 자동 설정)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 프로젝트 ID 저장",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.project && response.project.id) {",
+                  "        pm.collectionVariables.set('current_project_id', response.project.id);",
+                  "    }",
+                  "}",
+                  "",
+                  "// KST 시간 형식 검증",
+                  "pm.test(\"프로젝트 KST 시간 확인\", function () {",
+                  "    const response = pm.response.json();",
+                  "    if (response.project && response.project.created_at) {",
+                  "        pm.expect(response.project.created_at).to.match(/\\+09:00$/);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Folder",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"folder_name\": \"Test Folder\",\n  \"folder_type\": \"environment\",\n  \"environment\": \"dev\",\n  \"project_id\": {{current_project_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/folders",
+              "host": ["{{base_url}}"],
+              "path": ["folders"]
+            },
+            "description": "새 폴더 생성 (KST 시간 자동 설정)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 폴더 ID 저장",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.folder && response.folder.id) {",
+                  "        pm.collectionVariables.set('current_folder_id', response.folder.id);",
+                  "    }",
+                  "}",
+                  "",
+                  "// KST 시간 형식 검증",
+                  "pm.test(\"폴더 KST 시간 확인\", function () {",
+                  "    const response = pm.response.json();",
+                  "    if (response.folder && response.folder.created_at) {",
+                  "        pm.expect(response.folder.created_at).to.match(/\\+09:00$/);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Folder Tree",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/folders/tree",
+              "host": ["{{base_url}}"],
+              "path": ["folders", "tree"]
+            },
+            "description": "계층적 폴더 구조 조회"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧪 Test Cases",
+      "item": [
+        {
+          "name": "Create Test Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Case Title\",\n  \"description\": \"Test Case Description\",\n  \"folder_id\": {{current_folder_id}},\n  \"priority\": \"high\",\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/testcases",
+              "host": ["{{base_url}}"],
+              "path": ["testcases"]
+            },
+            "description": "새 테스트 케이스 생성 (KST 시간 자동 설정)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 테스트 케이스 ID 저장",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.testcase && response.testcase.id) {",
+                  "        pm.collectionVariables.set('current_testcase_id', response.testcase.id);",
+                  "    }",
+                  "}",
+                  "",
+                  "// KST 시간 형식 검증",
+                  "pm.test(\"테스트 케이스 KST 시간 확인\", function () {",
+                  "    const response = pm.response.json();",
+                  "    if (response.testcase && response.testcase.created_at) {",
+                  "        pm.expect(response.testcase.created_at).to.match(/\\+09:00$/);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload Excel File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "folder_id",
+                  "value": "{{current_folder_id}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/testcases/upload",
+              "host": ["{{base_url}}"],
+              "path": ["testcases", "upload"]
+            },
+            "description": "Excel 파일 업로드로 테스트 케이스 일괄 등록"
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚡ Performance Tests",
+      "item": [
+        {
+          "name": "Create Performance Test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Performance Test\",\n  \"description\": \"Performance test description\",\n  \"k6_script\": \"import http from 'k6/http';\",\n  \"folder_id\": {{current_folder_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/performance",
+              "host": ["{{base_url}}"],
+              "path": ["performance"]
+            },
+            "description": "새 성능 테스트 생성 (KST 시간 자동 설정)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 Automation Tests",
+      "item": [
+        {
+          "name": "Create Automation Test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Automation Test\",\n  \"description\": \"Automation test description\",\n  \"playwright_script\": \"test('test', async ({ page }) => {});\",\n  \"folder_id\": {{current_folder_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/automation",
+              "host": ["{{base_url}}"],
+              "path": ["automation"]
+            },
+            "description": "새 자동화 테스트 생성 (KST 시간 자동 설정)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard & Analytics",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/summary",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "summary"]
+            },
+            "description": "대시보드 요약 정보 조회"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔍 System & Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "서버 상태 확인"
+          }
+        },
+        {
+          "name": "Database Initialization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/init-db",
+              "host": ["{{base_url}}"],
+              "path": ["init-db"]
+            },
+            "description": "데이터베이스 초기화 (admin 사용자 생성)"
+          }
+        },
+        {
+          "name": "CORS Test",
+          "request": {
+            "method": "OPTIONS",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "CORS 설정 테스트"
+          }
+        }
+      ]
+    }
+  ]
+}

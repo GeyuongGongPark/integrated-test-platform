@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import config from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatUTCToKST } from '../../utils/dateUtils';
 import './TestCaseAPP.css';
 
 // axios 인터셉터 설정 - 인증 토큰 자동 추가
@@ -104,7 +105,7 @@ const TestCaseScreenshots = ({ testCaseId }) => {
           {screenshots.map((screenshot, index) => (
             <div key={screenshot.id} className="screenshot-path-item">
               <span>• {screenshot.screenshot_path}</span>
-              <small>{screenshot.timestamp ? new Date(screenshot.timestamp).toLocaleString() : '시간 정보 없음'}</small>
+                              <small>{screenshot.timestamp ? formatUTCToKST(screenshot.timestamp) : '시간 정보 없음'}</small>
             </div>
           ))}
         </div>
@@ -153,7 +154,7 @@ const TestCaseExecutionResults = ({ testCaseId }) => {
               {result.result || 'N/A'}
             </span>
             <span className="result-timestamp">
-              {new Date(result.executed_at).toLocaleString()}
+                              {formatUTCToKST(result.executed_at)}
             </span>
           </div>
           {result.execution_duration && (
@@ -911,9 +912,9 @@ const TestCaseAPP = () => {
                           )}
                           <tr>
                             <th>생성일</th>
-                            <td>{testCase.created_at ? new Date(testCase.created_at).toLocaleString() : '없음'}</td>
+                            <td>{testCase.created_at ? formatUTCToKST(testCase.created_at) : '없음'}</td>
                             <th>수정일</th>
-                            <td>{testCase.updated_at ? new Date(testCase.updated_at).toLocaleString() : '없음'}</td>
+                            <td>{testCase.updated_at ? formatUTCToKST(testCase.updated_at) : '없음'}</td>
                           </tr>
                         </tbody>
                       </table>

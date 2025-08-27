@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, send_from_directory
 from models import db, AutomationTest, TestResult
 from utils.cors import add_cors_headers
 from utils.auth_decorators import guest_allowed, user_required, admin_required
+from utils.timezone_utils import get_kst_now
 from datetime import datetime
 import time
 import os
@@ -23,7 +24,8 @@ def get_automation_tests():
     """모든 자동화 테스트 조회"""
     try:
         tests = AutomationTest.query.all()
-        response = jsonify([{
+        
+        response_data = [{
             'id': test.id,
             'name': test.name,
             'description': test.description,
@@ -31,9 +33,11 @@ def get_automation_tests():
             'script_path': test.script_path,
             'environment': test.environment,
             'parameters': test.parameters,
-            'created_at': test.created_at.strftime('%Y-%m-%d %H:%M:%S') if test.created_at else None,
-            'updated_at': test.updated_at.strftime('%Y-%m-%d %H:%M:%S') if test.updated_at else None
-        } for test in tests])
+            'created_at': test.created_at.isoformat() if test.created_at else None,
+            'updated_at': test.updated_at.isoformat() if test.updated_at else None
+        } for test in tests]
+        
+        response = jsonify(response_data)
         return add_cors_headers(response), 200
     except Exception as e:
         response = jsonify({'error': str(e)})
@@ -83,8 +87,8 @@ def get_automation_test(id):
             'script_path': test.script_path,
             'environment': test.environment,
             'parameters': test.parameters,
-            'created_at': test.created_at.strftime('%Y-%m-%d %H:%M:%S') if test.created_at else None,
-            'updated_at': test.updated_at.strftime('%Y-%m-%d %H:%M:%S') if test.updated_at else None
+            'created_at': test.created_at.isoformat() if test.created_at else None,
+            'updated_at': test.updated_at.isoformat() if test.updated_at else None
         })
         return add_cors_headers(response), 200
     except Exception as e:

@@ -3,6 +3,7 @@ from models import db, TestCase
 from utils.cors import add_cors_headers
 from datetime import datetime
 from sqlalchemy import func, text
+from utils.timezone_utils import get_kst_now
 
 # Blueprint 생성
 dashboard_extended_bp = Blueprint('dashboard_extended', __name__)
@@ -26,7 +27,7 @@ def get_dashboard_summaries():
                 'failed_tests': s.failed_tests,
                 'skipped_tests': s.skipped_tests,
                 'pass_rate': s.pass_rate,
-                'last_updated': s.last_updated.strftime('%Y-%m-%d %H:%M:%S') if s.last_updated else None
+                'last_updated': s.last_updated.isoformat() if s.last_updated else None
             } for s in summaries]
         except:
             # DashboardSummary 테이블이 없으면 실시간 계산
@@ -90,7 +91,7 @@ def get_testcases_summary_all():
                 'na': na,
                 'blocked': blocked,
                 'pass_rate': round(pass_rate, 2),
-                'last_updated': get_kst_now().strftime('%Y-%m-%d %H:%M:%S')
+                'last_updated': get_kst_now().isoformat()
             }
             summaries.append(summary)
         

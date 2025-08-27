@@ -244,6 +244,8 @@ const AutomationTestDetail = ({ test, onClose, onRefresh }) => {
   const [loading, setLoading] = useState(false);
   const [executing, setExecuting] = useState(false);
 
+
+
   const handleExecuteTest = async () => {
     if (!window.confirm('이 자동화 테스트를 실행하시겠습니까?')) {
       return;

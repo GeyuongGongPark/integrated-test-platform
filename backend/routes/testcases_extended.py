@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import db, TestCase, TestResult
 from utils.cors import add_cors_headers
+from utils.timezone_utils import get_kst_now
 from datetime import datetime
 import io
 import os
@@ -32,8 +33,8 @@ def manage_testcase(testcase_id):
                 'description': testcase.description,
                 'project_id': testcase.project_id,
                 'folder_id': testcase.folder_id,
-                'created_at': testcase.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': testcase.updated_at.strftime('%Y-%m-%d %H:%M:%S') if testcase.updated_at else None
+                            'created_at': testcase.created_at.isoformat(),
+            'updated_at': testcase.updated_at.isoformat() if testcase.updated_at else None
             }
             response = jsonify(data)
             return add_cors_headers(response), 200
@@ -181,7 +182,7 @@ def download_testcases():
                 'description': tc.description,
                 'project_id': tc.project_id,
                 'folder_id': tc.folder_id,
-                'created_at': tc.created_at.strftime('%Y-%m-%d %H:%M:%S') if tc.created_at else None
+                'created_at': tc.created_at.isoformat() if tc.created_at else None
             })
         
         df = pd.DataFrame(data)
@@ -224,7 +225,7 @@ def execute_testcase(testcase_id):
             'status': 'executed',
             'environment': environment,
             'parameters': parameters,
-            'executed_at': get_kst_now().strftime('%Y-%m-%d %H:%M:%S')
+            'executed_at': get_kst_now().isoformat()
         }
         
         response = jsonify(execution_result)

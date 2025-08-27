@@ -12,6 +12,7 @@
 - **📁 Folder Management**: 계층적 폴더 구조 관리
 - **📊 Dashboard**: 테스트 결과 통계 및 분석
 - **👥 User Management**: 사용자 및 프로젝트 관리
+- **🌍 KST 시간대**: 한국 표준시 기반 일관된 시간 처리
 
 ## 🏗️ 기술 스택
 
@@ -21,6 +22,7 @@
 - **SQLAlchemy 2.0+**
 - **MySQL 8.0+**
 - **Docker**
+- **pytz**: KST 시간대 처리
 
 ### Frontend
 - **React 18+**
@@ -71,18 +73,26 @@ integrated-test-platform/
 │   ├── app.py              # 메인 애플리케이션
 │   ├── models.py           # 데이터베이스 모델
 │   ├── routes/             # API 라우트
-│   └── utils/              # 유틸리티 함수
+│   ├── utils/              # 유틸리티 함수
+│   │   └── timezone_utils.py # KST 시간대 처리
+│   └── engines/            # 테스트 엔진 (K6, Playwright)
 ├── frontend/                # React 프론트엔드
 │   ├── src/
 │   │   ├── components/     # React 컴포넌트
+│   │   ├── contexts/       # React Context
+│   │   ├── pages/          # 페이지 컴포넌트
 │   │   └── config.js       # API 설정
 │   └── package.json
 ├── docs/                    # 문서 및 설정 파일
-│   ├── postman_collection.json
-│   ├── docker-compose.yml
+│   ├── postman_collection_v2.json
+│   ├── postman_environment_v2.json
 │   ├── PERMISSION_GUIDE.md # 권한별 기능 가이드
-│   └── README.md
+│   ├── API_TESTING_GUIDE.md # API 테스트 가이드
+│   ├── TESTING_GUIDE.md    # 테스트 가이드
+│   └── PROJECT_STRUCTURE.md # 프로젝트 구조
 ├── test-scripts/            # 테스트 스크립트
+│   ├── performance/        # K6 성능 테스트
+│   └── playwright/         # Playwright 자동화 테스트
 └── README.md               # 이 파일
 ```
 
@@ -93,6 +103,13 @@ integrated-test-platform/
 - **📖 [권한별 기능 가이드](docs/PERMISSION_GUIDE.md)** - 각 역할별 접근 가능한 기능 상세 설명
 - **🛡️ JWT 기반 인증** - 보안된 API 접근
 - **🔒 역할 기반 접근 제어** - 사용자 권한에 따른 기능 제한
+
+## 🌍 시간대 처리
+
+- **KST (한국 표준시) 기반**: 모든 시간 데이터를 KST로 일관되게 처리
+- **백엔드**: `utils/timezone_utils.py`를 통한 KST 시간 생성 및 변환
+- **데이터베이스**: 모든 타임스탬프를 KST로 저장
+- **API 응답**: KST 시간 형식으로 응답
 
 ## 🌐 배포
 
@@ -113,13 +130,15 @@ FLASK_ENV=production
 - **Postman 사용법**: `docs/POSTMAN_USAGE_GUIDE.md`
 - **프로젝트 구조**: `docs/PROJECT_STRUCTURE.md`
 - **배포 요약**: `docs/DEPLOYMENT_SUMMARY.md`
+- **테스트 가이드**: `docs/TESTING_GUIDE.md`
+- **권한 가이드**: `docs/PERMISSION_GUIDE.md`
 
 ## 🧪 테스트
 
 ### API 테스트
 ```bash
 # Postman Collection 사용
-docs/postman_collection.json
+docs/postman_collection_v2.json
 ```
 
 ### 성능 테스트
@@ -152,6 +171,7 @@ npx playwright test
 
 ---
 
-**마지막 업데이트**: 2025년 8월 13일  
-**버전**: 2.0.1  
-**상태**: 프로덕션 배포 완료 ✅
+**마지막 업데이트**: 2025년 8월 27일  
+**버전**: 2.1.0  
+**상태**: 프로덕션 배포 완료 ✅  
+**주요 업데이트**: KST 시간대 처리, 파일 정리, 문서 최신화

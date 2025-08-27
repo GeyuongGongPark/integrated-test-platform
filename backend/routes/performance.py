@@ -3,6 +3,7 @@ from models import db, PerformanceTest, TestResult, TestExecution
 from utils.cors import add_cors_headers
 from utils.auth_decorators import guest_allowed, user_required, admin_required
 from engines.k6_engine import k6_engine
+from utils.timezone_utils import get_kst_now
 import json
 from datetime import datetime
 import time
@@ -175,7 +176,7 @@ def get_performance_test_results(id):
         'execution_time': r.execution_time,
         'environment': r.environment,
         'executed_by': r.executed_by,
-        'executed_at': r.executed_at.strftime('%Y-%m-%d %H:%M:%S') if r.executed_at else None,
+                    'executed_at': r.executed_at.isoformat() if r.executed_at else None,
         'notes': r.notes
     } for r in results]
     response = jsonify(data)
@@ -190,8 +191,8 @@ def get_test_executions():
         'automation_test_id': e.automation_test_id,
         'performance_test_id': e.performance_test_id,
         'test_type': e.test_type,
-        'started_at': e.started_at.strftime('%Y-%m-%d %H:%M:%S') if e.started_at else None,
-        'completed_at': e.completed_at.strftime('%Y-%m-%d %H:%M:%S') if e.completed_at else None,
+                    'started_at': e.started_at.isoformat() if e.started_at else None,
+            'completed_at': e.completed_at.isoformat() if e.completed_at else None,
         'status': e.status,
         'result_summary': json.loads(e.result_summary) if e.result_summary else None
     } for e in executions]

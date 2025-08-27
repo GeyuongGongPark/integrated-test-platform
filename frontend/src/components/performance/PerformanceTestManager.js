@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatUTCToKST } from '../../utils/dateUtils';
 import './PerformanceTestManager.css';
 
 // axios 기본 설정
@@ -314,8 +315,8 @@ const PerformanceTestManager = () => {
                                     <p><strong>스크립트 경로:</strong> {test.script_path || '없음'}</p>
                                     <p><strong>환경:</strong> {test.environment || '없음'}</p>
                                     <p><strong>매개변수:</strong> {test.parameters ? JSON.stringify(JSON.parse(test.parameters), null, 2) : '없음'}</p>
-                                    <p><strong>생성일:</strong> {new Date(test.created_at).toLocaleString()}</p>
-                                    <p><strong>수정일:</strong> {new Date(test.updated_at).toLocaleString()}</p>
+                                    <p><strong>생성일:</strong> {formatUTCToKST(test.created_at)}</p>
+                                    <p><strong>수정일:</strong> {formatUTCToKST(test.updated_at)}</p>
                                 </div>
                                 
                                 {/* 테스트 결과 영역 */}
@@ -336,7 +337,7 @@ const PerformanceTestManager = () => {
                                             {testResults.map(result => (
                                                 <tr key={result.id}>
                                                     <td>
-                                                        {result.executed_at ? new Date(result.executed_at).toLocaleString() : 'N/A'}
+                                                        {result.executed_at ? formatUTCToKST(result.executed_at) : 'N/A'}
                                                     </td>
                                                     <td>
                                                         <span className={`status-${result.result?.toLowerCase() || 'error'}`}>

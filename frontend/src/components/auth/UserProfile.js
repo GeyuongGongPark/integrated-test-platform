@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatUTCToKST } from '../../utils/dateUtils';
 import './Auth.css';
 
 const UserProfile = () => {
@@ -101,7 +102,7 @@ const UserProfile = () => {
           
           <div className="profile-field">
             <label>가입일:</label>
-            <span>{user?.created_at ? new Date(user.created_at).toLocaleDateString('ko-KR') : '알 수 없음'}</span>
+            <span>{user?.created_at ? formatUTCToKST(user.created_at) : '알 수 없음'}</span>
           </div>
         </div>
 

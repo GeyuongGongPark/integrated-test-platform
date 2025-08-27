@@ -6,6 +6,7 @@
 - **프론트엔드**: Vercel에 성공적으로 배포됨
 - **백엔드**: Vercel에 성공적으로 배포됨 (backend-alpha 프로젝트)
 - **데이터베이스**: 로컬 Docker MySQL 정상 작동
+- **KST 시간대 처리**: 백엔드 전체 구현 완료
 
 ### 🚧 진행 중인 이슈
 - **Vercel 인증**: 401 Authentication Required 오류 (GitHub SSO 관련)
@@ -14,12 +15,12 @@
 
 ### 로컬 개발 환경
 - **상태**: 모든 기능 정상 작동 ✅
-- **백엔드**: Flask API (포트 8000)
-- **프론트엔드**: React (포트 3000)
-- **데이터베이스**: MySQL Docker 컨테이너 (포트 3306)
+- **백엔드**: Flask API (포트 8000) - KST 시간대 처리 완료
+- **프론트엔드**: React (포트 3000) - 로그 정리 완료
+- **데이터베이스**: MySQL Docker 컨테이너 (포트 3306) - KST 시간 저장
 
 ### Vercel 프로덕션 환경
-- **백엔드 URL**: `https://backend-alpha-6xhgmyzpt-gyeonggong-parks-projects.vercel.app`
+- **백엔드 URL**: `https://backend-alpha-liard.vercel.app`
 - **프론트엔드 URL**: `https://integrated-test-platform-dydlxktca-gyeonggong-parks-projects.vercel.app`
 - **상태**: 배포 완료, 인증 이슈 진행 중
 
@@ -45,6 +46,21 @@
 **원인**: `cryptography`, `bcrypt`, `alembic` 등 복잡한 의존성
 **해결**: `requirements.txt` 단순화 및 불필요한 패키지 제거
 
+### 5. 데이터베이스 중복 키 오류 ✅
+**문제**: `init-db` 엔드포인트에서 Duplicate entry 오류 발생
+**원인**: SQLAlchemy autoflush와 중복 사용자 생성
+**해결**: autoflush 비활성화 및 세션 관리 개선
+
+### 6. 프론트엔드 콘솔 로그 보안 위험 ✅
+**문제**: 브라우저 콘솔에 민감한 정보 노출
+**원인**: 과도한 디버깅 로그 및 토큰 정보 출력
+**해결**: 모든 불필요한 로그 제거, 환경별 로그 레벨 조정
+
+### 7. 시간대 불일치 문제 ✅
+**문제**: 프론트엔드는 KST, 백엔드는 UTC 혼재 사용
+**원인**: 시간대 처리 로직 부재
+**해결**: `timezone_utils.py` 생성, 모든 시간 관련 코드를 KST로 통일
+
 ## 🚧 현재 진행 중인 이슈
 
 ### Vercel 인증 문제 (401 Authentication Required)
@@ -62,16 +78,22 @@
 ## 📁 최신화된 파일들
 
 ### Backend
-- **`app.py`**: 폴더 API 속성 참조 오류 수정
+- **`app.py`**: KST 시간대 처리, 데이터베이스 초기화 개선
+- **`models.py`**: 모든 시간 필드를 KST 기반으로 변경
+- **`routes/*.py`**: 모든 API에서 KST 시간 응답
+- **`utils/timezone_utils.py`**: KST 시간 처리 유틸리티 (신규)
+- **`requirements.txt`**: pytz 의존성 추가
 - **`vercel.json`**: Vercel 배포 설정 최적화
-- **`requirements.txt`**: 의존성 단순화
 
 ### Frontend
-- **`TestCaseAPP.js`**: 폴더 속성 참조 수정
-- **`Dashboard/FolderManager.js`**: 폴더 관리 속성 참조 수정
-- **`Settings/FolderManager.js`**: 이미 올바르게 구현됨
+- **`TestCaseAPP.js`**: 로그 정리, KST 시간 표시
+- **`AuthContext.js`**: 보안을 위한 로그 최소화
+- **`UnifiedDashboard.js`**: 불필요한 로그 제거
+- **`AccountManager.js`**: 디버깅 로그 정리
+- **`ProjectManager.js`**: 로그 정리
 
 ### Database
+- **모든 테이블**: KST 시간대 기반 타임스탬프 저장
 - **`mysql-init/02-external-access.sql`**: 외부 접근 권한 설정 최신화
 
 ## 🔧 환경 변수 설정
@@ -91,6 +113,22 @@ FLASK_ENV=production
 VERCEL_AUTH_DISABLED=true
 ```
 
+## 🌍 KST 시간대 처리 구현
+
+### 주요 기능
+- **`timezone_utils.py`**: KST 시간 처리 전용 모듈
+- **모든 모델**: `created_at`, `updated_at` 등 시간 필드를 KST로 저장
+- **API 응답**: 모든 타임스탬프를 KST 형식으로 응답
+- **파일명 생성**: KST 기반 타임스탬프 사용
+
+### 구현된 함수들
+```python
+get_kst_now()           # 현재 KST 시간
+get_kst_datetime()      # UTC → KST 변환
+get_kst_isoformat()     # KST ISO 형식
+get_kst_datetime_string() # KST 문자열 형식
+```
+
 ## 📈 성능 최적화
 
 ### 데이터베이스 연결
@@ -98,56 +136,34 @@ VERCEL_AUTH_DISABLED=true
 - **타임아웃**: 연결, 읽기, 쓰기 타임아웃 관리
 - **SSL 모드**: Vercel 환경에서 안전한 연결
 
-### API 응답
-- **CORS**: 모든 환경에서 접근 가능
-- **에러 핸들링**: 상세한 에러 메시지 및 로깅
-- **응답 형식**: 일관된 API 응답 구조
+### 프론트엔드 최적화
+- **로그 최소화**: 프로덕션 환경에서 불필요한 로그 제거
+- **환경별 설정**: 개발/프로덕션 환경 분리
+- **보안 강화**: 민감한 정보 노출 방지
 
-## 🚀 다음 단계
+## 🗂️ 파일 정리 완료
 
-### 단기 목표 (1-2주)
-1. **Vercel 인증 문제 해결**: Dashboard 설정 확인 및 변경
-2. **프로덕션 데이터베이스 연결**: 클라우드 MySQL 또는 PostgreSQL 설정
-3. **API 테스트**: 모든 엔드포인트 정상 작동 확인
+### 제거된 파일들
+- **백엔드 정리 스크립트**: 일회성 데이터 정리 스크립트들 모두 제거
+- **중복 Postman 파일**: v1 파일들 제거, v2만 유지
+- **불필요한 설정 파일**: 중복 docker-compose.yml 제거
 
-### 중기 목표 (1개월)
-1. **모니터링 설정**: 로그 수집 및 에러 추적
-2. **성능 최적화**: API 응답 시간 개선
-3. **보안 강화**: JWT 토큰 및 권한 관리
+### 정리 원칙
+1. **일회성 스크립트**: 문제 해결 후 즉시 삭제
+2. **중복 파일**: 최신 버전만 유지
+3. **보안**: 민감한 정보가 포함된 로그 제거
+4. **일관성**: 시간대, 로깅 등 시스템 전반의 일관성 유지
 
-### 장기 목표 (3개월)
-1. **CI/CD 파이프라인**: 자동 배포 및 테스트
-2. **확장성 개선**: 마이크로서비스 아키텍처 고려
-3. **사용자 피드백**: UI/UX 개선
+## 📊 현재 상태 요약
 
-## 📚 관련 문서
-
-- [README.md](README.md) - 프로젝트 개요
-- [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) - 상세 구조 설명
-- [docs/USAGE.md](docs/USAGE.md) - 사용법 가이드
-- [docs/DEPLOYMENT_SUCCESS.md](docs/DEPLOYMENT_SUCCESS.md) - 배포 성공 가이드
-
-## 🤝 팀 협업 현황
-
-### 개발자
-- **백엔드**: Flask API 개발 및 배포 완료
-- **프론트엔드**: React 컴포넌트 개발 및 배포 완료
-- **데이터베이스**: MySQL Docker 설정 및 권한 관리
-
-### 현재 작업
-- **Vercel 인증 문제 해결**: 진행 중
-- **문서 최신화**: 완료
-- **코드 품질 개선**: 지속적 진행
-
-## 📞 문의 및 지원
-
-프로젝트 관련 문의사항이나 기술적 지원이 필요한 경우:
-1. GitHub Issues 생성
-2. 프로젝트 문서 참조
-3. 개발팀과 직접 연락
+- **백엔드**: KST 시간대 처리 완료, 정리 스크립트 제거, 모든 API 최신화
+- **프론트엔드**: 로그 정리 완료, KST 시간 표시, 보안 강화
+- **데이터베이스**: KST 시간 저장 완료, 연결 최적화
+- **문서**: 모든 문서 최신화 완료
+- **배포**: Vercel 배포 완료, 인증 이슈만 남음
 
 ---
 
-**마지막 업데이트**: 2025년 8월 13일
-**문서 버전**: 2.0.1
-**상태**: 배포 완료, 인증 이슈 진행 중 
+**마지막 업데이트**: 2025년 8월 27일  
+**버전**: 2.1.0  
+**상태**: 프로덕션 배포 완료, KST 시간대 처리 완료 ✅ 

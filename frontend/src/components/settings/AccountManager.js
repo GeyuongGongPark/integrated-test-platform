@@ -360,7 +360,7 @@ const AccountManager = () => {
             </div>
             <div className="info-item">
               <label>생성일:</label>
-              <span>{currentUser?.created_at ? new Date(currentUser.created_at).toLocaleDateString() : 'N/A'}</span>
+              <span>{currentUser?.created_at ? formatUTCToKST(currentUser.created_at) : 'N/A'}</span>
             </div>
             <div className="info-item">
               <label>마지막 로그인:</label>
