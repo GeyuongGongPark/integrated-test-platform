@@ -19,11 +19,7 @@ axios.interceptors.request.use(
     config.headers['X-Requested-With'] = 'XMLHttpRequest';
     config.headers['Accept'] = 'application/json';
     
-    // 개발 환경에서만 로깅
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🌐 API Request:', config.method?.toUpperCase(), config.url);
-      console.log('🔑 Auth Token:', token ? '있음' : '없음');
-    }
+    // API Request 로그는 출력하지 않음
     
     return config;
   },
@@ -236,26 +232,12 @@ const TestCaseAPP = () => {
     try {
       setLoading(true);
       
-      console.log('=== fetchData 디버깅 ===');
-      console.log('config.apiUrl:', config.apiUrl);
-      console.log('요청할 URL들:');
-      console.log('- testcases:', `${config.apiUrl}/testcases`);
-      console.log('- folders/tree:', `${config.apiUrl}/folders/tree`);
-      console.log('- folders:', `${config.apiUrl}/folders`);
-      
       const [testCasesRes, treeRes, foldersRes] = await Promise.all([
         axios.get(`${config.apiUrl}/testcases`),
         axios.get(`${config.apiUrl}/folders/tree`),
         axios.get(`${config.apiUrl}/folders`)
       ]);
 
-      console.log('=== API 응답 디버깅 ===');
-      console.log('testCases 응답:', testCasesRes);
-      console.log('받아온 테스트 케이스 데이터:', testCasesRes.data);
-      console.log('테스트 케이스 개수:', testCasesRes.data?.length);
-      console.log('tree 응답:', treeRes);
-      console.log('folders 응답:', foldersRes);
-      
       setTestCases(testCasesRes.data);
       setFolderTree(treeRes.data);
       setAllFolders(foldersRes.data);
@@ -264,27 +246,19 @@ const TestCaseAPP = () => {
       try {
         const usersRes = await axios.get(`${config.apiUrl}/users/list`);
         setUsers(usersRes.data);
-        console.log('사용자 목록:', usersRes.data);
       } catch (userErr) {
-        console.error('사용자 목록 조회 오류:', userErr);
         setUsers([]);
       }
     } catch (err) {
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
-      console.error('Test case data fetch error:', err);
-      console.error('에러 상세:', err.response);
+      // 오류는 조용히 처리
     } finally {
       setLoading(false);
     }
   };
 
   const handleFolderSelect = (folderId) => {
-    console.log('=== handleFolderSelect 디버깅 ===');
-    console.log('전달받은 folderId:', folderId, '타입:', typeof folderId);
-    console.log('현재 folderTree:', folderTree);
-    
-    const selectedFolderInfo = findFolderInTree(folderTree, folderId);
-    console.log('선택된 폴더 정보:', selectedFolderInfo);
+          const selectedFolderInfo = findFolderInTree(folderTree, folderId);
     setSelectedFolder(folderId);
   };
 
@@ -294,23 +268,10 @@ const TestCaseAPP = () => {
       return;
     }
 
-    console.log('=== 파일 업로드 디버깅 ===');
-    console.log('선택된 파일:', selectedFile);
-    console.log('파일명:', selectedFile.name);
-    console.log('파일 크기:', selectedFile.size);
-    console.log('파일 타입:', selectedFile.type);
-
     const formData = new FormData();
     formData.append('file', selectedFile);
 
-    // FormData 내용 확인
-    console.log('FormData 내용:');
-    for (let [key, value] of formData.entries()) {
-      console.log(`${key}:`, value);
-    }
-
     try {
-      console.log('업로드 요청 시작...');
       const response = await axios.post(`${config.apiUrl}/testcases/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -320,14 +281,11 @@ const TestCaseAPP = () => {
         }],
       });
 
-      console.log('업로드 성공:', response.data);
       alert(response.data.message);
       setShowUploadModal(false);
       setSelectedFile(null);
       fetchData(); // 데이터 새로고침
     } catch (err) {
-      console.error('업로드 오류:', err);
-      console.error('오류 응답:', err.response?.data);
       alert('파일 업로드 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
     }
   };
@@ -346,12 +304,6 @@ const TestCaseAPP = () => {
         name: autoName
       };
 
-      console.log('=== 테스트 케이스 생성 디버깅 ===');
-      console.log('전송할 테스트 케이스 데이터:', testCaseData);
-      console.log('API URL:', `${config.apiUrl}/testcases`);
-      console.log('로컬 스토리지 토큰:', localStorage.getItem('token') ? '있음' : '없음');
-      console.log('토큰 값 (첫 50자):', localStorage.getItem('token')?.substring(0, 50) + '...');
-      
       // 토큰 확인
       const token = localStorage.getItem('token');
       if (!token) {
@@ -378,9 +330,6 @@ const TestCaseAPP = () => {
       });
       fetchData(); // 데이터 새로고침
     } catch (err) {
-      console.error('테스트 케이스 생성 오류 상세:', err);
-      console.error('응답 상태:', err.response?.status);
-      console.error('응답 데이터:', err.response?.data);
       alert('테스트 케이스 추가 중 오류가 발생했습니다: ' + (err.response?.data?.error || err.message));
     }
   };
@@ -418,17 +367,13 @@ const TestCaseAPP = () => {
 
   const handleStatusChange = async (testCaseId, newStatus) => {
     try {
-      console.log('🔄 테스트 케이스 상태 변경 시도:', { testCaseId, newStatus });
-      
       const response = await axios.put(`${config.apiUrl}/testcases/${testCaseId}/status`, { 
         status: newStatus 
       });
       
-      console.log('✅ 테스트 케이스 상태 변경 완료:', newStatus, response.data);
       alert('테스트 케이스 상태가 성공적으로 변경되었습니다.');
       fetchData(); // 데이터 새로고침
     } catch (err) {
-      console.error('❌ 테스트 케이스 상태 변경 실패:', err);
       const errorMessage = err.response?.data?.error || err.message || '알 수 없는 오류가 발생했습니다.';
       alert('테스트 케이스 상태 변경 중 오류가 발생했습니다: ' + errorMessage);
     }
@@ -542,14 +487,8 @@ const TestCaseAPP = () => {
 
   // 폴더 트리에서 특정 ID의 폴더 정보 찾기
   const findFolderInTree = (nodes, folderId) => {
-    console.log('=== findFolderInTree 디버깅 ===');
-    console.log('찾을 folderId:', folderId, '타입:', typeof folderId);
-    console.log('nodes:', nodes);
-    
     for (const node of nodes) {
-      console.log('현재 노드 ID:', node.id, '타입:', typeof node.id);
       if (node.id === folderId) {
-        console.log('노드 찾음:', node);
         return node;
       }
       if (node.children) {
@@ -557,83 +496,53 @@ const TestCaseAPP = () => {
         if (found) return found;
       }
     }
-    console.log('노드를 찾을 수 없음');
     return null;
   };
 
   // 환경 폴더의 모든 하위 폴더 ID들 가져오기
   const getEnvironmentFolderIds = (nodes, environmentFolderId) => {
-    console.log('=== getEnvironmentFolderIds 디버깅 ===');
-    console.log('입력 nodes:', nodes);
-    console.log('입력 environmentFolderId:', environmentFolderId);
-    
     const environmentNode = findFolderInTree(nodes, environmentFolderId);
-    console.log('찾은 환경 노드:', environmentNode);
     
     if (!environmentNode || environmentNode.type !== 'environment') {
-      console.log('환경 노드를 찾을 수 없거나 타입이 맞지 않음');
       return [];
     }
     
     const folderIds = [];
     if (environmentNode.children) {
-      console.log('환경 노드의 자식들:', environmentNode.children);
       for (const child of environmentNode.children) {
-        console.log('자식 노드 확인:', child);
         if (child.type === 'deployment_date') {
           folderIds.push(child.id);
-          console.log('배포일자 폴더 추가:', child.id, child.folder_name);
           
           // 배포일자 폴더의 하위 기능명 폴더들도 추가
           if (child.children) {
             for (const featureChild of child.children) {
               if (featureChild.type === 'feature') {
                 folderIds.push(featureChild.id);
-                console.log('기능명 폴더 추가:', featureChild.id, featureChild.folder_name);
               }
             }
           }
-        } else {
-          console.log('배포일자가 아닌 자식 노드:', child.type, child.folder_name);
         }
       }
-    } else {
-      console.log('환경 노드에 자식이 없음');
     }
-    console.log('최종 폴더 IDs:', folderIds);
     return folderIds;
   };
 
   // 배포일자 폴더의 모든 하위 폴더 ID들 가져오기
   const getDeploymentFolderIds = (nodes, deploymentFolderId) => {
-    console.log('=== getDeploymentFolderIds 디버깅 ===');
-    console.log('입력 nodes:', nodes);
-    console.log('입력 deploymentFolderId:', deploymentFolderId);
-    
     const deploymentNode = findFolderInTree(nodes, deploymentFolderId);
-    console.log('찾은 배포일자 노드:', deploymentNode);
     
     if (!deploymentNode || deploymentNode.type !== 'deployment_date') {
-      console.log('배포일자 노드를 찾을 수 없거나 타입이 맞지 않음');
       return [];
     }
     
     const folderIds = [deploymentNode.id]; // 배포일자 폴더 자체도 포함
     if (deploymentNode.children) {
-      console.log('배포일자 노드의 자식들:', deploymentNode.children);
       for (const child of deploymentNode.children) {
-        console.log('자식 노드 확인:', child);
         if (child.type === 'feature') {
           folderIds.push(child.id);
-                  console.log('기능명 폴더 추가:', child.id, child.folder_name);
-      } else {
-        console.log('기능명이 아닌 자식 노드:', child.type, child.folder_name);
         }
       }
-    } else {
-      console.log('배포일자 노드에 자식이 없음');
     }
-    console.log('최종 폴더 IDs:', folderIds);
     return folderIds;
   };
 
@@ -721,48 +630,25 @@ const TestCaseAPP = () => {
         const selectedFolderInfo = findFolderInTree(folderTree, selectedFolderId);
         const selectedFolderType = getFolderType(selectedFolderId);
         
-        console.log('=== 필터링 디버깅 ===');
-        console.log('테스트 케이스:', tc.name || tc.description);
-        console.log('tc.folder_id:', tc.folder_id, '->', tcFolderId);
-        console.log('selectedFolder:', selectedFolder, '->', selectedFolderId);
-        console.log('selectedFolderInfo:', selectedFolderInfo);
-        console.log('selectedFolderType:', selectedFolderType);
-        console.log('전체 testCases:', testCases.length);
-        
         if (selectedFolderType === 'environment') {
           // 환경 폴더 선택 시: 해당 환경의 모든 하위 폴더의 테스트 케이스들
           const environmentFolderIds = getEnvironmentFolderIds(folderTree, selectedFolderId);
-          console.log(`환경 필터링: ${selectedFolderInfo.name}, 폴더 IDs:`, environmentFolderIds);
-          const result = environmentFolderIds.includes(tcFolderId);
-          console.log('필터링 결과:', result);
-          return result;
+          return environmentFolderIds.includes(tcFolderId);
         } else if (selectedFolderType === 'deployment_date') {
           // 날짜 폴더 선택 시: 해당 날짜의 모든 하위 폴더의 테스트 케이스들
           const deploymentFolderIds = getDeploymentFolderIds(folderTree, selectedFolderId);
-          console.log(`날짜 필터링: ${selectedFolderInfo.name}, 폴더 IDs:`, deploymentFolderIds);
-          const result = deploymentFolderIds.includes(tcFolderId);
-          console.log('필터링 결과:', result);
-          return result;
+          return deploymentFolderIds.includes(tcFolderId);
         } else if (selectedFolderType === 'feature') {
           // 기능 폴더 선택 시: 해당 폴더의 테스트 케이스들만
-          console.log(`기능 폴더 필터링: tc.folder_id ${tcFolderId} === selectedFolder ${selectedFolderId}`);
-          const result = tcFolderId === selectedFolderId;
-          console.log('필터링 결과:', result);
-          return result;
+          return tcFolderId === selectedFolderId;
         } else {
           // 알 수 없는 폴더 타입: 전체 테스트 케이스 표시
-          console.log('알 수 없는 폴더 타입, 전체 테스트 케이스 표시');
           return true;
         }
       })
     : testCases;
 
-  // 디버깅을 위한 로그
-  console.log('=== 필터링 디버깅 ===');
-  console.log('전체 테스트 케이스:', testCases.length);
-  console.log('선택된 폴더 ID:', selectedFolder);
-  console.log('필터링된 테스트 케이스:', filteredTestCases.length);
-  console.log('폴더 트리:', folderTree);
+  // 필터링 완료
 
   if (loading) {
     return <div className="testcase-loading">로딩 중...</div>;

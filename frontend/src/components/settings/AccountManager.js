@@ -77,45 +77,28 @@ const AccountManager = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      console.log('🔍 fetchUsers 실행 시작');
-      console.log('👤 currentUser 전체:', JSON.stringify(currentUser, null, 2));
       
       // 토큰 유효성 검사
       if (!token) {
-        console.log('❌ 토큰이 없음 - 로그아웃 필요');
         setError('로그인이 필요합니다. 다시 로그인해주세요.');
         return;
       }
       
       if (!currentUser) {
-        console.log('❌ currentUser가 없음');
         setUsers([]);
         return;
       }
       
-      console.log('🔍 fetchUsers 실행');
-      console.log('👤 currentUser:', currentUser);
-      console.log('🎭 currentUser.role:', currentUser.role);
-      console.log('🔑 token:', token ? '있음' : '없음');
-      console.log('🔍 currentUser.role === "admin":', currentUser.role === 'admin');
-      console.log('🔍 currentUser.role === "user":', currentUser.role === 'user');
-      
       const url = (currentUser.role === 'admin') ? '/users' : '/users/list';
-      console.log('📡 호출할 URL:', url);
-      console.log('📡 URL 결정 로직:', `(${currentUser.role} === 'admin') ? '/users' : '/users/list'`);
       
       const response = await axios.get(url);
-      console.log('✅ 응답 성공:', response.data);
       setUsers(response.data);
     } catch (err) {
-      console.error('❌ Users fetch error:', err);
-      console.error('❌ 에러 응답:', err.response?.data);
-      console.error('❌ 에러 상태:', err.response?.status);
+      // 오류는 조용히 처리
       
       // 403 에러 시 토큰 문제로 간주하고 로그아웃 제안
       if (err.response?.status === 403) {
         setError('권한이 없습니다. 다시 로그인해주세요.');
-        console.log('🚨 403 에러 - 토큰 문제 가능성 높음');
         // 강제 로그아웃 실행
         localStorage.removeItem('token');
         window.location.reload();

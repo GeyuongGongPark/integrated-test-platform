@@ -11,8 +11,11 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.log('Error caught by boundary:', error);
-    console.log('Error info:', errorInfo);
+    // 개발 환경에서도 최소한의 오류 정보만
+    if (process.env.NODE_ENV === 'development') {
+      console.error('App Error:', error.message);
+    }
+    
     this.setState({
       error: error,
       errorInfo: errorInfo

@@ -21,19 +21,13 @@ const ProjectManager = () => {
 
   // 권한 체크 함수들
   const canAddProject = () => {
-    const can = currentUser?.role === 'admin';
-    console.log('➕ 프로젝트 추가 권한:', can, '사용자 역할:', currentUser?.role);
-    return can;
+    return currentUser?.role === 'admin';
   };
   const canEditProject = () => {
-    const can = currentUser?.role === 'admin';
-    console.log('✏️ 프로젝트 수정 권한:', can, '사용자 역할:', currentUser?.role);
-    return can;
+    return currentUser?.role === 'admin';
   };
   const canDeleteProject = () => {
-    const can = currentUser?.role === 'admin';
-    console.log('🗑️ 프로젝트 삭제 권한:', can, '사용자 역할:', currentUser?.role);
-    return can;
+    return currentUser?.role === 'admin';
   };
 
   useEffect(() => {
@@ -46,15 +40,11 @@ const ProjectManager = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      console.log('🔍 프로젝트 조회 시작');
-      console.log('👤 현재 사용자:', currentUser);
-      console.log('🔑 토큰:', token ? '있음' : '없음');
       
       const response = await axios.get('/projects');
-      console.log('📋 프로젝트 응답:', response.data);
       setProjects(response.data);
     } catch (err) {
-      console.error('❌ 프로젝트 조회 오류:', err);
+      // 오류는 조용히 처리
       setError('프로젝트 목록을 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);

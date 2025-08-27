@@ -27,10 +27,7 @@ axios.interceptors.request.use(
       config.timeout = 15000; // 15초 타임아웃으로 증가
     }
     
-    // 개발 환경에서만 로깅
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🌐 API Request:', config.method?.toUpperCase(), config.url);
-    }
+    // API Request 로그는 출력하지 않음
     
     return config;
   },
@@ -45,18 +42,7 @@ axios.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('🚨 API Error:', error.response?.status, error.response?.data || error.message);
-    
-    // CORS 오류 처리
-    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
-      console.error('🌐 CORS 또는 네트워크 오류 발생');
-    }
-    
-    // 401 오류 처리
-    if (error.response?.status === 401) {
-      console.error('🔐 인증 오류 발생');
-    }
-    
+    // 오류는 조용히 처리
     return Promise.reject(error);
   }
 );
@@ -86,17 +72,14 @@ const UnifiedDashboard = ({ setActiveTab }) => {
   const initializeDatabase = async () => {
     try {
       setDbInitializing(true);
-      console.log('🔄 데이터베이스 초기화 시작...');
       
       const response = await axios.post('/init-db');
-      console.log('✅ 데이터베이스 초기화 성공:', response.data);
       
       // 초기화 후 데이터 다시 로드 (skipInit=true로 호출하여 무한 루프 방지)
       await fetchDashboardData(true);
       
       return true;
     } catch (err) {
-      console.error('❌ 데이터베이스 초기화 실패:', err);
       return false;
     } finally {
       setDbInitializing(false);
@@ -108,25 +91,19 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       setLoading(true);
       setError(null);
       
-      // API URL 로깅
-      console.log('🔗 Current API URL:', config.apiUrl);
-      console.log('🌐 Current Origin:', window.location.origin);
-      
       // 헬스체크 요청
       try {
         const healthRes = await axios.get('/health');
-        console.log('✅ Health check successful:', healthRes.data);
         
         // 데이터베이스 상태 확인 (skipInit이 false일 때만)
         if (!skipInit && healthRes.data.database && !healthRes.data.database.tables_exist) {
-          console.log('⚠️ 데이터베이스 테이블이 존재하지 않습니다. 초기화를 시도합니다...');
           const initSuccess = await initializeDatabase();
           if (!initSuccess) {
             throw new Error('데이터베이스 초기화에 실패했습니다.');
           }
         }
       } catch (healthErr) {
-        console.error('❌ Health check failed:', healthErr);
+        // 헬스체크 오류는 조용히 처리
       }
       
       const [testCasesRes, performanceTestsRes, testExecutionsRes, summariesRes, testcaseSummariesRes] = await Promise.all([
@@ -143,23 +120,11 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       setDashboardSummaries(summariesRes.data);
       setTestcaseSummaries(testcaseSummariesRes.data);
       
-      // 테스트 케이스 요약 데이터 디버깅
-      console.log('📊 Testcase summaries loaded:', testcaseSummariesRes.data);
-      console.log('📊 Testcases loaded:', testCasesRes.data);
-      
-      console.log('✅ Dashboard data loaded successfully');
     } catch (err) {
-      console.error('Dashboard data fetch error:', err);
-      console.error('Error details:', {
-        message: err.message,
-        code: err.code,
-        response: err.response,
-        request: err.request
-      });
+      // 오류는 조용히 처리
       
       // 데이터베이스 오류인 경우 초기화 시도 (skipInit이 false일 때만)
       if (!skipInit && err.response?.status === 500 && err.response?.data?.error?.includes('no such table')) {
-        console.log('🔄 데이터베이스 테이블 오류 감지. 초기화를 시도합니다...');
         setError('데이터베이스 테이블이 없습니다. 초기화를 시도합니다...');
         
         const initSuccess = await initializeDatabase();

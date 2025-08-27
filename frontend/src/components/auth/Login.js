@@ -21,20 +21,15 @@ const Login = ({ onSwitchToRegister }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('📝 폼 제출 시작:', formData);
     setLoading(true);
     setError('');
 
-    console.log('🔐 로그인 함수 호출...');
     const result = await login(formData.username, formData.password);
-    console.log('📡 로그인 결과:', result);
     
     if (result.success) {
-      console.log('✅ 로그인 성공!');
       // 로그인 성공 시 에러 메시지 초기화
       setError('');
     } else {
-      console.log('❌ 로그인 실패:', result.error);
       setError(result.error);
     }
     
@@ -42,18 +37,14 @@ const Login = ({ onSwitchToRegister }) => {
   };
 
   const handleGuestLogin = async () => {
-    console.log('🎭 게스트 로그인 시도');
     setLoading(true);
     setError('');
 
     const result = await guestLogin();
-    console.log('📡 게스트 로그인 결과:', result);
     
     if (result.success) {
-      console.log('✅ 게스트 로그인 성공!');
       setError('');
     } else {
-      console.log('❌ 게스트 로그인 실패:', result.error);
       setError(result.error);
     }
     
