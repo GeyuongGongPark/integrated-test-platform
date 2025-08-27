@@ -44,18 +44,61 @@ export const AuthProvider = ({ children }) => {
     console.error(`🚨 ${source} 오류:`, error);
   };
 
+  // 토큰 만료 체크 함수
+  const isTokenExpired = (token) => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      const expirationTime = payload.exp;
+      
+      log('⏰ 토큰 만료 시간 체크:', {
+        currentTime: new Date(currentTime * 1000).toISOString(),
+        expirationTime: new Date(expirationTime * 1000).toISOString(),
+        isExpired: currentTime >= expirationTime
+      });
+      
+      return currentTime >= expirationTime;
+    } catch (error) {
+      log('🚨 토큰 만료 시간 체크 오류:', error);
+      return true; // 파싱 오류 시 만료된 것으로 간주
+    }
+  };
+
   // 토큰이 있으면 사용자 정보 가져오기
   useEffect(() => {
     log('🔄 useEffect 실행 - token:', token);
     log('🏪 localStorage token:', localStorage.getItem('token') ? '있음' : '없음');
     
     if (token) {
+      // 토큰 만료 시간 체크
+      if (isTokenExpired(token)) {
+        log('⏰ 토큰 만료됨 - 자동 로그아웃');
+        logout();
+        return;
+      }
+      
       log('🔍 사용자 프로필 가져오기 시작');
       fetchUserProfile();
     } else {
       log('❌ 토큰이 없음, 로딩 완료');
       setLoading(false);
     }
+  }, [token]);
+
+  // 주기적 토큰 만료 체크 (5분마다)
+  useEffect(() => {
+    if (!token) return;
+    
+    const checkTokenExpiry = () => {
+      if (isTokenExpired(token)) {
+        log('⏰ 주기적 체크에서 토큰 만료 발견 - 자동 로그아웃');
+        logout();
+      }
+    };
+    
+    const interval = setInterval(checkTokenExpiry, 5 * 60 * 1000); // 5분마다
+    
+    return () => clearInterval(interval);
   }, [token]);
 
   const fetchUserProfile = async () => {
