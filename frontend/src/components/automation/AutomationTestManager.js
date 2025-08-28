@@ -15,6 +15,7 @@ const AutomationTestManager = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTest, setEditingTest] = useState(null);
+  // 하단 전체 화면 구조로 변경
   const [selectedTest, setSelectedTest] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [users, setUsers] = useState([]);
@@ -138,19 +139,23 @@ const AutomationTestManager = () => {
     }
   };
 
-  const handleViewDetail = (test) => {
-    if (showDetail && selectedTest?.id === test.id) {
-      setShowDetail(false);
+  // 상세보기 토글 함수를 하단 전체 화면용으로 변경
+  const toggleTestDetails = (test) => {
+    if (selectedTest && selectedTest.id === test.id) {
+      // 같은 테스트를 다시 클릭하면 닫기
       setSelectedTest(null);
+      setShowDetail(false);
     } else {
-      setShowDetail(true);
+      // 다른 테스트를 클릭하면 선택하고 표시
       setSelectedTest(test);
+      setShowDetail(true);
     }
   };
 
-  const handleCloseDetail = () => {
-    setShowDetail(false);
+  // 상세보기 닫기
+  const closeDetail = () => {
     setSelectedTest(null);
+    setShowDetail(false);
   };
 
   if (loading) {
@@ -177,6 +182,7 @@ const AutomationTestManager = () => {
         </div>
       </div>
 
+      {/* 테스트 목록 */}
       <div className="automation-list">
         {automationTests.length === 0 ? (
           <div className="empty-state">
@@ -192,54 +198,59 @@ const AutomationTestManager = () => {
           </div>
         ) : (
           automationTests.map(test => (
-            <div key={test.id} className="automation-item">
-              <div className="automation-header">
-                <h3 className="automation-name">{test.name}</h3>
-                <p className="automation-description">{test.description}</p>
-              </div>
-              <div className="automation-actions">
-                {user && (user.role === 'admin' || user.role === 'user') && (
+            <div 
+              key={test.id} 
+              className={`automation-item ${selectedTest && selectedTest.id === test.id ? 'selected' : ''}`}
+            >
+              <div className="automation-item-header" onClick={() => toggleTestDetails(test)}>
+                <div className="automation-header">
+                  <h3 className="automation-name">{test.name}</h3>
+                  <p className="automation-description">{test.description}</p>
+                </div>
+                <div className="automation-actions" onClick={(e) => e.stopPropagation()}>
+                  {user && (user.role === 'admin' || user.role === 'user') && (
+                    <button 
+                      className="btn btn-automation btn-icon"
+                      onClick={() => handleExecuteTest(test.id)}
+                      title="자동화 실행"
+                    >
+                      🤖
+                    </button>
+                  )}
                   <button 
-                    className="btn btn-automation btn-icon"
-                    onClick={() => handleExecuteTest(test.id)}
-                    title="자동화 실행"
+                    className="btn btn-details btn-icon"
+                    onClick={() => toggleTestDetails(test)}
+                    title="상세보기"
                   >
-                    🤖
+                    {selectedTest && selectedTest.id === test.id ? '📋' : '📄'}
                   </button>
-                )}
-                <button 
-                  className="btn btn-details btn-icon"
-                  onClick={() => handleViewDetail(test)}
-                  title="상세보기"
-                >
-                  {showDetail && selectedTest?.id === test.id ? '📋' : '📄'}
-                </button>
-                {user && (user.role === 'admin' || user.role === 'user') && (
-                  <button 
-                    className="btn btn-edit-icon btn-icon"
-                    onClick={() => handleEditClick(test)}
-                    title="수정"
-                  >
-                    ✏️
-                  </button>
-                )}
-                {user && user.role === 'admin' && (
-                  <button 
-                    className="btn btn-delete-icon btn-icon"
-                    onClick={() => handleDeleteTest(test.id)}
-                    title="삭제"
-                  >
-                    ✕
-                  </button>
-                )}
+                  {user && (user.role === 'admin' || user.role === 'user') && (
+                    <button 
+                      className="btn btn-edit-icon btn-icon"
+                      onClick={() => handleEditClick(test)}
+                      title="수정"
+                    >
+                      ✏️
+                    </button>
+                  )}
+                  {user && user.role === 'admin' && (
+                    <button 
+                      className="btn btn-delete-icon btn-icon"
+                      onClick={() => handleDeleteTest(test.id)}
+                      title="삭제"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
               
               {/* 상세 정보 인라인 표시 */}
-              {showDetail && selectedTest?.id === test.id && (
+              {selectedTest && selectedTest.id === test.id && (
                 <div className="automation-detail-inline">
                   <AutomationTestDetail 
-                    test={selectedTest}
-                    onClose={handleCloseDetail}
+                    test={test}
+                    onClose={closeDetail}
                     onRefresh={fetchAutomationTests}
                   />
                 </div>
@@ -248,6 +259,17 @@ const AutomationTestManager = () => {
           ))
         )}
       </div>
+
+      {/* 하단 전체 화면 구조 제거 */}
+      {/* {showDetail && selectedTest && (
+        <div className="automation-detail-bottom">
+          <AutomationTestDetail 
+            test={selectedTest}
+            onClose={closeDetail}
+            onRefresh={fetchAutomationTests}
+          />
+        </div>
+      )} */}
 
       {/* 추가 모달 */}
       {showAddModal && (

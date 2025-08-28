@@ -13,7 +13,7 @@ export const convertUTCToKST = (utcTime) => {
   const date = new Date(utcTime);
   if (isNaN(date.getTime())) return null;
   
-  // Date 객체를 그대로 반환 (toLocaleString에서 timeZone 옵션으로 처리)
+  // Date 객체./를 그대로 반환 (toLocaleString에서 timeZone 옵션으로 처리)
   return date;
 };
 

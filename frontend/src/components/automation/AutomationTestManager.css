@@ -1,3 +1,4 @@
+/* 자동화 테스트 관리자 스타일 */
 .automation-test-manager {
   padding: 20px;
 }
@@ -106,15 +107,15 @@
   color: white;
 }
 
+.btn-delete-icon:hover {
+  background: #c82333;
+}
+
 /* 게스트용 기본 버튼 스타일 */
 .btn-details {
   background: #f8f9fa;
   color: #666;
   border: 1px solid #e9ecef;
-}
-
-.btn-delete-icon:hover {
-  background: #c82333;
 }
 
 .btn-primary {
@@ -126,51 +127,137 @@
   background: #0056b3;
 }
 
+/* 테스트 목록 */
 .automation-list {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
+  margin-bottom: 30px;
 }
 
+/* 테스트 항목 스타일 */
 .automation-item {
   background: white;
+  border: 1px solid #e9ecef;
   border-radius: 8px;
-  padding: 25px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .automation-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
 }
 
-.automation-header {
+.automation-item.selected {
+  border-color: #007bff;
+  background: #f8f9ff;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+}
+
+/* 테스트 항목 헤더 */
+.automation-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.automation-item-header:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+.automation-item .automation-header {
   flex: 1;
-  padding: 15px;
+  margin-bottom: 0;
+  border: none;
+  padding: 0;
 }
 
-.automation-name {
-  font-size: 18px;
-  font-weight: 600;
+.automation-item .automation-header h3 {
+  margin: 0 0 8px 0;
   color: #333;
-  margin: 0 0 10px 0;
+  font-size: 1.2em;
+  font-weight: 600;
 }
 
-.automation-description {
+.automation-item .automation-description {
+  margin: 0;
   color: #666;
-  margin: 0 0 15px 0;
-  line-height: 1.5;
+  font-size: 0.9em;
+  line-height: 1.4;
 }
 
 .automation-actions {
   display: flex;
   gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
   flex-shrink: 0;
 }
 
+/* 아코디언 상세 정보 스타일 */
+.automation-detail-inline {
+  border-top: 2px solid #e9ecef;
+  background: #f8f9fa;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.automation-detail-inline .automation-detail-container {
+  background: transparent;
+  box-shadow: none;
+  margin: 0;
+  max-height: none;
+  border-radius: 0;
+}
+
+.automation-detail-inline .automation-test-detail {
+  padding: 20px;
+}
+
+.automation-detail-inline .detail-content {
+  padding: 0;
+  overflow: visible;
+}
+
+.automation-detail-inline .automation-info-table {
+  margin-bottom: 20px;
+}
+
+.automation-detail-inline .detail-section {
+  margin-bottom: 20px;
+}
+
+.automation-detail-inline .detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.automation-detail-inline .detail-actions {
+  padding: 15px 0;
+  background: transparent;
+  border-top: 1px solid #e0e0e0;
+}
+
+.automation-detail-inline .screenshot-gallery {
+  margin-top: 15px;
+}
+
+.automation-detail-inline .screenshot-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.automation-detail-inline .screenshot-thumbnail {
+  height: 100px;
+}
+
+/* 빈 상태 스타일 */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -185,103 +272,102 @@
   margin-bottom: 20px;
 }
 
-/* 모달 스타일 - 전체화면 모달 제거 */
+/* 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 20px;
+}
 
-/* 인라인 상세 정보 스타일 */
-.automation-detail-inline {
-  margin-top: 20px;
-  border-top: 2px solid #e9ecef;
-  padding-top: 20px;
-  background: #f8f9ff;
-  border-radius: 0 0 8px 8px;
+.modal {
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    max-height: none;
-    transform: translateY(0);
-  }
-}
-
-/* 자동화 테스트 아이템 선택 상태 */
-.automation-item.selected {
-  border-color: #007bff;
-  background: #f8f9ff;
-}
-
-.automation-item.selected .automation-detail-inline {
-  border-top-color: #007bff;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
+  padding: 20px 30px;
   border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
 }
 
 .modal-header h3 {
   margin: 0;
   color: #333;
-  font-size: 1.4em;
+  font-size: 1.5em;
+  font-weight: 600;
 }
 
 .modal-close {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 28px;
   cursor: pointer;
   color: #666;
   padding: 0;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
 }
 
 .modal-close:hover {
+  background: #e9ecef;
   color: #333;
 }
 
 .modal-body {
-  margin-bottom: 20px;
+  padding: 30px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
+  font-size: 14px;
 }
 
 .form-control {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
   font-size: 14px;
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
+  background: white;
 }
 
 .form-control:focus {
   outline: none;
   border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
 select.form-control {
@@ -295,9 +381,11 @@ textarea.form-control {
 
 .modal-actions {
   display: flex;
-  gap: 10px;
+  gap: 15px;
   justify-content: flex-end;
-  margin-top: 30px;
+  padding: 20px 30px;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
 }
 
 .btn-cancel {

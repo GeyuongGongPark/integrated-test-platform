@@ -241,127 +241,78 @@ const AutomationTestResults = ({ testId }) => {
 const AutomationTestDetail = ({ test, onClose, onRefresh }) => {
   const [screenshotsExpanded, setScreenshotsExpanded] = useState(true);
   const [resultsExpanded, setResultsExpanded] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [executing, setExecuting] = useState(false);
-
-
-
-  const handleExecuteTest = async () => {
-    if (!window.confirm('이 자동화 테스트를 실행하시겠습니까?')) {
-      return;
-    }
-
-    try {
-      setExecuting(true);
-      await axios.post(`/automation-tests/${test.id}/execute`);
-      alert('자동화 테스트 실행이 완료되었습니다.');
-      onRefresh(); // 목록 새로고침
-    } catch (err) {
-      alert('자동화 테스트 실행 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
-    } finally {
-      setExecuting(false);
-    }
-  };
-
-  const handleEditTest = () => {
-    // 편집 모달 열기 로직 (부모 컴포넌트에서 처리)
-    onClose(); // 상세 화면 닫기
-  };
-
-  const handleDeleteTest = async () => {
-    if (!window.confirm('정말로 이 자동화 테스트를 삭제하시겠습니까?')) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await axios.delete(`/automation-tests/${test.id}`);
-      alert('자동화 테스트가 성공적으로 삭제되었습니다.');
-      onClose(); // 상세 화면 닫기
-      onRefresh(); // 목록 새로고침
-    } catch (err) {
-      alert('자동화 테스트 삭제 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="automation-test-detail">
-      {/* detail-header 제거 - 상세보기 버튼으로 제어 */}
-
       <div className="detail-content">
-        <div className="detail-section">
-          <h3>기본 정보</h3>
-          <div className="automation-info-table">
-            <h5>📋 자동화 테스트 상세 정보</h5>
-            <table className="info-table">
-              <tbody>
+        {/* 기본 정보 섹션 */}
+        <div className="automation-info-table">
+          <h5>📋 자동화 테스트 상세 정보</h5>
+          <table className="info-table">
+            <tbody>
+              <tr>
+                <th>테스트명</th>
+                <td>{test.name}</td>
+                <th>테스트 타입</th>
+                <td>
+                  <span className="test-type-badge">{test.test_type}</span>
+                </td>
+              </tr>
+              <tr>
+                <th>환경</th>
+                <td>
+                  <span className="environment-badge">{test.environment}</span>
+                </td>
+                <th>자동화</th>
+                <td>
+                  <span className="automation-badge">🤖 자동화</span>
+                </td>
+              </tr>
+              <tr>
+                <th>작성자</th>
+                <td>
+                  <span className="creator-badge">
+                    👤 {test.creator_name || '없음'}
+                  </span>
+                </td>
+                <th>담당자</th>
+                <td>
+                  <span className="assignee-badge">
+                    👤 {test.assignee_name || '없음'}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <th>스크립트 경로</th>
+                <td colSpan="3" className="script-path">
+                  {test.script_path || '없음'}
+                </td>
+              </tr>
+              <tr>
+                <th>설명</th>
+                <td colSpan="3" className="description">
+                  {test.description || '설명 없음'}
+                </td>
+              </tr>
+              {test.parameters && (
                 <tr>
-                  <th>테스트명</th>
-                  <td>{test.name}</td>
-                  <th>테스트 타입</th>
-                  <td>
-                    <span className="test-type-badge">{test.test_type}</span>
+                  <th>매개변수</th>
+                  <td colSpan="3" className="parameters">
+                    <pre className="parameters-json">{test.parameters}</pre>
                   </td>
                 </tr>
-                <tr>
-                  <th>환경</th>
-                  <td>
-                    <span className="environment-badge">{test.environment}</span>
-                  </td>
-                  <th>자동화</th>
-                  <td>
-                    <span className="automation-badge">🤖 자동화</span>
-                  </td>
-                </tr>
-                <tr>
-                  <th>작성자</th>
-                  <td>
-                    <span className="creator-badge">
-                      👤 {test.creator_name || '없음'}
-                    </span>
-                  </td>
-                  <th>담당자</th>
-                  <td>
-                    <span className="assignee-badge">
-                      👤 {test.assignee_name || '없음'}
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <th>스크립트 경로</th>
-                  <td colSpan="3" className="script-path">
-                    {test.script_path || '없음'}
-                  </td>
-                </tr>
-                <tr>
-                  <th>설명</th>
-                  <td colSpan="3" className="description">
-                    {test.description || '설명 없음'}
-                  </td>
-                </tr>
-                {test.parameters && (
-                  <tr>
-                    <th>매개변수</th>
-                    <td colSpan="3" className="parameters">
-                      <pre className="parameters-json">{test.parameters}</pre>
-                    </td>
-                  </tr>
-                )}
-                <tr>
-                  <th>생성일</th>
-                  <td>{formatUTCToKST(test.created_at)}</td>
-                  <th>수정일</th>
-                  <td>{test.updated_at ? formatUTCToKST(test.updated_at) : 'N/A'}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+              )}
+              <tr>
+                <th>생성일</th>
+                <td>{formatUTCToKST(test.created_at)}</td>
+                <th>수정일</th>
+                <td>{test.updated_at ? formatUTCToKST(test.updated_at) : 'N/A'}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-
-        {/* 매개변수는 기본 정보 표에 통합됨 */}
-
+        
+        {/* 스크린샷 영역 */}
         <div className="detail-section">
           <h3 
             className="collapsible-header"
@@ -373,21 +324,20 @@ const AutomationTestDetail = ({ test, onClose, onRefresh }) => {
             <ScreenshotGallery testId={test.id} testName={test.name} />
           )}
         </div>
-
-                                <div className="detail-section">
-                          <h3 
-                            className="collapsible-header"
-                            onClick={() => setResultsExpanded(!resultsExpanded)}
-                          >
-                            🤖 실행 결과 {resultsExpanded ? '▼' : '▶'}
-                          </h3>
-                          {resultsExpanded && (
-                            <AutomationTestResults testId={test.id} />
-                          )}
-                        </div>
+        
+        {/* 자동화 실행 결과 */}
+        <div className="detail-section">
+          <h3 
+            className="collapsible-header"
+            onClick={() => setResultsExpanded(!resultsExpanded)}
+          >
+            🤖 자동화 실행 결과 {resultsExpanded ? '▼' : '▶'}
+          </h3>
+          {resultsExpanded && (
+            <AutomationTestResults testId={test.id} />
+          )}
+        </div>
       </div>
-
-            {/* detail-actions 제거 - 모든 버튼 제거 */}
     </div>
   );
 };

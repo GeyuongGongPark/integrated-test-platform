@@ -16,6 +16,7 @@ from routes.performance import performance_bp
 from routes.folders import folders_bp
 from routes.users import users_bp
 from routes.auth import auth_bp
+from routes.test_scripts import test_scripts_bp
 from utils.cors import setup_cors
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
@@ -163,6 +164,7 @@ app.register_blueprint(performance_bp)
 app.register_blueprint(folders_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(test_scripts_bp, url_prefix='/api/test-scripts')
 
 # 헬퍼 함수들
 def create_cors_response(data=None, status_code=200):

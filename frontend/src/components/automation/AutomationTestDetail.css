@@ -13,7 +13,6 @@
 
 .detail-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
   padding: 20px;
   display: flex;
   justify-content: space-between;
@@ -416,6 +415,46 @@
   border-radius: 0;
 }
 
+.automation-detail-inline .automation-test-detail {
+  padding: 0;
+}
+
+.automation-detail-inline .detail-content {
+  padding: 0;
+  overflow: visible;
+}
+
+.automation-detail-inline .automation-info-table {
+  margin-bottom: 20px;
+}
+
+.automation-detail-inline .detail-section {
+  margin-bottom: 20px;
+}
+
+.automation-detail-inline .detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.automation-detail-inline .detail-actions {
+  padding: 15px 0;
+  background: transparent;
+  border-top: 1px solid #e0e0e0;
+}
+
+.automation-detail-inline .screenshot-gallery {
+  margin-top: 15px;
+}
+
+.automation-detail-inline .screenshot-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.automation-detail-inline .screenshot-thumbnail {
+  height: 100px;
+}
+
 /* 자동화 테스트 정보 표 스타일 */
 .automation-info-table {
   background: white;
@@ -542,7 +581,6 @@
   cursor: pointer;
   font-weight: 500;
   font-size: 14px;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -840,4 +878,62 @@
   .automation-results-container {
     max-height: 250px;
   }
+} 
+
+/* 실행 결과 섹션을 하단에 명확하게 배치 */
+.detail-section:last-child {
+  margin-bottom: 0;
+  /* 결과 영역을 하단에 배치 */
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 2px solid #e0e0e0;
+} 
+
+/* 하단 전체 화면 표시용 스타일 */
+.automation-detail-bottom .automation-detail-container {
+  background: white;
+  box-shadow: none;
+  margin: 0;
+  max-height: none;
+  border-radius: 0;
+}
+
+.automation-detail-bottom .automation-test-detail {
+  padding: 20px;
+}
+
+.automation-detail-bottom .detail-content {
+  padding: 0;
+  overflow: visible;
+}
+
+.automation-detail-bottom .automation-info-table {
+  margin-bottom: 20px;
+}
+
+.automation-detail-bottom .detail-section {
+  margin-bottom: 20px;
+}
+
+.automation-detail-bottom .detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.automation-detail-bottom .detail-actions {
+  padding: 15px 0;
+  background: transparent;
+  border-top: 1px solid #e0e0e0;
+}
+
+.automation-detail-bottom .screenshot-gallery {
+  margin-top: 15px;
+}
+
+.automation-detail-bottom .screenshot-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.automation-detail-bottom .screenshot-thumbnail {
+  height: 100px;
 } 
