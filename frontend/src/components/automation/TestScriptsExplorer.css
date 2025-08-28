@@ -1,0 +1,374 @@
+.test-scripts-explorer {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+  overflow: hidden;
+}
+
+.explorer-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.explorer-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-refresh {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-refresh:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-help {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 12px;
+  font-size: 16px;
+}
+
+.btn-help:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.loading-container {
+  padding: 60px 20px;
+  text-align: center;
+  color: #666;
+}
+
+.loading-spinner {
+  font-size: 48px;
+  margin-bottom: 20px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.error-container {
+  padding: 40px 20px;
+  text-align: center;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  margin: 20px;
+  border-radius: 8px;
+}
+
+.error-message {
+  color: #e53e3e;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.error-note {
+  color: #718096;
+  font-size: 14px;
+}
+
+.explorer-content {
+  display: flex;
+  min-height: 500px;
+}
+
+.file-tree-container {
+  flex: 1;
+  padding: 20px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.tree-header {
+  margin-bottom: 20px;
+}
+
+.tree-header h3 {
+  color: #2d3748;
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
+.tree-description {
+  color: #718096;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 폴더 트리 스타일 (테스트 케이스와 동일) */
+.folder-tree {
+  padding: 25px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  height: fit-content;
+  background: #f7fafc;
+  border-radius: 8px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.file-tree-item {
+  margin-bottom: 4px;
+}
+
+.folder-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  margin: 3px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.folder-item:hover {
+  background: #f8f9fa;
+  border-color: #e9ecef;
+}
+
+.folder-item.clickable {
+  cursor: pointer;
+}
+
+.folder-item.clickable:hover {
+  background: #e3f2fd;
+  border-color: #007bff;
+}
+
+.folder-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  font-size: 10px;
+  color: #666;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  user-select: none;
+}
+
+.folder-toggle:hover {
+  color: #007bff;
+}
+
+.folder-toggle.expanded {
+  transform: rotate(0deg);
+}
+
+.folder-toggle:not(.expanded) {
+  transform: rotate(-90deg);
+}
+
+.folder-icon {
+  margin-right: 10px;
+  font-size: 1.1em;
+  flex-shrink: 0;
+}
+
+.folder-name {
+  flex: 1;
+  font-weight: 500;
+  font-size: 0.95em;
+  margin-right: 8px;
+}
+
+.file-size {
+  font-size: 12px;
+  color: #a0aec0;
+  font-family: monospace;
+}
+
+.folder-children {
+  margin-left: 25px;
+  border-left: 2px solid #e9ecef;
+  padding-left: 16px;
+}
+
+.folder-children.expanded {
+  display: block;
+}
+
+.folder-children.collapsed {
+  display: none;
+}
+
+.file-view-container {
+  flex: 1;
+  padding: 20px;
+  background: #f7fafc;
+}
+
+.file-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.file-view-header h3 {
+  margin: 0;
+  color: #2d3748;
+  font-size: 18px;
+}
+
+.btn-close {
+  background: #e53e3e;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.btn-close:hover {
+  background: #c53030;
+}
+
+.file-content {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.code-content {
+  background: #1a202c;
+  color: #e2e8f0;
+  padding: 16px;
+  border-radius: 6px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.file-info {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: #718096;
+}
+
+.explorer-footer {
+  background: #f7fafc;
+  padding: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.footer-info {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+.footer-info p {
+  margin: 0;
+  color: #4a5568;
+  font-size: 14px;
+}
+
+.footer-info strong {
+  color: #2d3748;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .explorer-content {
+    flex-direction: column;
+  }
+  
+  .file-tree-container {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .explorer-header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .footer-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+/* 스크롤바 스타일링 */
+.folder-tree::-webkit-scrollbar {
+  width: 8px;
+}
+
+.folder-tree::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.folder-tree::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.folder-tree::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.code-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.code-content::-webkit-scrollbar-track {
+  background: #2d3748;
+  border-radius: 4px;
+}
+
+.code-content::-webkit-scrollbar-thumb {
+  background: #4a5568;
+  border-radius: 4px;
+}
+
+.code-content::-webkit-scrollbar-thumb:hover {
+  background: #718096;
+}

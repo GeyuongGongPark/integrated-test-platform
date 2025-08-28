@@ -1,6 +1,6 @@
 .unified-dashboard {
   padding: 20px;
-  max-width: 1200px;
+  max-width: auto;
   margin: 0 auto;
 }
 
@@ -120,7 +120,7 @@
 .chart-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* align-items: center; */
   gap: 15px;
 }
 

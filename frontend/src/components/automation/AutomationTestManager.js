@@ -73,7 +73,7 @@ const AutomationTestManager = () => {
       setNewTest({
         name: '',
         description: '',
-        test_type: 'selenium',
+        test_type: 'playwright',
         script_path: '',
         environment: 'dev',
         parameters: '',
@@ -125,6 +125,10 @@ const AutomationTestManager = () => {
   };
 
   const handleExecuteTest = async (testId) => {
+    if (!window.confirm('이 자동화 테스트를 실행하시겠습니까?')) {
+      return;
+    }
+
     try {
       await axios.post(`/automation-tests/${testId}/execute`);
       alert('자동화 테스트 실행이 완료되었습니다.');
@@ -135,15 +139,12 @@ const AutomationTestManager = () => {
   };
 
   const handleViewDetail = (test) => {
-    // 이미 열린 테스트를 다시 클릭하면 접기
     if (showDetail && selectedTest?.id === test.id) {
       setShowDetail(false);
       setSelectedTest(null);
     } else {
-      // 다른 테스트를 클릭하거나 처음 클릭하는 경우 열기
-      console.log('선택된 테스트 데이터:', test); // 디버깅
-      setSelectedTest(test);
       setShowDetail(true);
+      setSelectedTest(test);
     }
   };
 
@@ -153,7 +154,7 @@ const AutomationTestManager = () => {
   };
 
   if (loading) {
-    return <div className="loading">로딩 중...</div>;
+    return <div className="loading">자동화 테스트 목록을 불러오는 중...</div>;
   }
 
   if (error) {
@@ -164,14 +165,16 @@ const AutomationTestManager = () => {
     <div className="automation-test-manager">
       <div className="automation-header">
         <h2>자동화 테스트 관리</h2>
-        {user && (user.role === 'admin' || user.role === 'user') && (
-          <button 
-            className="btn btn-add"
-            onClick={() => setShowAddModal(true)}
-          >
-            ➕ 자동화 테스트 추가
-          </button>
-        )}
+        <div className="header-actions">
+          {user && (user.role === 'admin' || user.role === 'user') && (
+            <button 
+              className="btn btn-add"
+              onClick={() => setShowAddModal(true)}
+            >
+              ➕ 자동화 테스트 추가
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="automation-list">
@@ -471,8 +474,6 @@ const AutomationTestManager = () => {
           </div>
         </div>
       )}
-
-      {/* 상세 화면 - 모달 제거하고 인라인 표시 */}
     </div>
   );
 };
