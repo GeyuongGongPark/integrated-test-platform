@@ -3,8 +3,11 @@ from flask_jwt_extended import create_access_token, create_refresh_token, jwt_re
 from models import db, User, UserSession
 from datetime import datetime, timedelta
 from utils.timezone_utils import get_kst_now, get_kst_isoformat
+from utils.logger import get_logger
 import secrets
 import os
+
+logger = get_logger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -76,9 +79,9 @@ def login():
         return response, 200
     
     try:
-        print("🔐 로그인 시도 시작")
+        logger.info("로그인 시도 시작")
         data = request.get_json()
-        print(f"📝 받은 데이터: {data}")
+        logger.debug(f"받은 데이터: {data}")
         
         username = data.get('username')
         password = data.get('password')
@@ -86,11 +89,11 @@ def login():
         if not username or not password:
             return jsonify({'error': '사용자명과 비밀번호를 입력해주세요.'}), 400
         
-        print(f"👤 사용자명: {username}")
+        logger.debug(f"사용자명: {username}")
         
         # 사용자 조회
         user = User.query.filter_by(username=username).first()
-        print(f"🔍 사용자 조회 결과: {user}")
+        logger.debug(f"사용자 조회 결과: {user}")
         
         if not user:
             return jsonify({'error': '사용자명 또는 비밀번호가 올바르지 않습니다.'}), 400

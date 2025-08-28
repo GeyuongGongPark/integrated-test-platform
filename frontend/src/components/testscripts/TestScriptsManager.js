@@ -38,9 +38,14 @@ const FileTreeItem = ({ item, level = 0, onFileClick, getFileIcon, getFolderIcon
         relativePath = item.path.substring(testScriptsIndex);
       }
       
-      console.log('요청 경로:', relativePath);
+      // 개발 환경에서만 로그 출력
+      if (process.env.NODE_ENV === 'development') {
+        console.log('요청 경로:', relativePath);
+      }
       const response = await axios.get(`/api/test-scripts/explore?path=${encodeURIComponent(relativePath)}`);
-      console.log('백엔드 응답:', response.data);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('백엔드 응답:', response.data);
+      }
       setChildren(response.data.children || []);
     } catch (err) {
       console.error('하위 항목 로드 오류:', err);
@@ -186,16 +191,22 @@ const TestScriptsManager = () => {
       setError(null);
       
       // 백엔드에서 루트 구조 로드
-      console.log('백엔드 API 호출 시도...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('백엔드 API 호출 시도...');
+      }
       const response = await axios.get('/api/test-scripts/explore');
-      console.log('백엔드 응답:', response.data);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('백엔드 응답:', response.data);
+      }
       setRootItems(response.data.children || []);
     } catch (err) {
       console.error('테스트 스크립트 구조 로드 오류:', err);
       setError(`백엔드 연결 실패: ${err.message}`);
       
       // 오류 시 기본 구조 표시 (정적 데이터)
-      console.log('정적 데이터로 폴더 구조 표시');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('정적 데이터로 폴더 구조 표시');
+      }
       setRootItems([
         {
           name: 'performance',
@@ -225,7 +236,10 @@ const TestScriptsManager = () => {
         relativePath = file.path.substring(testScriptsIndex);
       }
       
-      console.log('파일 요청 경로:', relativePath);
+      // 개발 환경에서만 로그 출력
+      if (process.env.NODE_ENV === 'development') {
+        console.log('파일 요청 경로:', relativePath);
+      }
       const response = await axios.get(`/api/test-scripts/file-content?path=${encodeURIComponent(relativePath)}`);
       setFileContent({
         path: file.path,

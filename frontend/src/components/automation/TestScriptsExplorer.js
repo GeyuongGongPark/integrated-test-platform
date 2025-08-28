@@ -92,7 +92,9 @@ const FileTreeItem = ({ item, level = 0, scriptType }) => {
       toggleExpanded();
     } else {
       // 파일 클릭 시 처리 (예: 내용 보기, 다운로드 등)
-      console.log('파일 클릭:', item.path);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('파일 클릭:', item.path);
+      }
     }
   };
 

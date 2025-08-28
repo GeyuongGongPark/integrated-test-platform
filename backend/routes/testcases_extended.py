@@ -2,9 +2,12 @@ from flask import Blueprint, request, jsonify
 from models import db, TestCase, TestResult
 from utils.cors import add_cors_headers
 from utils.timezone_utils import get_kst_now
+from utils.logger import get_logger
 from datetime import datetime
 import io
 import os
+
+logger = get_logger(__name__)
 
 # pandas import를 조건부로 처리
 try:
@@ -12,7 +15,7 @@ try:
     PANDAS_AVAILABLE = True
 except ImportError:
     PANDAS_AVAILABLE = False
-    print("⚠️ pandas 모듈을 사용할 수 없습니다. Excel 기능이 비활성화됩니다.")
+    logger.warning("pandas 모듈을 사용할 수 없습니다. Excel 기능이 비활성화됩니다.")
 
 # Blueprint 생성
 testcases_extended_bp = Blueprint('testcases_extended', __name__)
@@ -142,7 +145,7 @@ def upload_testcases():
                     db.session.add(testcase)
                     success_count += 1
                 except Exception as e:
-                    print(f"행 처리 오류: {e}")
+                    logger.error(f"행 처리 오류: {e}")
                     continue
             
             db.session.commit()
@@ -252,7 +255,7 @@ def reorganize_testcases():
                 # 규칙에 따른 테스트 케이스 재구성
                 success_count += 1
             except Exception as e:
-                print(f"재구성 규칙 처리 오류: {e}")
+                logger.error(f"재구성 규칙 처리 오류: {e}")
                 continue
         
         response = jsonify({

@@ -21,10 +21,16 @@ from utils.cors import setup_cors
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
 from utils.timezone_utils import get_kst_now, get_kst_isoformat, get_kst_datetime_string
+from utils.logger import get_logger
+from utils.error_handler import handle_api_error, APIError
+from utils.response_utils import success_response, error_response
 
 # .env 파일 로드 (절대 경로 사용)
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 load_dotenv(env_path)
+
+# 로거 초기화
+logger = get_logger(__name__)
 
 # Flask 앱 생성
 app = Flask(__name__)
@@ -48,7 +54,7 @@ if is_vercel:
     
     # DATABASE_URL이 없으면 SQLite 사용
     if not database_url:
-        print("⚠️ DATABASE_URL이 설정되지 않음, SQLite 사용")
+        logger.warning("DATABASE_URL이 설정되지 않음, SQLite 사용")
         database_url = 'sqlite:///:memory:'
     elif database_url.startswith('mysql://'):
         database_url = database_url.replace('mysql://', 'mysql+pymysql://')
@@ -59,18 +65,18 @@ if is_vercel:
             filtered_params = [p for p in params if not p.startswith('ssl_mode=')]
             if filtered_params:
                 database_url = database_url.split('?')[0] + '?' + '&'.join(filtered_params)
-        print("🚀 Vercel 환경에서 MySQL 연결 설정 적용")
+        logger.info("Vercel 환경에서 MySQL 연결 설정 적용")
     else:
-        print(f"🔗 Vercel 환경에서 데이터베이스 URL 사용: {database_url[:20]}...")
+        logger.info(f"Vercel 환경에서 데이터베이스 URL 사용: {database_url[:20]}...")
 else:
     # 로컬 개발 환경에서는 환경변수 우선, 없으면 기본 MySQL 사용
     mysql_database_url = os.environ.get('MYSQL_DATABASE_URL')
     if mysql_database_url:
         database_url = mysql_database_url
-        print("🏠 로컬 환경에서 Docker Alpha MySQL 사용")
+        logger.info("로컬 환경에서 Docker Alpha MySQL 사용")
     else:
         database_url = 'mysql+pymysql://root:1q2w#E$R@127.0.0.1:3306/test_management'
-        print("🏠 로컬 환경에서 기본 MySQL 사용")
+        logger.info("로컬 환경에서 기본 MySQL 사용")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -91,7 +97,7 @@ if is_vercel and 'mysql' in database_url:
 elif is_vercel and 'sqlite' in database_url:
     # Vercel SQLite 환경
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {}
-    print("💾 Vercel 환경에서 SQLite 사용")
+    logger.info("Vercel 환경에서 SQLite 사용")
 else:
     # 로컬 MySQL 환경
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
@@ -105,13 +111,13 @@ else:
     }
 
 # 환경 변수 로깅 (디버깅용)
-print(f"🔗 Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
-print(f"🔑 Secret Key: {app.config['SECRET_KEY']}")
-print(f"🔑 JWT Secret Key: {app.config['JWT_SECRET_KEY']}")
-print(f"🌍 Environment: {'production' if is_vercel else 'development'}")
-print(f"🚀 Vercel URL: {os.environ.get('VERCEL_URL', 'Not Vercel')}")
-print(f"📁 .env 파일 경로: {env_path}")
-print(f"📁 .env 파일 존재: {os.path.exists(env_path)}")
+logger.debug(f"Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
+logger.debug(f"Secret Key: {app.config['SECRET_KEY']}")
+logger.debug(f"JWT Secret Key: {app.config['JWT_SECRET_KEY']}")
+logger.info(f"Environment: {'production' if is_vercel else 'development'}")
+logger.debug(f"Vercel URL: {os.environ.get('VERCEL_URL', 'Not Vercel')}")
+logger.debug(f".env 파일 경로: {env_path}")
+logger.debug(f".env 파일 존재: {os.path.exists(env_path)}")
 
 # CORS 설정 (데이터베이스 초기화 전에)
 if is_vercel:
@@ -130,7 +136,7 @@ jwt = JWTManager(app)
 
 @jwt.expired_token_loader
 def expired_token_callback(jwt_header, jwt_payload):
-    print(f"❌ 토큰 만료: header={jwt_header}, payload={jwt_payload}")
+    logger.warning(f"토큰 만료: header={jwt_header}, payload={jwt_payload}")
     return jsonify({
         'message': '토큰이 만료되었습니다.',
         'error': 'token_expired'
@@ -138,7 +144,7 @@ def expired_token_callback(jwt_header, jwt_payload):
 
 @jwt.invalid_token_loader
 def invalid_token_callback(error):
-    print(f"❌ 유효하지 않은 토큰: {error}")
+    logger.warning(f"유효하지 않은 토큰: {error}")
     return jsonify({
         'message': '유효하지 않은 토큰입니다.',
         'error': 'invalid_token'
@@ -146,10 +152,10 @@ def invalid_token_callback(error):
 
 @jwt.unauthorized_loader
 def missing_token_callback(error):
-    print(f"❌ 토큰 누락: {error}")
-    print(f"🔍 요청 헤더: {dict(request.headers)}")
-    print(f"🔍 요청 URL: {request.url}")
-    print(f"🔍 요청 메서드: {request.method}")
+    logger.warning(f"토큰 누락: {error}")
+    logger.debug(f"요청 헤더: {dict(request.headers)}")
+    logger.debug(f"요청 URL: {request.url}")
+    logger.debug(f"요청 메서드: {request.method}")
     return jsonify({
         'message': '토큰이 필요합니다.',
         'error': 'authorization_required'
@@ -272,7 +278,7 @@ def health_check():
         
     except Exception as e:
         error_msg = str(e)
-        print(f"❌ Health check 오류: {error_msg}")
+        logger.error(f"Health check 오류: {error_msg}")
         
         # 오류가 발생해도 앱은 정상 작동 중임을 표시
         response = jsonify({
@@ -349,20 +355,20 @@ def test_database_connection():
             # 데이터베이스 연결 테스트
             if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
                 db.session.execute(text('SELECT 1'))
-                print(f"✅ SQLite 연결 테스트 성공 (시도 {i+1}/{max_retries})")
+                logger.info(f"SQLite 연결 테스트 성공 (시도 {i+1}/{max_retries})")
                 return True
             else:
                 db.session.execute(text('SELECT 1'))
                 db.session.commit()
-                print(f"✅ MySQL 연결 테스트 성공 (시도 {i+1}/{max_retries})")
+                logger.info(f"MySQL 연결 테스트 성공 (시도 {i+1}/{max_retries})")
                 return True
         except Exception as e:
-            print(f"❌ 데이터베이스 연결 실패 (시도 {i+1}/{max_retries}): {e}")
+            logger.error(f"데이터베이스 연결 실패 (시도 {i+1}/{max_retries}): {e}")
             if i < max_retries - 1:
-                print(f"🔄 {retry_delay}초 후 다시 시도...")
+                logger.info(f"{retry_delay}초 후 다시 시도...")
                 time.sleep(retry_delay)
             else:
-                print("❌ 데이터베이스 연결 재시도 실패. 앱을 종료합니다.")
+                logger.error("데이터베이스 연결 재시도 실패. 앱을 종료합니다.")
                 return False
     return False
 
@@ -386,11 +392,11 @@ def init_database():
         with app.app_context():
             # 테이블이 존재하지 않으면 자동 생성
             db.create_all()
-            print("✅ 데이터베이스 테이블 생성 완료")
+            logger.info("데이터베이스 테이블 생성 완료")
             
             # 세션 격리 설정
             db.session.autoflush = False
-            print("🔒 세션 autoflush 비활성화")
+            logger.info("세션 autoflush 비활성화")
             
             # 기본 사용자 생성 (테스트용)
             from models import User
@@ -410,9 +416,9 @@ def init_database():
                 )
                 admin_user.set_password('admin123')
                 users_to_create.append(admin_user)
-                print("✅ admin 사용자 생성 준비 완료")
+                logger.info("admin 사용자 생성 준비 완료")
             else:
-                print("ℹ️ admin 사용자가 이미 존재합니다")
+                logger.info("admin 사용자가 이미 존재합니다")
             
             # testuser 체크 및 생성 준비
             if not User.query.filter_by(username='testuser').first():
@@ -426,24 +432,24 @@ def init_database():
                 )
                 test_user.set_password('test123')
                 users_to_create.append(test_user)
-                print("✅ testuser 생성 준비 완료")
+                logger.info("testuser 생성 준비 완료")
             else:
-                print("ℹ️ testuser가 이미 존재합니다")
+                logger.info("testuser가 이미 존재합니다")
             
             # 준비된 사용자들을 한 번에 추가하고 커밋
             if users_to_create:
                 for user in users_to_create:
                     db.session.add(user)
                 db.session.commit()
-                print(f"✅ {len(users_to_create)}명의 사용자 생성 완료")
+                logger.info(f"{len(users_to_create)}명의 사용자 생성 완료")
             else:
-                print("ℹ️ 생성할 사용자가 없습니다")
+                logger.info("생성할 사용자가 없습니다")
             
-            print("✅ 데이터베이스 초기화 완료")
+            logger.info("데이터베이스 초기화 완료")
             
             # 세션 정리
             db.session.close()
-            print("🧹 세션 정리 완료")
+            logger.info("세션 정리 완료")
             
         response = jsonify({
             'status': 'success',
@@ -452,17 +458,17 @@ def init_database():
         })
         return response, 200
     except Exception as e:
-        print(f"❌ init-db 오류 발생: {str(e)}")
-        print(f"🔍 오류 타입: {type(e)}")
+        logger.error(f"init-db 오류 발생: {str(e)}")
+        logger.error(f"오류 타입: {type(e)}")
         import traceback
-        print(f"📋 상세 오류: {traceback.format_exc()}")
+        logger.error(f"상세 오류: {traceback.format_exc()}")
         
         # 세션 롤백
         try:
             db.session.rollback()
-            print("🔄 데이터베이스 세션 롤백 완료")
+            logger.info("데이터베이스 세션 롤백 완료")
         except Exception as rollback_error:
-            print(f"⚠️ 롤백 중 오류 발생: {rollback_error}")
+            logger.error(f"롤백 중 오류 발생: {rollback_error}")
         
         response = jsonify({
             'status': 'error',

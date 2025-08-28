@@ -4,10 +4,13 @@ from utils.cors import add_cors_headers
 from utils.auth_decorators import guest_allowed, user_required, admin_required
 from engines.k6_engine import k6_engine
 from utils.timezone_utils import get_kst_now
+from utils.logger import get_logger
 import json
 from datetime import datetime
 import time
 import os
+
+logger = get_logger(__name__)
 
 # Blueprint 생성
 performance_bp = Blueprint('performance', __name__)
@@ -110,16 +113,16 @@ def execute_performance_test(id):
             if isinstance(base_params, dict):
                 env_vars.update(base_params)
             else:
-                print(f"Warning: pt.parameters is not a dictionary: {type(base_params)}")
-                print(f"pt.parameters content: {pt.parameters}")
+                logger.warning(f"pt.parameters is not a dictionary: {type(base_params)}")
+                logger.debug(f"pt.parameters content: {pt.parameters}")
                 # 기본 환경 변수 설정
                 env_vars.update({
                     'BASE_URL': 'http://localhost:3000',
                     'ENVIRONMENT': pt.environment or 'dev'
                 })
         except (json.JSONDecodeError, TypeError) as e:
-            print(f"Error parsing pt.parameters: {e}")
-            print(f"pt.parameters content: {pt.parameters}")
+            logger.error(f"Error parsing pt.parameters: {e}")
+            logger.debug(f"pt.parameters content: {pt.parameters}")
             # 파싱 실패 시 기본 환경 변수 설정
             env_vars.update({
                 'BASE_URL': 'http://localhost:3000',

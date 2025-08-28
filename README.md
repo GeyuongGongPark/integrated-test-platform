@@ -161,13 +161,12 @@ npx playwright test
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
 
 ## 📞 연락처
 
-프로젝트 링크: [https://github.com/username/integrated-test-platform](https://github.com/username/integrated-test-platform)
+- 프로젝트 링크: [https://github.com/username/integrated-test-platform](https://github.com/username/integrated-test-platform)
+- E-Mail : [bakgg93@gmail.com](bakgg93@gmail.com)
+- H.P : 010-8496-1463
 
 ---
 

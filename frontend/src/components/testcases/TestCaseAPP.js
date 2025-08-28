@@ -437,7 +437,10 @@ const TestCaseAPP = () => {
     }
 
     try {
-      console.log('🔄 폴더 이동 시도:', { selectedTestCases, targetFolderId });
+      // 폴더 이동 시도 로그 (개발 환경에서만)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 폴더 이동 시도:', { selectedTestCases, targetFolderId });
+      }
       
       // 선택된 테스트 케이스들을 대상 폴더로 이동
       await Promise.all(

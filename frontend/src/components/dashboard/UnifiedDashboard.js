@@ -121,7 +121,10 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       setTestcaseSummaries(testcaseSummariesRes.data);
       
     } catch (err) {
-      // 오류는 조용히 처리
+      // 오류는 조용히 처리 (개발 환경에서만 로그 출력)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Dashboard 데이터 로드 오류:', err);
+      }
       
       // 데이터베이스 오류인 경우 초기화 시도 (skipInit이 false일 때만)
       if (!skipInit && err.response?.status === 500 && err.response?.data?.error?.includes('no such table')) {

@@ -112,7 +112,9 @@ const PerformanceTestManager = () => {
             const response = await axios.post(`/performance-tests/${testId}/execute`, {
                 environment_vars: {}
             });
-            console.log('테스트 실행 결과:', response.data);
+            if (process.env.NODE_ENV === 'development') {
+                console.log('테스트 실행 결과:', response.data);
+            }
             fetchPerformanceTests();
         } catch (error) {
             console.error('성능 테스트 실행 오류:', error);

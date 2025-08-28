@@ -1,5 +1,8 @@
 from flask import request
 import os
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 def setup_cors(app):
     """Vercel 환경에서만 사용되는 고급 CORS 설정"""
@@ -9,10 +12,10 @@ def setup_cors(app):
     is_vercel = 'vercel.app' in os.environ.get('VERCEL_URL', '') or os.environ.get('VERCEL') == '1'
     
     if not is_vercel:
-        print("🌐 로컬 환경이므로 고급 CORS 설정을 건너뜁니다.")
+        logger.debug("로컬 환경이므로 고급 CORS 설정을 건너뜁니다.")
         return
     
-    print("🌐 Vercel 환경에서 고급 CORS 설정을 적용합니다.")
+    logger.info("Vercel 환경에서 고급 CORS 설정을 적용합니다.")
     
     # CORS 설정 - 모든 origin 허용
     CORS(app, 
@@ -53,10 +56,10 @@ def setup_cors(app):
         # 디버깅을 위한 로깅 (Vercel 환경에서만)
         if is_vercel:
             if request.method == 'OPTIONS':
-                print(f"🌐 CORS Preflight Request - Origin: {origin}, Method: {request.method}")
-                print(f"🔧 Preflight Response Headers: {dict(response.headers)}")
+                logger.debug(f"CORS Preflight Request - Origin: {origin}, Method: {request.method}")
+                logger.debug(f"Preflight Response Headers: {dict(response.headers)}")
             else:
-                print(f"🌐 CORS Request - Origin: {origin}, Method: {request.method}, Path: {request.path}")
+                logger.debug(f"CORS Request - Origin: {origin}, Method: {request.method}, Path: {request.path}")
         
         return response
 
