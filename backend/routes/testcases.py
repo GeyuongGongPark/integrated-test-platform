@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify, send_file
-from models import db, TestCase, TestResult, Screenshot, Project, Folder, User
+from models import db, TestCase, TestResult, Screenshot, Project, Folder, User, TestCaseTemplate, TestPlan, TestPlanTestCase
 from utils.cors import add_cors_headers
 from utils.auth_decorators import admin_required, user_required, guest_allowed
-from datetime import datetime
+from datetime import datetime, timedelta
 from utils.timezone_utils import get_kst_now, get_kst_isoformat
 import pandas as pd
 from io import BytesIO
@@ -10,9 +10,17 @@ import os
 import subprocess
 import time
 import json
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Blueprint 생성
 testcases_bp = Blueprint('testcases', __name__)
+
+def handle_options_request():
+    """OPTIONS 요청 처리"""
+    response = jsonify({'message': 'OK'})
+    return add_cors_headers(response), 200
 
 # 기존 TCM API 엔드포인트들
 @testcases_bp.route('/projects', methods=['GET'])
@@ -39,56 +47,111 @@ def create_project():
     response = jsonify({'message': '프로젝트 생성 완료', 'id': project.id})
     return add_cors_headers(response), 201
 
-@testcases_bp.route('/testcases', methods=['GET'])
-@guest_allowed
+@testcases_bp.route('/testcases', methods=['GET', 'OPTIONS'])
 def get_testcases():
+    if request.method == 'OPTIONS':
+        return handle_options_request()
+    
     try:
-        testcases = TestCase.query.all()
-        print(f"🧪 전체 테스트 케이스 수: {len(testcases)}")
+        # 페이징 파라미터 처리
+        page = request.args.get('page', None, type=int)
+        per_page = request.args.get('per_page', None, type=int)
         
-        # 폴더 ID별 테스트 케이스 수 확인
-        folder_counts = {}
-        for tc in testcases:
-            folder_id = tc.folder_id
-            if folder_id not in folder_counts:
-                folder_counts[folder_id] = 0
-            folder_counts[folder_id] += 1
+        # 페이징 파라미터가 없으면 전체 데이터 반환
+        if page is None or per_page is None:
+            testcases = TestCase.query.all()
+            data = [{
+                'id': tc.id,
+                'name': tc.name,
+                'description': tc.description,
+                'test_type': tc.test_type,
+                'script_path': tc.script_path,
+                'folder_id': tc.folder_id,
+                'main_category': tc.main_category,
+                'sub_category': tc.sub_category,
+                'detail_category': tc.detail_category,
+                'pre_condition': tc.pre_condition,
+                'expected_result': tc.expected_result,
+                'remark': tc.remark,
+                'automation_code_path': tc.automation_code_path,
+                'environment': tc.environment,
+                'result_status': tc.result_status,
+                'creator_id': tc.creator_id,
+                'assignee_id': tc.assignee_id,
+                'creator_name': tc.creator.username if tc.creator else None,
+                'assignee_name': tc.assignee.username if tc.assignee else None,
+                'created_at': tc.created_at.isoformat(),
+                'updated_at': tc.updated_at.isoformat()
+            } for tc in testcases]
+            
+            response = jsonify(data)
+            return add_cors_headers(response), 200
         
-        print(f"📁 폴더별 테스트 케이스 수: {folder_counts}")
+        # 페이지 번호와 per_page 유효성 검사
+        if page < 1:
+            page = 1
+        if per_page < 1 or per_page > 100:
+            per_page = 10
         
+        # 전체 테스트 케이스 수 조회
+        total_count = TestCase.query.count()
+        
+        # 페이징된 테스트 케이스 조회
+        offset = (page - 1) * per_page
+        testcases = TestCase.query.offset(offset).limit(per_page).all()
+        
+        # 총 페이지 수 계산
+        total_pages = (total_count + per_page - 1) // per_page
+        has_next = page < total_pages
+        has_prev = page > 1
+        next_num = page + 1 if has_next else None
+        prev_num = page - 1 if has_prev else None
+        
+        # 데이터 직렬화
         data = [{
             'id': tc.id,
             'name': tc.name,
-            'project_id': tc.project_id,
+            'description': tc.description,
+            'test_type': tc.test_type,
+            'script_path': tc.script_path,
+            'folder_id': tc.folder_id,
             'main_category': tc.main_category,
             'sub_category': tc.sub_category,
             'detail_category': tc.detail_category,
             'pre_condition': tc.pre_condition,
             'expected_result': tc.expected_result,
-            'result_status': tc.result_status,
             'remark': tc.remark,
-            'folder_id': tc.folder_id,
             'automation_code_path': tc.automation_code_path,
-            'automation_code_type': tc.automation_code_type,
             'environment': tc.environment,
+            'result_status': tc.result_status,
             'creator_id': tc.creator_id,
             'assignee_id': tc.assignee_id,
             'creator_name': tc.creator.username if tc.creator else None,
             'assignee_name': tc.assignee.username if tc.assignee else None,
-            'created_at': tc.created_at,
-            'updated_at': tc.updated_at
+            'created_at': tc.created_at.isoformat(),
+            'updated_at': tc.updated_at.isoformat()
         } for tc in testcases]
-        response = jsonify(data)
         
+        # 페이징 정보 포함 응답
+        response_data = {
+            'items': data,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': total_count,
+                'pages': total_pages,
+                'has_next': has_next,
+                'has_prev': has_prev,
+                'next_num': next_num,
+                'prev_num': prev_num
+            }
+        }
+        
+        response = jsonify(response_data)
         return add_cors_headers(response), 200
-    except Exception as e:
-        print(f"❌ TestCases 조회 오류: {str(e)}")
-        response = jsonify({
-            'error': '데이터베이스 연결 오류',
-            'message': str(e),
-            'timestamp': get_kst_isoformat(get_kst_now())
-        })
         
+    except Exception as e:
+        response = jsonify({'error': str(e)})
         return add_cors_headers(response), 500
 
 @testcases_bp.route('/testcases/<int:id>', methods=['GET'])
@@ -114,12 +177,45 @@ def get_testcase(id):
         'expected_result': tc.expected_result,
         'result_status': tc.result_status,
         'remark': tc.remark,
+        'automation_code_path': tc.automation_code_path,
+        'automation_code_type': tc.automation_code_type,
+        'folder_id': tc.folder_id,
+        'creator_id': tc.creator_id,
+        'assignee_id': tc.assignee_id,
+        'creator_name': tc.creator.username if tc.creator else None,
+        'assignee_name': tc.assignee.username if tc.assignee else None,
         'screenshots': screenshot_data,
         'created_at': tc.created_at,
         'updated_at': tc.updated_at
     }
     response = jsonify(data)
     return add_cors_headers(response), 200
+
+@testcases_bp.route('/testcases/<int:id>/history', methods=['GET'])
+@guest_allowed
+def get_test_case_history_api(id):
+    """테스트 케이스 변경 히스토리 조회"""
+    try:
+        history = get_test_case_history(id)
+        
+        data = [{
+            'id': h.id,
+            'field_name': h.field_name,
+            'old_value': h.old_value,
+            'new_value': h.new_value,
+            'change_type': h.change_type,
+            'changed_by': h.changed_by,
+            'changed_at': h.changed_at.isoformat() if h.changed_at else None,
+            'user_name': h.user.username if h.user else 'Unknown'
+        } for h in history]
+        
+        response = jsonify(data)
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        logger.error(f"테스트 케이스 히스토리 조회 오류: {str(e)}")
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
 
 @testcases_bp.route('/testcases', methods=['POST'])
 @user_required
@@ -191,6 +287,13 @@ def create_testcase():
     try:
         db.session.add(tc)
         db.session.commit()
+        
+        # 히스토리 추적
+        try:
+            track_test_case_creation(tc.id, data, 1)  # TODO: 실제 사용자 ID 사용
+        except Exception as e:
+            logger.warning(f"히스토리 추적 실패: {str(e)}")
+        
         response = jsonify({'message': '테스트 케이스 생성 완료', 'id': tc.id})
         return add_cors_headers(response), 201
     except Exception as e:
@@ -818,3 +921,661 @@ def execute_automation_code(id):
     except Exception as e:
         response = jsonify({'error': str(e)})
         return add_cors_headers(response), 500 
+
+# 테스트 케이스 템플릿 API
+@testcases_bp.route('/templates', methods=['GET'])
+@guest_allowed
+def get_templates():
+    """템플릿 목록 조회"""
+    try:
+        # 검색 및 필터링 파라미터
+        search = request.args.get('search', '')
+        category = request.args.get('category', '')
+        tags = request.args.get('tags', '')
+        is_public = request.args.get('public', '')
+        
+        query = TestCaseTemplate.query
+        
+        # 검색어 필터링
+        if search:
+            query = query.filter(
+                db.or_(
+                    TestCaseTemplate.name.contains(search),
+                    TestCaseTemplate.description.contains(search),
+                    TestCaseTemplate.main_category.contains(search),
+                    TestCaseTemplate.sub_category.contains(search)
+                )
+            )
+        
+        # 카테고리 필터링
+        if category:
+            query = query.filter(TestCaseTemplate.main_category == category)
+        
+        # 태그 필터링
+        if tags:
+            tag_list = [tag.strip() for tag in tags.split(',')]
+            for tag in tag_list:
+                query = query.filter(TestCaseTemplate.tags.contains(tag))
+        
+        # 공개 여부 필터링
+        if is_public == 'true':
+            query = query.filter(TestCaseTemplate.is_public == True)
+        
+        # 사용 횟수순으로 정렬
+        templates = query.order_by(TestCaseTemplate.usage_count.desc()).all()
+        
+        data = [{
+            'id': t.id,
+            'name': t.name,
+            'description': t.description,
+            'main_category': t.main_category,
+            'sub_category': t.sub_category,
+            'detail_category': t.detail_category,
+            'pre_condition': t.pre_condition,
+            'expected_result': t.expected_result,
+            'test_steps': t.test_steps,
+            'automation_code_path': t.automation_code_path,
+            'automation_code_type': t.automation_code_type,
+            'tags': json.loads(t.tags) if t.tags else [],
+            'created_by': t.created_by,
+            'created_at': t.created_at.isoformat() if t.created_at else None,
+            'updated_at': t.updated_at.isoformat() if t.updated_at else None,
+            'is_public': t.is_public,
+            'usage_count': t.usage_count,
+            'creator_name': t.creator.username if t.creator else 'Unknown'
+        } for t in templates]
+        
+        response = jsonify(data)
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        logger.error(f"템플릿 조회 오류: {str(e)}")
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@testcases_bp.route('/templates', methods=['POST'])
+@user_required
+def create_template():
+    """템플릿 생성"""
+    try:
+        data = request.get_json()
+        
+        # 필수 필드 검증
+        if not data.get('name'):
+            response = jsonify({'error': '템플릿명은 필수입니다'})
+            return add_cors_headers(response), 400
+        
+        template = TestCaseTemplate(
+            name=data['name'],
+            description=data.get('description', ''),
+            main_category=data.get('main_category', ''),
+            sub_category=data.get('sub_category', ''),
+            detail_category=data.get('detail_category', ''),
+            pre_condition=data.get('pre_condition', ''),
+            expected_result=data.get('expected_result', ''),
+            test_steps=data.get('test_steps', ''),
+            automation_code_path=data.get('automation_code_path', ''),
+            automation_code_type=data.get('automation_code_type', 'playwright'),
+            tags=json.dumps(data.get('tags', [])),
+            created_by=1,  # TODO: 실제 사용자 ID 사용
+            is_public=data.get('is_public', False)
+        )
+        
+        db.session.add(template)
+        db.session.commit()
+        
+        response = jsonify({
+            'message': '템플릿이 성공적으로 생성되었습니다.',
+            'id': template.id
+        })
+        return add_cors_headers(response), 201
+        
+    except Exception as e:
+        logger.error(f"템플릿 생성 오류: {str(e)}")
+        db.session.rollback()
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@testcases_bp.route('/templates/<int:id>/apply', methods=['POST'])
+@user_required
+def apply_template(id):
+    """템플릿을 테스트 케이스로 적용"""
+    try:
+        template = TestCaseTemplate.query.get_or_404(id)
+        data = request.get_json()
+        
+        # 폴더 ID 필수
+        if not data.get('folder_id'):
+            response = jsonify({'error': '폴더 ID는 필수입니다'})
+            return add_cors_headers(response), 400
+        
+        # 템플릿을 기반으로 테스트 케이스 생성
+        test_case = TestCase(
+            name=template.name,
+            description=template.description,
+            main_category=template.main_category,
+            sub_category=template.sub_category,
+            detail_category=template.detail_category,
+            pre_condition=template.pre_condition,
+            expected_result=template.expected_result,
+            remark=template.test_steps,
+            folder_id=data['folder_id'],
+            automation_code_path=template.automation_code_path,
+            automation_code_type=template.automation_code_type,
+            environment='dev',  # 기본값
+            creator_id=1  # TODO: 실제 사용자 ID 사용
+        )
+        
+        db.session.add(test_case)
+        
+        # 템플릿 사용 횟수 증가
+        template.usage_count += 1
+        
+        db.session.commit()
+        
+        response = jsonify({
+            'message': '템플릿이 성공적으로 적용되었습니다.',
+            'test_case_id': test_case.id
+        })
+        return add_cors_headers(response), 201
+        
+    except Exception as e:
+        logger.error(f"템플릿 적용 오류: {str(e)}")
+        db.session.rollback()
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500 
+
+# 자동화 연동 API
+@testcases_bp.route('/testcases/<int:id>/automation', methods=['GET'])
+@guest_allowed
+def get_test_case_automation(id):
+    """테스트 케이스 자동화 정보 조회"""
+    try:
+        test_case = TestCase.query.get_or_404(id)
+        
+        # 자동화 스크립트 정보
+        automation_info = {
+            'has_automation': bool(test_case.automation_code_path),
+            'script_path': test_case.automation_code_path,
+            'script_type': test_case.automation_code_type,
+            'last_execution': None,
+            'execution_count': 0,
+            'success_rate': 0
+        }
+        
+        # 실행 이력 조회
+        if test_case.automation_code_path:
+            executions = TestResult.query.filter_by(
+                automation_test_id=id
+            ).order_by(TestResult.executed_at.desc()).limit(10).all()
+            
+            if executions:
+                automation_info['last_execution'] = executions[0].executed_at.isoformat()
+                automation_info['execution_count'] = len(executions)
+                
+                # 성공률 계산
+                success_count = sum(1 for e in executions if e.result == 'Pass')
+                automation_info['success_rate'] = (success_count / len(executions)) * 100
+        
+        response = jsonify(automation_info)
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        logger.error(f"자동화 정보 조회 오류: {str(e)}")
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@testcases_bp.route('/testcases/<int:id>/automation', methods=['POST'])
+@user_required
+def link_automation_script(id):
+    """테스트 케이스에 자동화 스크립트 연결"""
+    try:
+        test_case = TestCase.query.get_or_404(id)
+        data = request.get_json()
+        
+        # 스크립트 경로 검증
+        script_path = data.get('script_path')
+        if not script_path:
+            response = jsonify({'error': '스크립트 경로는 필수입니다'})
+            return add_cors_headers(response), 400
+        
+        # 파일 존재 여부 확인 (선택사항)
+        import os
+        full_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), script_path)
+        if not os.path.exists(full_path):
+            logger.warning(f"자동화 스크립트 파일이 존재하지 않습니다: {full_path}")
+        
+        # 테스트 케이스 업데이트
+        test_case.automation_code_path = script_path
+        test_case.automation_code_type = data.get('script_type', 'playwright')
+        
+        db.session.commit()
+        
+        # 히스토리 추적
+        try:
+            track_test_case_change(id, 'automation_code_path', None, script_path, 1)
+        except Exception as e:
+            logger.warning(f"자동화 연결 히스토리 추적 실패: {str(e)}")
+        
+        response = jsonify({
+            'message': '자동화 스크립트가 성공적으로 연결되었습니다.',
+            'script_path': script_path
+        })
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        logger.error(f"자동화 스크립트 연결 오류: {str(e)}")
+        db.session.rollback()
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@testcases_bp.route('/automation/suggest', methods=['GET'])
+@guest_allowed
+def suggest_automation_scripts():
+    """자동화 스크립트 추천"""
+    try:
+        # 미연결된 테스트 케이스들
+        unlinked_test_cases = TestCase.query.filter(
+            db.or_(
+                TestCase.automation_code_path.is_(None),
+                TestCase.automation_code_path == ''
+            )
+        ).all()
+        
+        suggestions = []
+        
+        for tc in unlinked_test_cases:
+            # 카테고리 기반 추천
+            if tc.main_category:
+                # 유사한 카테고리의 자동화 스크립트 찾기
+                similar_scripts = TestCase.query.filter(
+                    TestCase.main_category == tc.main_category,
+                    TestCase.automation_code_path.isnot(None),
+                    TestCase.automation_code_path != ''
+                ).limit(3).all()
+                
+                if similar_scripts:
+                    suggestions.append({
+                        'test_case_id': tc.id,
+                        'test_case_name': tc.name,
+                        'category': tc.main_category,
+                        'suggested_scripts': [
+                            {
+                                'script_path': script.automation_code_path,
+                                'script_type': script.automation_code_type,
+                                'similarity': 'category_match'
+                            } for script in similar_scripts
+                        ]
+                    })
+        
+        response = jsonify(suggestions)
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        logger.error(f"자동화 스크립트 추천 오류: {str(e)}")
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500 
+
+# 테스트 계획 API
+@testcases_bp.route('/test-plans', methods=['GET'])
+@guest_allowed
+def get_test_plans():
+    """테스트 계획 목록 조회"""
+    try:
+        plans = TestPlan.query.order_by(TestPlan.created_at.desc()).all()
+        
+        data = [{
+            'id': p.id,
+            'name': p.name,
+            'description': p.description,
+            'version': p.version,
+            'environment': p.environment,
+            'start_date': p.start_date.isoformat() if p.start_date else None,
+            'end_date': p.end_date.isoformat() if p.end_date else None,
+            'status': p.status,
+            'priority': p.priority,
+            'created_by': p.created_by,
+            'created_at': p.created_at.isoformat() if p.created_at else None,
+            'updated_at': p.updated_at.isoformat() if p.updated_at else None,
+            'creator_name': p.creator.username if p.creator else 'Unknown',
+            'test_case_count': len(p.test_cases)
+        } for p in plans]
+        
+        response = jsonify(data)
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        logger.error(f"테스트 계획 조회 오류: {str(e)}")
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@testcases_bp.route('/test-plans', methods=['POST'])
+@user_required
+def create_test_plan():
+    """테스트 계획 생성"""
+    try:
+        data = request.get_json()
+        
+        # 필수 필드 검증
+        if not data.get('name'):
+            response = jsonify({'error': '계획명은 필수입니다'})
+            return add_cors_headers(response), 400
+        
+        plan = TestPlan(
+            name=data['name'],
+            description=data.get('description', ''),
+            version=data.get('version', '1.0'),
+            environment=data.get('environment', 'dev'),
+            start_date=datetime.strptime(data['start_date'], '%Y-%m-%d').date() if data.get('start_date') else None,
+            end_date=datetime.strptime(data['end_date'], '%Y-%m-%d').date() if data.get('end_date') else None,
+            status=data.get('status', 'draft'),
+            priority=data.get('priority', 'medium'),
+            created_by=1  # TODO: 실제 사용자 ID 사용
+        )
+        
+        db.session.add(plan)
+        db.session.commit()
+        
+        response = jsonify({
+            'message': '테스트 계획이 성공적으로 생성되었습니다.',
+            'id': plan.id
+        })
+        return add_cors_headers(response), 201
+        
+    except Exception as e:
+        logger.error(f"테스트 계획 생성 오류: {str(e)}")
+        db.session.rollback()
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@testcases_bp.route('/test-plans/<int:id>/test-cases', methods=['POST'])
+@user_required
+def add_test_cases_to_plan(id):
+    """테스트 계획에 테스트 케이스 추가"""
+    try:
+        plan = TestPlan.query.get_or_404(id)
+        data = request.get_json()
+        
+        test_case_ids = data.get('test_case_ids', [])
+        if not test_case_ids:
+            response = jsonify({'error': '테스트 케이스 ID 목록이 필요합니다'})
+            return add_cors_headers(response), 400
+        
+        added_count = 0
+        for test_case_id in test_case_ids:
+            # 이미 추가된 테스트 케이스인지 확인
+            existing = TestPlanTestCase.query.filter_by(
+                test_plan_id=id,
+                test_case_id=test_case_id
+            ).first()
+            
+            if not existing:
+                plan_test_case = TestPlanTestCase(
+                    test_plan_id=id,
+                    test_case_id=test_case_id,
+                    execution_order=len(plan.test_cases) + 1,
+                    estimated_duration=data.get('estimated_duration', 30),
+                    assigned_to=data.get('assigned_to'),
+                    notes=data.get('notes', '')
+                )
+                db.session.add(plan_test_case)
+                added_count += 1
+        
+        db.session.commit()
+        
+        response = jsonify({
+            'message': f'{added_count}개 테스트 케이스가 계획에 추가되었습니다.',
+            'added_count': added_count
+        })
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        logger.error(f"테스트 케이스 추가 오류: {str(e)}")
+        db.session.rollback()
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@testcases_bp.route('/test-plans/<int:id>', methods=['GET'])
+@guest_allowed
+def get_test_plan_detail(id):
+    """테스트 계획 상세 조회"""
+    try:
+        plan = TestPlan.query.get_or_404(id)
+        
+        # 계획에 포함된 테스트 케이스들
+        test_cases = []
+        for ptc in plan.test_cases:
+            tc = ptc.test_case
+            test_cases.append({
+                'id': tc.id,
+                'name': tc.name,
+                'main_category': tc.main_category,
+                'sub_category': tc.sub_category,
+                'detail_category': tc.detail_category,
+                'environment': tc.environment,
+                'result_status': tc.result_status,
+                'execution_order': ptc.execution_order,
+                'estimated_duration': ptc.estimated_duration,
+                'assigned_to': ptc.assigned_to,
+                'assignee_name': ptc.assignee.username if ptc.assignee else None,
+                'notes': ptc.notes
+            })
+        
+        # 실행 순서대로 정렬
+        test_cases.sort(key=lambda x: x['execution_order'])
+        
+        data = {
+            'id': plan.id,
+            'name': plan.name,
+            'description': plan.description,
+            'version': plan.version,
+            'environment': plan.environment,
+            'start_date': plan.start_date.isoformat() if plan.start_date else None,
+            'end_date': plan.end_date.isoformat() if plan.end_date else None,
+            'status': plan.status,
+            'priority': plan.priority,
+            'created_by': plan.created_by,
+            'created_at': plan.created_at.isoformat() if plan.created_at else None,
+            'updated_at': plan.updated_at.isoformat() if plan.updated_at else None,
+            'creator_name': plan.creator.username if plan.creator else 'Unknown',
+            'test_cases': test_cases,
+            'total_estimated_duration': sum(tc['estimated_duration'] for tc in test_cases if tc['estimated_duration'])
+        }
+        
+        response = jsonify(data)
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        logger.error(f"테스트 계획 상세 조회 오류: {str(e)}")
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500 
+
+# 리포팅 API
+@testcases_bp.route('/reports/summary', methods=['GET'])
+@guest_allowed
+def get_test_summary_report():
+    """테스트 결과 요약 리포트"""
+    try:
+        # 환경별 통계
+        environment_stats = db.session.query(
+            TestCase.environment,
+            db.func.count(TestCase.id).label('total'),
+            db.func.sum(db.case([(TestCase.result_status == 'Pass', 1)], else_=0)).label('passed'),
+            db.func.sum(db.case([(TestCase.result_status == 'Fail', 1)], else_=0)).label('failed'),
+            db.func.sum(db.case([(TestCase.result_status == 'N/T', 1)], else_=0)).label('not_tested'),
+            db.func.sum(db.case([(TestCase.result_status == 'N/A', 1)], else_=0)).label('not_applicable'),
+            db.func.sum(db.case([(TestCase.result_status == 'Block', 1)], else_=0)).label('blocked')
+        ).group_by(TestCase.environment).all()
+        
+        # 카테고리별 통계
+        category_stats = db.session.query(
+            TestCase.main_category,
+            db.func.count(TestCase.id).label('total'),
+            db.func.sum(db.case([(TestCase.result_status == 'Pass', 1)], else_=0)).label('passed'),
+            db.func.sum(db.case([(TestCase.result_status == 'Fail', 1)], else_=0)).label('failed')
+        ).group_by(TestCase.main_category).all()
+        
+        # 자동화 통계
+        automation_stats = db.session.query(
+            db.func.count(TestCase.id).label('total'),
+            db.func.sum(db.case([(TestCase.automation_code_path.isnot(None), 1)], else_=0)).label('automated'),
+            db.func.sum(db.case([(TestCase.automation_code_path.is_(None), 1)], else_=0)).label('manual')
+        ).first()
+        
+        # 최근 실행 결과
+        recent_results = db.session.query(
+            TestResult.result,
+            db.func.count(TestResult.id).label('count')
+        ).filter(
+            TestResult.executed_at >= datetime.utcnow() - timedelta(days=30)
+        ).group_by(TestResult.result).all()
+        
+        data = {
+            'environment_stats': [{
+                'environment': stat.environment or 'Unknown',
+                'total': stat.total,
+                'passed': stat.passed or 0,
+                'failed': stat.failed or 0,
+                'not_tested': stat.not_tested or 0,
+                'not_applicable': stat.not_applicable or 0,
+                'blocked': stat.blocked or 0,
+                'pass_rate': round((stat.passed or 0) / stat.total * 100, 1) if stat.total > 0 else 0
+            } for stat in environment_stats],
+            
+            'category_stats': [{
+                'category': stat.main_category or 'Unknown',
+                'total': stat.total,
+                'passed': stat.passed or 0,
+                'failed': stat.failed or 0,
+                'pass_rate': round((stat.passed or 0) / stat.total * 100, 1) if stat.total > 0 else 0
+            } for stat in category_stats],
+            
+            'automation_stats': {
+                'total': automation_stats.total,
+                'automated': automation_stats.automated or 0,
+                'manual': automation_stats.manual or 0,
+                'automation_rate': round((automation_stats.automated or 0) / automation_stats.total * 100, 1) if automation_stats.total > 0 else 0
+            },
+            
+            'recent_results': [{
+                'result': stat.result or 'Unknown',
+                'count': stat.count
+            } for stat in recent_results],
+            
+            'generated_at': datetime.utcnow().isoformat()
+        }
+        
+        response = jsonify(data)
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        logger.error(f"요약 리포트 생성 오류: {str(e)}")
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+@testcases_bp.route('/reports/export', methods=['POST'])
+@user_required
+def export_test_report():
+    """테스트 리포트 엑셀 내보내기"""
+    try:
+        data = request.get_json()
+        report_type = data.get('type', 'summary')  # summary, detailed, test_plan
+        
+        if report_type == 'summary':
+            # 요약 리포트 데이터 가져오기
+            summary_data = get_test_summary_report_data()
+            
+            # 엑셀 파일 생성
+            import pandas as pd
+            from io import BytesIO
+            
+            # 환경별 통계 시트
+            env_df = pd.DataFrame(summary_data['environment_stats'])
+            
+            # 카테고리별 통계 시트
+            cat_df = pd.DataFrame(summary_data['category_stats'])
+            
+            # 엑셀 파일 생성
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                env_df.to_excel(writer, sheet_name='Environment_Stats', index=False)
+                cat_df.to_excel(writer, sheet_name='Category_Stats', index=False)
+                
+                # 자동화 통계 시트
+                automation_df = pd.DataFrame([summary_data['automation_stats']])
+                automation_df.to_excel(writer, sheet_name='Automation_Stats', index=False)
+            
+            output.seek(0)
+            
+            response = send_file(
+                output,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                as_attachment=True,
+                download_name=f'test_summary_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+            )
+            return add_cors_headers(response), 200
+            
+        else:
+            response = jsonify({'error': '지원하지 않는 리포트 타입입니다'})
+            return add_cors_headers(response), 400
+        
+    except Exception as e:
+        logger.error(f"리포트 내보내기 오류: {str(e)}")
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+def get_test_summary_report_data():
+    """테스트 요약 리포트 데이터 조회 (내부 함수)"""
+    # 환경별 통계
+    environment_stats = db.session.query(
+        TestCase.environment,
+        db.func.count(TestCase.id).label('total'),
+        db.func.sum(db.case([(TestCase.result_status == 'Pass', 1)], else_=0)).label('passed'),
+        db.func.sum(db.case([(TestCase.result_status == 'Fail', 1)], else_=0)).label('failed'),
+        db.func.sum(db.case([(TestCase.result_status == 'N/T', 1)], else_=0)).label('not_tested'),
+        db.func.sum(db.case([(TestCase.result_status == 'N/A', 1)], else_=0)).label('not_applicable'),
+        db.func.sum(db.case([(TestCase.result_status == 'Block', 1)], else_=0)).label('blocked')
+    ).group_by(TestCase.environment).all()
+    
+    # 카테고리별 통계
+    category_stats = db.session.query(
+        TestCase.main_category,
+        db.func.count(TestCase.id).label('total'),
+        db.func.sum(db.case([(TestCase.result_status == 'Pass', 1)], else_=0)).label('passed'),
+        db.func.sum(db.case([(TestCase.result_status == 'Fail', 1)], else_=0)).label('failed')
+    ).group_by(TestCase.main_category).all()
+    
+    # 자동화 통계
+    automation_stats = db.session.query(
+        db.func.count(TestCase.id).label('total'),
+        db.func.sum(db.case([(TestCase.automation_code_path.isnot(None), 1)], else_=0)).label('automated'),
+        db.func.sum(db.case([(TestCase.automation_code_path.is_(None), 1)], else_=0)).label('manual')
+    ).first()
+    
+    return {
+        'environment_stats': [{
+            'environment': stat.environment or 'Unknown',
+            'total': stat.total,
+            'passed': stat.passed or 0,
+            'failed': stat.failed or 0,
+            'not_tested': stat.not_tested or 0,
+            'not_applicable': stat.not_applicable or 0,
+            'blocked': stat.blocked or 0,
+            'pass_rate': round((stat.passed or 0) / stat.total * 100, 1) if stat.total > 0 else 0
+        } for stat in environment_stats],
+        
+        'category_stats': [{
+            'category': stat.main_category or 'Unknown',
+            'total': stat.total,
+            'passed': stat.passed or 0,
+            'failed': stat.failed or 0,
+            'pass_rate': round((stat.passed or 0) / stat.total * 100, 1) if stat.total > 0 else 0
+        } for stat in category_stats],
+        
+        'automation_stats': {
+            'total': automation_stats.total,
+            'automated': automation_stats.automated or 0,
+            'manual': automation_stats.manual or 0,
+            'automation_rate': round((automation_stats.automated or 0) / automation_stats.total * 100, 1) if automation_stats.total > 0 else 0
+        }
+    } 
