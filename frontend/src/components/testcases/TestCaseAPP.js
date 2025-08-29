@@ -185,36 +185,6 @@ const TestCaseExecutionResults = ({ testCaseId }) => {
 // axios 기본 URL 설정
 axios.defaults.baseURL = config.apiUrl;
 
-// 폴더 트리 렌더링 함수
-const renderFolderTree = (folders, selectedFolder, handleFolderSelect, level = 0) => {
-  if (!folders || folders.length === 0) {
-    return <div className="no-folders">폴더가 없습니다.</div>;
-  }
-
-  return (
-    <ul className={`folder-tree level-${level}`}>
-      {folders.map(folder => (
-        <li key={folder.id} className="folder-item">
-          <div 
-            className={`folder-header ${selectedFolder === folder.id ? 'selected' : ''}`}
-            onClick={() => handleFolderSelect(folder.id)}
-          >
-            <span className="folder-icon">📁</span>
-            <span className="folder-name">{folder.folder_name}</span>
-            <span className="folder-type">{folder.folder_type}</span>
-            {folder.environment && (
-              <span className="folder-environment">{folder.environment}</span>
-            )}
-          </div>
-          {folder.children && folder.children.length > 0 && (
-            renderFolderTree(folder.children, selectedFolder, handleFolderSelect, level + 1)
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-};
-
 const TestCaseAPP = () => {
   const { user } = useAuth();
   const [testCases, setTestCases] = useState([]);
@@ -255,8 +225,6 @@ const TestCaseAPP = () => {
   const [expandedFolders, setExpandedFolders] = useState(new Set());
   const [expandedTestCases, setExpandedTestCases] = useState(new Set());
 
-
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -271,7 +239,7 @@ const TestCaseAPP = () => {
         axios.get(`${config.apiUrl}/folders`)
       ]);
 
-      setTestCases(testCasesRes.data.items || testCasesRes.data);
+      setTestCases(testCasesRes.data);
       setFolderTree(treeRes.data);
       setAllFolders(foldersRes.data);
       
@@ -469,10 +437,7 @@ const TestCaseAPP = () => {
     }
 
     try {
-      // 폴더 이동 시도 로그 (개발 환경에서만)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔄 폴더 이동 시도:', { selectedTestCases, targetFolderId });
-      }
+      console.log('🔄 폴더 이동 시도:', { selectedTestCases, targetFolderId });
       
       // 선택된 테스트 케이스들을 대상 폴더로 이동
       await Promise.all(
@@ -494,10 +459,6 @@ const TestCaseAPP = () => {
       alert('폴더 이동 중 오류가 발생했습니다: ' + errorMessage);
     }
   };
-
-
-
-
 
   // 아코디언 토글 함수
   const toggleFolder = (folderId) => {
@@ -595,38 +556,100 @@ const TestCaseAPP = () => {
     return folder.type || 'unknown';
   };
 
+  const renderFolderTree = (nodes, level = 0) => {
+    return nodes.map(node => {
+      const hasChildren = node.children && node.children.length > 0;
+      const isExpanded = expandedFolders.has(node.id);
+      const isFolder = node.type === 'environment' || node.type === 'deployment_date' || node.type === 'feature';
+      
+      console.log(`렌더링 노드: ID=${node.id}, Name=${node.name}, Type=${node.type}, Level=${level}`);
+      
+      return (
+        <div key={node.id} style={{ marginLeft: level * 20 }}>
+          <div 
+            className={`folder-item ${selectedFolder === node.id && isFolder ? 'selected' : ''} ${isFolder ? 'clickable' : ''}`}
+            onClick={() => {
+              if (isFolder) {
+                const folderType = getFolderType(node.id);
+                console.log(`클릭된 폴더: ID=${node.id}, Name=${node.name}, Type=${folderType}`);
+                console.log('폴더 타입 상세:', {
+                  id: node.id,
+                  name: node.name,
+                  parent_id: node.parent_folder_id,
+                  calculated_type: folderType
+                });
+                handleFolderSelect(node.id);
+              }
+            }}
+          >
+            {hasChildren && (
+              <span 
+                className={`folder-toggle ${isExpanded ? 'expanded' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFolder(node.id);
+                }}
+              >
+                {isExpanded ? '▼' : '▶'}
+              </span>
+            )}
+            <span className="folder-icon">
+              {getFolderType(node.id) === 'environment' ? '🌍' : 
+               getFolderType(node.id) === 'deployment_date' ? '📅' : 
+               getFolderType(node.id) === 'feature' ? '🔧' : '📄'}
+            </span>
+            <span className="folder-name">{node.name}</span>
+            {getFolderType(node.id) === 'test_case' && (
+              <span className={`test-status ${(node.status || 'N/A').toLowerCase().replace('/', '-')}`}>
+                {node.status || 'N/A'}
+              </span>
+            )}
+            {isFolder && (
+              <span className="folder-type-badge">
+                {getFolderType(node.id) === 'environment' ? '환경' : 
+                 getFolderType(node.id) === 'deployment_date' ? '배포일자' : 
+                 getFolderType(node.id) === 'feature' ? '기능명' : ''}
+              </span>
+            )}
+          </div>
+          {hasChildren && (
+            <div className={`folder-children ${isExpanded ? 'expanded' : 'collapsed'}`}>
+              {isExpanded && renderFolderTree(node.children, level + 1)}
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
 
-
-
-
-  // 폴더별 테스트 케이스 필터링
   const filteredTestCases = selectedFolder 
     ? testCases.filter(tc => {
-        const folder = findFolderInTree(folderTree, selectedFolder);
-        if (!folder) return false;
+        const tcFolderId = Number(tc.folder_id);
+        const selectedFolderId = Number(selectedFolder);
         
-        // 환경 폴더인 경우
-        if (folder.type === 'environment') {
-          const environmentFolderIds = getEnvironmentFolderIds(folderTree, selectedFolder);
-          return environmentFolderIds.includes(tc.folder_id);
+        // 선택된 폴더 정보 찾기
+        const selectedFolderInfo = findFolderInTree(folderTree, selectedFolderId);
+        const selectedFolderType = getFolderType(selectedFolderId);
+        
+        if (selectedFolderType === 'environment') {
+          // 환경 폴더 선택 시: 해당 환경의 모든 하위 폴더의 테스트 케이스들
+          const environmentFolderIds = getEnvironmentFolderIds(folderTree, selectedFolderId);
+          return environmentFolderIds.includes(tcFolderId);
+        } else if (selectedFolderType === 'deployment_date') {
+          // 날짜 폴더 선택 시: 해당 날짜의 모든 하위 폴더의 테스트 케이스들
+          const deploymentFolderIds = getDeploymentFolderIds(folderTree, selectedFolderId);
+          return deploymentFolderIds.includes(tcFolderId);
+        } else if (selectedFolderType === 'feature') {
+          // 기능 폴더 선택 시: 해당 폴더의 테스트 케이스들만
+          return tcFolderId === selectedFolderId;
+        } else {
+          // 알 수 없는 폴더 타입: 전체 테스트 케이스 표시
+          return true;
         }
-        
-        // 배포일자 폴더인 경우
-        if (folder.type === 'deployment_date') {
-          const deploymentFolderIds = getDeploymentFolderIds(folderTree, selectedFolder);
-          return deploymentFolderIds.includes(tc.folder_id);
-        }
-        
-        // 기능명 폴더인 경우
-        if (folder.type === 'feature') {
-          return tc.folder_id === selectedFolder;
-        }
-        
-        return tc.folder_id === selectedFolder;
       })
     : testCases;
 
-
+  // 필터링 완료
 
   if (loading) {
     return <div className="testcase-loading">로딩 중...</div>;
@@ -671,14 +694,10 @@ const TestCaseAPP = () => {
               📁 폴더 이동 ({selectedTestCases.length})
             </button>
           )}
-          
-
         </div>
       </div>
 
       <div className="testcase-content">
-
-        
         {/* 폴더 트리 */}
         <div className="folder-tree">
           <h3>폴더 구조</h3>
@@ -694,7 +713,7 @@ const TestCaseAPP = () => {
             )}
           </div>
           <div className="tree-container">
-            {renderFolderTree(folderTree, selectedFolder, handleFolderSelect)}
+            {renderFolderTree(folderTree)}
           </div>
         </div>
 
@@ -732,10 +751,7 @@ const TestCaseAPP = () => {
 
           <div className="testcase-list">
             {filteredTestCases.map(testCase => (
-              <div 
-                key={testCase.id} 
-                className="testcase-list-item"
-              >
+              <div key={testCase.id} className="testcase-list-item">
                 <div className="testcase-header">
                   <div className="testcase-checkbox">
                     <input 
