@@ -35,7 +35,7 @@ const FolderManager = () => {
     try {
       setLoading(true);
       const response = await axios.get('/folders');
-      setFolders(response.data);
+      setFolders(response.data.items || response.data);
       setError(null);
     } catch (err) {
       console.error('폴더 조회 오류:', err);

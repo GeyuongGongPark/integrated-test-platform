@@ -30,7 +30,7 @@ const FolderManager = () => {
     try {
       setLoading(true);
       const response = await axios.get('/folders');
-      setFolders(response.data);
+      setFolders(response.data.items || response.data);
     } catch (err) {
       setError('폴더 목록을 불러오는 중 오류가 발생했습니다.');
       console.error('Folder fetch error:', err);

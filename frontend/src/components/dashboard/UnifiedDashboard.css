@@ -308,36 +308,86 @@
 }
 
 /* 페이징 관련 스타일 */
-.reset-paging {
-  color: #6c757d;
-  font-size: 12px;
-  text-align: center;
-  padding: 8px;
-  margin-top: 8px;
-  border-top: 1px solid #e9ecef;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.reset-paging:hover {
-  color: #495057;
-  text-decoration: underline;
-}
-
 .more-items {
+  background: #f8f9fa;
   color: #007bff;
-  font-size: 12px;
+  padding: 12px;
   text-align: center;
-  padding: 8px;
-  margin-top: 8px;
-  border-top: 1px solid #e9ecef;
+  border-radius: 6px;
+  margin-top: 15px;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
+  font-weight: 500;
 }
 
 .more-items:hover {
+  background: #e9ecef;
   color: #0056b3;
-  text-decoration: underline;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+.reset-paging {
+  background: #6c757d;
+  color: white;
+  padding: 8px 16px;
+  text-align: center;
+  border-radius: 4px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.reset-paging:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+.pagination-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  padding: 10px 0;
+  border-top: 1px solid #e9ecef;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.pagination-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.pagination-controls button {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #495057;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background: #e9ecef;
+  color: #212529;
+}
+
+.pagination-controls button:disabled {
+  background: #f8f9fa;
+  color: #adb5bd;
+  cursor: not-allowed;
 }
 
 
@@ -357,17 +407,121 @@
 
 /* 로딩 및 에러 상태 */
 .dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
   text-align: center;
-  padding: 50px;
-  font-size: 1.2em;
+}
+
+.loading-spinner {
+  margin-bottom: 20px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.dashboard-loading p {
   color: #666;
+  font-size: 16px;
+  margin: 0;
 }
 
 .dashboard-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
   text-align: center;
-  padding: 50px;
+  padding: 40px 20px;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.dashboard-error h3 {
   color: #dc3545;
-  font-size: 1.2em;
+  margin-bottom: 15px;
+  font-size: 24px;
+}
+
+.dashboard-error p {
+  color: #666;
+  font-size: 16px;
+  margin-bottom: 30px;
+  max-width: 500px;
+}
+
+.error-actions {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-retry {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-retry:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.btn-retry:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-init-db {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-init-db:hover:not(:disabled) {
+  background: #1e7e34;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-init-db:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* 스크린샷 섹션 스타일 */

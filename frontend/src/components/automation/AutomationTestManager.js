@@ -39,7 +39,7 @@ const AutomationTestManager = () => {
       
       // 자동화 테스트 목록은 항상 가져오기
       const automationRes = await axios.get('/automation-tests');
-      setAutomationTests(automationRes.data);
+      setAutomationTests(automationRes.data.items || automationRes.data);
       
       // 사용자 목록은 admin이나 user만 가져오기 (게스트는 제외)
       if (user && (user.role === 'admin' || user.role === 'user')) {

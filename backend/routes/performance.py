@@ -19,19 +19,63 @@ performance_bp = Blueprint('performance', __name__)
 @performance_bp.route('/performance-tests', methods=['GET'])
 @guest_allowed
 def get_performance_tests():
-    tests = PerformanceTest.query.all()
-    data = [{
-        'id': pt.id,
-        'name': pt.name,
-        'description': pt.description,
-        'script_path': pt.script_path,
-        'environment': pt.environment,
-        'parameters': pt.parameters,
-        'created_at': pt.created_at,
-        'updated_at': pt.updated_at
-    } for pt in tests]
-    response = jsonify(data)
-    return add_cors_headers(response), 200
+    try:
+        # 페이징 파라미터 처리
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        # 페이지 번호와 per_page 유효성 검사
+        if page < 1:
+            page = 1
+        if per_page < 1 or per_page > 100:
+            per_page = 10
+        
+        # 전체 성능 테스트 수 조회
+        total_count = PerformanceTest.query.count()
+        
+        # 페이징된 성능 테스트 조회
+        offset = (page - 1) * per_page
+        tests = PerformanceTest.query.offset(offset).limit(per_page).all()
+        
+        # 총 페이지 수 계산
+        total_pages = (total_count + per_page - 1) // per_page
+        has_next = page < total_pages
+        has_prev = page > 1
+        next_num = page + 1 if has_next else None
+        prev_num = page - 1 if has_prev else None
+        
+        data = [{
+            'id': pt.id,
+            'name': pt.name,
+            'description': pt.description,
+            'script_path': pt.script_path,
+            'environment': pt.environment,
+            'parameters': pt.parameters,
+            'created_at': pt.created_at,
+            'updated_at': pt.updated_at
+        } for pt in tests]
+        
+        # 페이징 정보 포함 응답
+        response_data = {
+            'items': data,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': total_count,
+                'pages': total_pages,
+                'has_next': has_next,
+                'has_prev': has_prev,
+                'next_num': next_num,
+                'prev_num': prev_num
+            }
+        }
+        
+        response = jsonify(response_data)
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
 
 @performance_bp.route('/performance-tests', methods=['POST'])
 @user_required
@@ -187,20 +231,64 @@ def get_performance_test_results(id):
 
 @performance_bp.route('/test-executions', methods=['GET'])
 def get_test_executions():
-    executions = TestExecution.query.all()
-    data = [{
-        'id': e.id,
-        'test_case_id': e.test_case_id,
-        'automation_test_id': e.automation_test_id,
-        'performance_test_id': e.performance_test_id,
-        'test_type': e.test_type,
-                    'started_at': e.started_at.isoformat() if e.started_at else None,
+    try:
+        # 페이징 파라미터 처리
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        # 페이지 번호와 per_page 유효성 검사
+        if page < 1:
+            page = 1
+        if per_page < 1 or per_page > 100:
+            per_page = 10
+        
+        # 전체 테스트 실행 수 조회
+        total_count = TestExecution.query.count()
+        
+        # 페이징된 테스트 실행 조회
+        offset = (page - 1) * per_page
+        executions = TestExecution.query.offset(offset).limit(per_page).all()
+        
+        # 총 페이지 수 계산
+        total_pages = (total_count + per_page - 1) // per_page
+        has_next = page < total_pages
+        has_prev = page > 1
+        next_num = page + 1 if has_next else None
+        prev_num = page - 1 if has_prev else None
+        
+        data = [{
+            'id': e.id,
+            'test_case_id': e.test_case_id,
+            'automation_test_id': e.automation_test_id,
+            'performance_test_id': e.performance_test_id,
+            'test_type': e.test_type,
+            'started_at': e.started_at.isoformat() if e.started_at else None,
             'completed_at': e.completed_at.isoformat() if e.completed_at else None,
-        'status': e.status,
-        'result_summary': json.loads(e.result_summary) if e.result_summary else None
-    } for e in executions]
-    response = jsonify(data)
-    return add_cors_headers(response), 200
+            'status': e.status,
+            'result_summary': json.loads(e.result_summary) if e.result_summary else None
+        } for e in executions]
+        
+        # 페이징 정보 포함 응답
+        response_data = {
+            'items': data,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': total_count,
+                'pages': total_pages,
+                'has_next': has_next,
+                'has_prev': has_prev,
+                'next_num': next_num,
+                'prev_num': prev_num
+            }
+        }
+        
+        response = jsonify(response_data)
+        return add_cors_headers(response), 200
+        
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
 
 @performance_bp.route('/test-executions', methods=['POST'])
 def create_test_execution():

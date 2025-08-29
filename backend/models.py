@@ -117,6 +117,27 @@ class TestCase(db.Model):
     project = db.relationship('Project', backref='test_cases')
     # creator와 assignee 관계는 User 모델에서 이미 설정됨
 
+# 테스트 케이스 히스토리 모델
+class TestCaseHistory(db.Model):
+    """테스트 케이스 변경 히스토리"""
+    __tablename__ = 'test_case_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    test_case_id = db.Column(db.Integer, db.ForeignKey('TestCases.id'), nullable=False)
+    field_name = db.Column(db.String(100), nullable=False)  # 변경된 필드명
+    old_value = db.Column(db.Text)  # 이전 값
+    new_value = db.Column(db.Text)  # 새로운 값
+    changed_by = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    changed_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    change_type = db.Column(db.String(50), nullable=False)  # 'create', 'update', 'delete'
+    
+    # 관계 설정
+    test_case = db.relationship('TestCase', backref='history')
+    user = db.relationship('User', backref='test_case_changes')
+    
+    def __repr__(self):
+        return f'<TestCaseHistory {self.field_name}: {self.old_value} -> {self.new_value}>'
+
 # 성능 테스트 모델
 class PerformanceTest(db.Model):
     __tablename__ = 'PerformanceTests'
@@ -208,3 +229,79 @@ class Screenshot(db.Model):
     test_result_id = db.Column(db.Integer, db.ForeignKey('TestResults.id'), nullable=False)  # alpha DB는 test_result_id 사용
     file_path = db.Column(db.String(500), nullable=False)  # alpha DB는 file_path 사용
     created_at = db.Column(db.DateTime, default=get_kst_now)  # alpha DB는 created_at 사용
+
+# 테스트 케이스 템플릿 모델
+class TestCaseTemplate(db.Model):
+    """테스트 케이스 템플릿"""
+    __tablename__ = 'test_case_templates'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    main_category = db.Column(db.String(100))
+    sub_category = db.Column(db.String(100))
+    detail_category = db.Column(db.String(100))
+    pre_condition = db.Column(db.Text)
+    expected_result = db.Column(db.Text)
+    test_steps = db.Column(db.Text)  # 단계별 테스트 절차
+    automation_code_path = db.Column(db.String(500))
+    automation_code_type = db.Column(db.String(50), default='playwright')
+    tags = db.Column(db.Text)  # JSON 형태로 태그 저장
+    created_by = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_public = db.Column(db.Boolean, default=False)  # 공개 템플릿 여부
+    usage_count = db.Column(db.Integer, default=0)  # 사용 횟수
+    
+    # 관계 설정
+    creator = db.relationship('User', backref='created_templates')
+    
+    def __repr__(self):
+        return f'<TestCaseTemplate {self.name}>'
+
+# 테스트 계획 모델
+class TestPlan(db.Model):
+    """테스트 계획"""
+    __tablename__ = 'test_plans'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    version = db.Column(db.String(50))
+    environment = db.Column(db.String(50))
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    status = db.Column(db.String(50), default='draft')  # draft, active, completed, cancelled
+    priority = db.Column(db.String(20), default='medium')  # low, medium, high, critical
+    created_by = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 관계 설정
+    creator = db.relationship('User', backref='created_test_plans')
+    test_cases = db.relationship('TestPlanTestCase', back_populates='test_plan')
+    
+    def __repr__(self):
+        return f'<TestPlan {self.name}>'
+
+# 테스트 계획과 테스트 케이스 연결 테이블
+class TestPlanTestCase(db.Model):
+    """테스트 계획과 테스트 케이스 연결"""
+    __tablename__ = 'test_plan_test_cases'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    test_plan_id = db.Column(db.Integer, db.ForeignKey('test_plans.id'), nullable=False)
+    test_case_id = db.Column(db.Integer, db.ForeignKey('TestCases.id'), nullable=False)
+    execution_order = db.Column(db.Integer, default=0)
+    estimated_duration = db.Column(db.Integer)  # 분 단위
+    assigned_to = db.Column(db.Integer, db.ForeignKey('Users.id'))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # 관계 설정
+    test_plan = db.relationship('TestPlan', back_populates='test_cases')
+    test_case = db.relationship('TestCase')
+    assignee = db.relationship('User')
+    
+    def __repr__(self):
+        return f'<TestPlanTestCase {self.test_plan_id}:{self.test_case_id}>'

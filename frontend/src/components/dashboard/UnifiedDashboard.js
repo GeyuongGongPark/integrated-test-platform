@@ -63,6 +63,9 @@ const UnifiedDashboard = ({ setActiveTab }) => {
   const [testCasesPage, setTestCasesPage] = useState(1);
   const [performanceTestsPage, setPerformanceTestsPage] = useState(1);
   const [testExecutionsPage, setTestExecutionsPage] = useState(1);
+  const [testCasesPagination, setTestCasesPagination] = useState(null);
+  const [performanceTestsPagination, setPerformanceTestsPagination] = useState(null);
+  const [testExecutionsPagination, setTestExecutionsPagination] = useState(null);
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -107,18 +110,29 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       }
       
       const [testCasesRes, performanceTestsRes, testExecutionsRes, summariesRes, testcaseSummariesRes] = await Promise.all([
-        axios.get('/testcases'),
-        axios.get('/performance-tests'),
-        axios.get('/test-executions'),
+        axios.get(`/testcases?page=1&per_page=${itemsPerPage}`),
+        axios.get(`/performance-tests?page=1&per_page=${itemsPerPage}`),
+        axios.get(`/test-executions?page=1&per_page=${itemsPerPage}`),
         axios.get('/dashboard-summaries'),
         axios.get('/testcases/summary/all')
       ]);
 
-      setTestCases(testCasesRes.data);
-      setPerformanceTests(performanceTestsRes.data);
-      setTestExecutions(testExecutionsRes.data);
+      setTestCases(testCasesRes.data.items || testCasesRes.data);
+      setPerformanceTests(performanceTestsRes.data.items || performanceTestsRes.data);
+      setTestExecutions(testExecutionsRes.data.items || testExecutionsRes.data);
       setDashboardSummaries(summariesRes.data);
       setTestcaseSummaries(testcaseSummariesRes.data);
+      
+      // 페이징 정보 설정
+      if (testCasesRes.data.pagination) {
+        setTestCasesPagination(testCasesRes.data.pagination);
+      }
+      if (performanceTestsRes.data.pagination) {
+        setPerformanceTestsPagination(performanceTestsRes.data.pagination);
+      }
+      if (testExecutionsRes.data.pagination) {
+        setTestExecutionsPagination(testExecutionsRes.data.pagination);
+      }
       
     } catch (err) {
       // 오류는 조용히 처리 (개발 환경에서만 로그 출력)
@@ -140,6 +154,52 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 페이징 데이터 로드 함수들
+  const loadMoreTestCases = async () => {
+    try {
+      const nextPage = testCasesPage + 1;
+      const response = await axios.get(`/testcases?page=${nextPage}&per_page=${itemsPerPage}`);
+      
+      if (response.data.items) {
+        setTestCases(prev => [...prev, ...response.data.items]);
+        setTestCasesPage(nextPage);
+        setTestCasesPagination(response.data.pagination);
+      }
+    } catch (err) {
+      console.error('테스트 케이스 추가 로드 실패:', err);
+    }
+  };
+
+  const loadMorePerformanceTests = async () => {
+    try {
+      const nextPage = performanceTestsPage + 1;
+      const response = await axios.get(`/performance-tests?page=${nextPage}&per_page=${itemsPerPage}`);
+      
+      if (response.data.items) {
+        setPerformanceTests(prev => [...prev, ...response.data.items]);
+        setPerformanceTestsPage(nextPage);
+        setPerformanceTestsPagination(response.data.pagination);
+      }
+    } catch (err) {
+      console.error('성능 테스트 추가 로드 실패:', err);
+    }
+  };
+
+  const loadMoreTestExecutions = async () => {
+    try {
+      const nextPage = testExecutionsPage + 1;
+      const response = await axios.get(`/test-executions?page=${nextPage}&per_page=${itemsPerPage}`);
+      
+      if (response.data.items) {
+        setTestExecutions(prev => [...prev, ...response.data.items]);
+        setTestExecutionsPage(nextPage);
+        setTestExecutionsPagination(response.data.pagination);
+      }
+    } catch (err) {
+      console.error('테스트 실행 추가 로드 실패:', err);
     }
   };
 
@@ -167,18 +227,6 @@ const UnifiedDashboard = ({ setActiveTab }) => {
   };
 
   // 페이징 관련 함수들
-  const loadMoreTestCases = () => {
-    setTestCasesPage(prev => prev + 1);
-  };
-
-  const loadMorePerformanceTests = () => {
-    setPerformanceTestsPage(prev => prev + 1);
-  };
-
-  const loadMoreTestExecutions = () => {
-    setTestExecutionsPage(prev => prev + 1);
-  };
-
   const resetTestCasesPaging = () => {
     setTestCasesPage(1);
   };
@@ -286,11 +334,40 @@ const UnifiedDashboard = ({ setActiveTab }) => {
   };
 
   if (loading) {
-    return <div className="dashboard-loading">로딩 중...</div>;
+    return (
+      <div className="dashboard-loading">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+        </div>
+        <p>대시보드 데이터를 불러오는 중...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="dashboard-error">{error}</div>;
+    return (
+      <div className="dashboard-error">
+        <div className="error-icon">⚠️</div>
+        <h3>오류가 발생했습니다</h3>
+        <p>{error}</p>
+        <div className="error-actions">
+          <button 
+            className="btn-retry"
+            onClick={fetchDashboardData}
+            disabled={loading}
+          >
+            다시 시도
+          </button>
+          <button 
+            className="btn-init-db"
+            onClick={initializeDatabase}
+            disabled={dbInitializing}
+          >
+            {dbInitializing ? '초기화 중...' : '데이터베이스 초기화'}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -407,12 +484,12 @@ const UnifiedDashboard = ({ setActiveTab }) => {
                 </span>
               </div>
             ))}
-            {testCases.length > testCasesPage * itemsPerPage && (
+            {testCasesPagination?.has_next && (
               <div 
                 className="more-items clickable"
                 onClick={loadMoreTestCases}
               >
-                + {testCases.length - (testCasesPage * itemsPerPage)} more
+                + {testCasesPagination.total - testCases.length} more
               </div>
             )}
             {testCasesPage > 1 && (
@@ -421,6 +498,14 @@ const UnifiedDashboard = ({ setActiveTab }) => {
                 onClick={resetTestCasesPaging}
               >
                 처음부터 보기
+              </div>
+            )}
+            {testCasesPagination && (
+              <div className="pagination-info">
+                <div className="pagination-stats">
+                  <span>총 {testCasesPagination.total}개</span>
+                  <span>페이지 {testCasesPagination.page}/{testCasesPagination.pages}</span>
+                </div>
               </div>
             )}
           </div>
@@ -444,12 +529,12 @@ const UnifiedDashboard = ({ setActiveTab }) => {
                 <span className="test-environment">{test.environment}</span>
               </div>
             ))}
-            {performanceTests.length > performanceTestsPage * itemsPerPage && (
+            {performanceTestsPagination?.total_pages > 1 && (
               <div 
                 className="more-items clickable"
                 onClick={loadMorePerformanceTests}
               >
-                + {performanceTests.length - (performanceTestsPage * itemsPerPage)} more
+                + {performanceTestsPagination.total_items - (performanceTestsPage * itemsPerPage)} more
               </div>
             )}
             {performanceTestsPage > 1 && (
@@ -483,12 +568,12 @@ const UnifiedDashboard = ({ setActiveTab }) => {
                 </span>
               </div>
             ))}
-            {testExecutions.length > testExecutionsPage * itemsPerPage && (
+            {testExecutionsPagination?.has_next && (
               <div 
                 className="more-items clickable"
                 onClick={loadMoreTestExecutions}
               >
-                + {testExecutions.length - (testExecutionsPage * itemsPerPage)} more
+                + {testExecutionsPagination.total - testExecutions.length} more
               </div>
             )}
             {testExecutionsPage > 1 && (
@@ -497,6 +582,14 @@ const UnifiedDashboard = ({ setActiveTab }) => {
                 onClick={resetTestExecutionsPaging}
               >
                 처음부터 보기
+              </div>
+            )}
+            {testExecutionsPagination && (
+              <div className="pagination-info">
+                <div className="pagination-stats">
+                  <span>총 {testExecutionsPagination.total}개</span>
+                  <span>페이지 {testExecutionsPagination.page}/{testExecutionsPagination.pages}</span>
+                </div>
               </div>
             )}
           </div>

@@ -224,6 +224,16 @@ const TestCaseAPP = () => {
   // 아코디언 관련 상태
   const [expandedFolders, setExpandedFolders] = useState(new Set());
   const [expandedTestCases, setExpandedTestCases] = useState(new Set());
+  
+  // 검색 관련 상태
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [environmentFilter, setEnvironmentFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [creatorFilter, setCreatorFilter] = useState('all');
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   useEffect(() => {
     fetchData();
@@ -556,6 +566,159 @@ const TestCaseAPP = () => {
     return folder.type || 'unknown';
   };
 
+  // 고급 검색을 위한 헬퍼 함수들
+  const getUniqueEnvironments = () => {
+    const uniqueEnvs = new Set();
+    testCases.forEach(tc => {
+      if (tc.environment) {
+        uniqueEnvs.add(tc.environment);
+      }
+    });
+    return Array.from(uniqueEnvs).sort();
+  };
+
+  const getUniqueCategories = () => {
+    const uniqueCategories = new Set();
+    testCases.forEach(tc => {
+      if (tc.main_category) uniqueCategories.add(tc.main_category);
+      if (tc.sub_category) uniqueCategories.add(`${tc.main_category} > ${tc.sub_category}`);
+      if (tc.detail_category) uniqueCategories.add(`${tc.main_category} > ${tc.sub_category} > ${tc.detail_category}`);
+    });
+    return Array.from(uniqueCategories).sort();
+  };
+
+  const getUniqueCreators = () => {
+    const uniqueCreators = new Set();
+    testCases.forEach(tc => {
+      if (tc.creator_name) {
+        uniqueCreators.add(tc.creator_name);
+      }
+    });
+    return Array.from(uniqueCreators).sort();
+  };
+
+  const getUniqueAssignees = () => {
+    const uniqueAssignees = new Set();
+    testCases.forEach(tc => {
+      if (tc.assignee_name) {
+        uniqueAssignees.add(tc.assignee_name);
+      }
+    });
+    return Array.from(uniqueAssignees).sort();
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setEnvironmentFilter('all');
+    setCategoryFilter('all');
+    setCreatorFilter('all');
+    setAssigneeFilter('all');
+    setSortBy('name');
+    setSortOrder('asc');
+  };
+
+  // 고급 검색 기능
+  const getFilteredTestCases = () => {
+    let filtered = selectedFolder 
+      ? testCases.filter(tc => {
+          const tcFolderId = Number(tc.folder_id);
+          const selectedFolderId = Number(selectedFolder);
+          
+          // 선택된 폴더 정보 찾기
+          const selectedFolderInfo = findFolderInTree(folderTree, selectedFolderId);
+          const selectedFolderType = getFolderType(selectedFolderId);
+          
+          if (selectedFolderType === 'environment') {
+            // 환경 폴더 선택 시: 해당 환경의 모든 하위 폴더의 테스트 케이스들
+            const environmentFolderIds = getEnvironmentFolderIds(folderTree, selectedFolderId);
+            return environmentFolderIds.includes(tcFolderId);
+          } else if (selectedFolderType === 'deployment_date') {
+            // 날짜 폴더 선택 시: 해당 날짜의 모든 하위 폴더의 테스트 케이스들
+            const deploymentFolderIds = getDeploymentFolderIds(folderTree, selectedFolderId);
+            return deploymentFolderIds.includes(tcFolderId);
+          } else if (selectedFolderType === 'feature') {
+            // 기능 폴더 선택 시: 해당 폴더의 테스트 케이스들만
+            return tcFolderId === selectedFolderId;
+          } else {
+            // 알 수 없는 폴더 타입: 전체 테스트 케이스 표시
+            return true;
+          }
+        })
+      : testCases;
+
+    // 검색어가 있으면 검색 필터링 적용
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(tc => 
+        (tc.main_category && tc.main_category.toLowerCase().includes(searchLower)) ||
+        (tc.sub_category && tc.sub_category.toLowerCase().includes(searchLower)) ||
+        (tc.detail_category && tc.detail_category.toLowerCase().includes(searchLower)) ||
+        (tc.expected_result && tc.expected_result.toLowerCase().includes(searchLower)) ||
+        (tc.remark && tc.remark.toLowerCase().includes(searchLower)) ||
+        (tc.creator_name && tc.creator_name.toLowerCase().includes(searchLower)) ||
+        (tc.assignee_name && tc.assignee_name.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // 상태 필터 적용
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(tc => tc.result_status === statusFilter);
+    }
+
+    // 환경 필터 적용
+    if (environmentFilter !== 'all') {
+      filtered = filtered.filter(tc => tc.environment === environmentFilter);
+    }
+
+    // 카테고리 필터 적용
+    if (categoryFilter !== 'all') {
+      const categoryParts = categoryFilter.split(' > ');
+      if (categoryParts.length === 1) {
+        filtered = filtered.filter(tc => tc.main_category === categoryParts[0]);
+      } else if (categoryParts.length === 2) {
+        filtered = filtered.filter(tc => tc.main_category === categoryParts[0] && tc.sub_category === categoryParts[1]);
+      } else if (categoryParts.length === 3) {
+        filtered = filtered.filter(tc => tc.main_category === categoryParts[0] && tc.sub_category === categoryParts[1] && tc.detail_category === categoryParts[2]);
+      }
+    }
+
+    // 작성자 필터 적용
+    if (creatorFilter !== 'all') {
+      filtered = filtered.filter(tc => tc.creator_name === creatorFilter);
+    }
+
+    // 담당자 필터 적용
+    if (assigneeFilter !== 'all') {
+      filtered = filtered.filter(tc => tc.assignee_name === assigneeFilter);
+    }
+
+    // 정렬 적용
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'name':
+          comparison = (a.main_category || '').localeCompare(b.main_category || '');
+          break;
+        case 'created_at':
+          comparison = new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+          break;
+        case 'updated_at':
+          comparison = new Date(a.updated_at || 0).getTime() - new Date(b.updated_at || 0).getTime();
+          break;
+        case 'environment':
+          comparison = (a.environment || '').localeCompare(b.environment || '');
+          break;
+        case 'status':
+          comparison = (a.result_status || '').localeCompare(b.result_status || '');
+          break;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  };
+
   const renderFolderTree = (nodes, level = 0) => {
     return nodes.map(node => {
       const hasChildren = node.children && node.children.length > 0;
@@ -622,32 +785,7 @@ const TestCaseAPP = () => {
     });
   };
 
-  const filteredTestCases = selectedFolder 
-    ? testCases.filter(tc => {
-        const tcFolderId = Number(tc.folder_id);
-        const selectedFolderId = Number(selectedFolder);
-        
-        // 선택된 폴더 정보 찾기
-        const selectedFolderInfo = findFolderInTree(folderTree, selectedFolderId);
-        const selectedFolderType = getFolderType(selectedFolderId);
-        
-        if (selectedFolderType === 'environment') {
-          // 환경 폴더 선택 시: 해당 환경의 모든 하위 폴더의 테스트 케이스들
-          const environmentFolderIds = getEnvironmentFolderIds(folderTree, selectedFolderId);
-          return environmentFolderIds.includes(tcFolderId);
-        } else if (selectedFolderType === 'deployment_date') {
-          // 날짜 폴더 선택 시: 해당 날짜의 모든 하위 폴더의 테스트 케이스들
-          const deploymentFolderIds = getDeploymentFolderIds(folderTree, selectedFolderId);
-          return deploymentFolderIds.includes(tcFolderId);
-        } else if (selectedFolderType === 'feature') {
-          // 기능 폴더 선택 시: 해당 폴더의 테스트 케이스들만
-          return tcFolderId === selectedFolderId;
-        } else {
-          // 알 수 없는 폴더 타입: 전체 테스트 케이스 표시
-          return true;
-        }
-      })
-    : testCases;
+  const filteredTestCases = getFilteredTestCases();
 
   // 필터링 완료
 
@@ -694,6 +832,150 @@ const TestCaseAPP = () => {
               📁 폴더 이동 ({selectedTestCases.length})
             </button>
           )}
+        </div>
+      </div>
+
+      {/* 고급 검색 기능 */}
+      <div className="search-section">
+        <div className="search-container">
+          {/* 기본 검색 */}
+          <div className="search-input-wrapper">
+            <input
+              type="text"
+              placeholder="🔍 테스트 케이스 검색... (대분류, 중분류, 소분류, 기대결과, 비고, 작성자, 담당자)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+            {searchTerm && (
+              <button 
+                className="btn btn-clear-search"
+                onClick={() => setSearchTerm('')}
+                title="검색어 지우기"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* 고급 필터 */}
+          <div className="advanced-filters">
+            <div className="filter-row">
+              <div className="filter-group">
+                <label>상태:</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="all">모든 상태</option>
+                  <option value="Pass">Pass</option>
+                  <option value="Fail">Fail</option>
+                  <option value="N/T">N/T</option>
+                  <option value="N/A">N/A</option>
+                  <option value="Block">Block</option>
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label>환경:</label>
+                <select
+                  value={environmentFilter}
+                  onChange={(e) => setEnvironmentFilter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="all">모든 환경</option>
+                  {getUniqueEnvironments().map(env => (
+                    <option key={env} value={env}>{env}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label>카테고리:</label>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="all">모든 카테고리</option>
+                  {getUniqueCategories().map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label>작성자:</label>
+                <select
+                  value={creatorFilter}
+                  onChange={(e) => setCreatorFilter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="all">모든 작성자</option>
+                  {getUniqueCreators().map(creator => (
+                    <option key={creator} value={creator}>{creator}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label>담당자:</label>
+                <select
+                  value={assigneeFilter}
+                  onChange={(e) => setAssigneeFilter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="all">모든 담당자</option>
+                  {getUniqueAssignees().map(assignee => (
+                    <option key={assignee} value={assignee}>{assignee}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label>정렬:</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="name">이름순</option>
+                  <option value="created_at">생성일순</option>
+                  <option value="updated_at">수정일순</option>
+                  <option value="environment">환경순</option>
+                  <option value="status">상태순</option>
+                </select>
+              </div>
+
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="btn btn-sort"
+                title={sortOrder === 'asc' ? '오름차순' : '내림차순'}
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
+
+              <button
+                onClick={clearAllFilters}
+                className="btn btn-clear-filters"
+                title="모든 필터 초기화"
+              >
+                🗑️ 초기화
+              </button>
+            </div>
+          </div>
+
+          {/* 검색 결과 요약 */}
+          <div className="search-summary">
+            <span>총 {getFilteredTestCases().length}개 테스트 케이스</span>
+            {searchTerm && <span> • 검색어: "{searchTerm}"</span>}
+            {statusFilter !== 'all' && <span> • 상태: {statusFilter}</span>}
+            {environmentFilter !== 'all' && <span> • 환경: {environmentFilter}</span>}
+            {categoryFilter !== 'all' && <span> • 카테고리: {categoryFilter}</span>}
+            {creatorFilter !== 'all' && <span> • 작성자: {creatorFilter}</span>}
+            {assigneeFilter !== 'all' && <span> • 담당자: {assigneeFilter}</span>}
+          </div>
         </div>
       </div>
 

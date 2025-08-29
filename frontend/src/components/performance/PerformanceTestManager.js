@@ -32,7 +32,7 @@ const PerformanceTestManager = () => {
     const fetchPerformanceTests = async () => {
         try {
             const response = await axios.get('/performance-tests');
-            setPerformanceTests(response.data);
+            setPerformanceTests(response.data.items || response.data);
         } catch (error) {
             console.error('성능 테스트 조회 오류:', error);
         }
