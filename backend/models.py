@@ -186,14 +186,22 @@ class TestResult(db.Model):
     test_case_id = db.Column(db.Integer, db.ForeignKey('TestCases.id'), nullable=True)  # nullable=True로 변경
     result = db.Column(db.String(20))  # Pass, Fail, Skip, Error
     execution_time = db.Column(db.Float)  # 초 단위
+    execution_duration = db.Column(db.Float)  # 실행 시간 (초 단위, execution_time과 동일하거나 별도 측정)
     environment = db.Column(db.String(50))
     executed_by = db.Column(db.String(100))
     executed_at = db.Column(db.DateTime, default=get_kst_now)
     notes = db.Column(db.Text)
+    error_message = db.Column(db.Text)  # 에러 메시지
+    automation_test_id = db.Column(db.Integer, db.ForeignKey('AutomationTests.id'), nullable=True)  # 자동화 테스트 연결
+    performance_test_id = db.Column(db.Integer, db.ForeignKey('PerformanceTests.id'), nullable=True)  # 성능 테스트 연결
     # test_case_id는 반드시 있어야 함 (실제 DB 스키마에 맞춤)
     __table_args__ = (
         db.CheckConstraint('test_case_id IS NOT NULL', name='check_test_reference'),
     )
+    
+    # 관계 설정
+    automation_test = db.relationship('AutomationTest', backref='test_results')
+    performance_test = db.relationship('PerformanceTest', backref='test_results')
 
 # 대시보드 요약 모델
 class DashboardSummary(db.Model):

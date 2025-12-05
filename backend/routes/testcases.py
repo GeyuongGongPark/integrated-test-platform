@@ -5,8 +5,9 @@ from utils.auth_decorators import admin_required, user_required, guest_allowed
 from utils.serializers import serialize_testcase, serialize_project, serialize_folder
 from services.testcase_service import TestCaseService
 from services.report_service import ReportService
+from utils.history_tracker import get_test_case_history, track_test_case_creation, track_test_case_change, track_test_case_deletion
 from datetime import datetime, timedelta
-from utils.timezone_utils import get_kst_now, get_kst_isoformat
+from utils.timezone_utils import get_kst_now, get_kst_isoformat, format_kst_datetime
 import pandas as pd
 from io import BytesIO
 import os
@@ -209,7 +210,7 @@ def create_testcase():
         
         # 히스토리 추적
         try:
-            track_test_case_creation(tc.id, data, 1)  # TODO: 실제 사용자 ID 사용
+            track_test_case_creation(tc.id, data, request.user.id)
         except Exception as e:
             logger.warning(f"히스토리 추적 실패: {str(e)}")
         
@@ -712,7 +713,7 @@ def download_testcases_excel():
             output,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             as_attachment=True,
-            download_name=f'testcases_{get_kst_datetime_string("%Y%m%d_%H%M%S")}.xlsx'
+            download_name=f'testcases_{format_kst_datetime(get_kst_now(), "%Y%m%d_%H%M%S")}.xlsx'
         )
         
     except Exception as e:
@@ -905,7 +906,7 @@ def execute_automation_code(id):
                     os.makedirs(screenshot_dir, exist_ok=True)
                     
                     # 스크린샷 파일명 생성
-                    timestamp = get_kst_datetime_string('%Y%m%d_%H%M%S')
+                    timestamp = format_kst_datetime(get_kst_now(), '%Y%m%d_%H%M%S')
                     screenshot_path = os.path.join(screenshot_dir, f'screenshot_{timestamp}.png')
                     
                     # Playwright 실행 결과에서 스크린샷 복사 (실제 구현에서는 더 복잡)
@@ -1046,7 +1047,7 @@ def create_template():
             automation_code_path=data.get('automation_code_path', ''),
             automation_code_type=data.get('automation_code_type', 'playwright'),
             tags=json.dumps(data.get('tags', [])),
-            created_by=1,  # TODO: 실제 사용자 ID 사용
+            created_by=request.user.id,
             is_public=data.get('is_public', False)
         )
         
@@ -1092,7 +1093,7 @@ def apply_template(id):
             automation_code_path=template.automation_code_path,
             automation_code_type=template.automation_code_type,
             environment='dev',  # 기본값
-            creator_id=1  # TODO: 실제 사용자 ID 사용
+            creator_id=request.user.id
         )
         
         db.session.add(test_case)
@@ -1182,7 +1183,7 @@ def link_automation_script(id):
         
         # 히스토리 추적
         try:
-            track_test_case_change(id, 'automation_code_path', None, script_path, 1)
+            track_test_case_change(id, 'automation_code_path', None, script_path, request.user.id)
         except Exception as e:
             logger.warning(f"자동화 연결 히스토리 추적 실패: {str(e)}")
         
@@ -1299,7 +1300,7 @@ def create_test_plan():
             end_date=datetime.strptime(data['end_date'], '%Y-%m-%d').date() if data.get('end_date') else None,
             status=data.get('status', 'draft'),
             priority=data.get('priority', 'medium'),
-            created_by=1  # TODO: 실제 사용자 ID 사용
+            created_by=request.user.id
         )
         
         db.session.add(plan)
