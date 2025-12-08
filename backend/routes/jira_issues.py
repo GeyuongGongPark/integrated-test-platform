@@ -472,3 +472,46 @@ def get_stats():
             'error': str(e)
         }), 500
 
+@jira_issues_bp.route('/stats/environment', methods=['GET'])
+def get_jira_stats_by_environment():
+    """환경별 JIRA 통계 조회"""
+    try:
+        from sqlalchemy import func
+        
+        # TestCase를 통해 환경별 이슈 통계 계산
+        environment_stats = {}
+        
+        # 각 환경별로 이슈 수 집계
+        # TestCase의 environment를 기준으로 연결된 JiraIssue를 조회
+        environments = ['dev', 'alpha', 'staging', 'production', 'prod']
+        
+        for env in environments:
+            # 해당 환경의 테스트 케이스에 연결된 이슈 수
+            issue_count = db.session.query(func.count(JiraIssue.id)).join(
+                TestCase, JiraIssue.test_case_id == TestCase.id
+            ).filter(TestCase.environment == env).scalar() or 0
+            
+            # 상태별 통계
+            status_counts = db.session.query(
+                JiraIssue.status,
+                func.count(JiraIssue.id)
+            ).join(
+                TestCase, JiraIssue.test_case_id == TestCase.id
+            ).filter(TestCase.environment == env).group_by(JiraIssue.status).all()
+            
+            environment_stats[env] = {
+                'totalIssues': issue_count,
+                'issuesByStatus': dict(status_counts) if status_counts else {}
+            }
+        
+        return jsonify({
+            'success': True,
+            'data': environment_stats
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
