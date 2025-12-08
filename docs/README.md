@@ -1,78 +1,49 @@
-# Integrated Test Platform
+# 프로젝트 문서
 
-## 프로젝트 개요
-통합 테스트 플랫폼으로, 성능 테스트, 자동화 테스트, 테스트 케이스 관리 등을 제공합니다.
+이 폴더에는 프로젝트의 모든 문서가 포함되어 있습니다.
 
-## 환경 변수 설정
+## 📁 폴더 구조
 
-### Vercel 환경에서 필요한 환경 변수
+### 📊 일반 문서
+- **API_TESTING_GUIDE.md** - API 테스트 가이드
+- **AUTH_SYSTEM_PLAN.md** - 인증 시스템 계획
+- **DEPLOYMENT_SUMMARY.md** - 배포 요약
+- **JIRA_INTEGRATION_PLAN.md** - JIRA 통합 계획
+- **PERMISSION_GUIDE.md** - 권한 가이드
+- **POSTMAN_USAGE_GUIDE.md** - Postman 사용 가이드
+- **PROJECT_STRUCTURE.md** - 프로젝트 구조 설명
+- **TESTING_GUIDE.md** - 테스트 가이드
+- **S3_SETUP_GUIDE.md** - S3 설정 가이드
 
-백엔드가 Vercel에서 정상 작동하려면 다음 환경 변수들을 설정해야 합니다:
+### 🗄️ 데이터베이스 관련 (`database/`)
+로컬 및 원격 데이터베이스 설정 가이드
+- LOCAL_DATABASE_SETUP.md
+- LOCAL_DB_SETUP.md
+- LOCAL_MYSQL_RESTORE.md
+- MYSQL_WORKBENCH_CONNECTION.md
+- UBUNTU_MYSQL_SETUP.md
 
-```bash
-# Flask 설정
-SECRET_KEY=your-secret-key-here
-FLASK_ENV=production
+### 🚀 배포 관련 (`deployment/`)
+배포 및 인프라 설정 가이드
+- VERCEL_DEPLOYMENT_GUIDE.md
+- S3_BACKUP_GUIDE.md
 
-# 데이터베이스 설정 (Vercel 환경)
-DATABASE_URL=mysql+pymysql://username:password@host:port/database_name?ssl_mode=VERIFY_IDENTITY
+### 📈 리포트 (`reports/`)
+프로젝트 분석 및 정리 리포트
+- TESTCASE_ANALYSIS_REPORT.md
+- PROJECT_CLEANUP_SUMMARY.md
 
-# CORS 설정 (Vercel 환경)
-CORS_ORIGINS=https://frontend-alpha-ten-pi.vercel.app,https://frontend-alpha-jade-15.vercel.app
+## 🚀 빠른 시작
 
-# Vercel 환경 변수 (자동 설정됨)
-VERCEL=1
-VERCEL_URL=https://your-backend.vercel.app
-```
+### 새로 시작하는 경우
+1. [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) - 프로젝트 구조 이해
+2. [database/README.md](./database/README.md) - 데이터베이스 설정
+3. [TESTING_GUIDE.md](./TESTING_GUIDE.md) - 테스트 실행 방법
 
-### 로컬 개발 환경
-로컬에서는 기본 설정을 사용하며, 별도 환경 변수 설정이 필요하지 않습니다.
+### 배포하는 경우
+1. [deployment/README.md](./deployment/README.md) - 배포 가이드 확인
+2. [VERCEL_DEPLOYMENT_GUIDE.md](./deployment/VERCEL_DEPLOYMENT_GUIDE.md) - Vercel 배포
 
-## CORS 문제 해결
+## 📖 문서 검색
 
-### 문제 상황
-프론트엔드에서 백엔드 API 호출 시 CORS 정책 위반 오류가 발생하는 경우:
-
-```
-Access to XMLHttpRequest at 'https://backend-alpha-liard.vercel.app/health' 
-from origin 'https://frontend-alpha-ten-pi.vercel.app' has been blocked by CORS policy
-```
-
-### 해결 방법
-
-1. **환경 변수 확인**: Vercel 대시보드에서 `DATABASE_URL`과 `CORS_ORIGINS` 설정
-2. **백엔드 재배포**: 환경 변수 변경 후 백엔드 재배포
-3. **CORS 설정 확인**: `utils/cors.py`의 `setup_cors` 함수가 Vercel 환경에서만 실행되는지 확인
-
-## 배포 가이드
-
-### 백엔드 배포 (Vercel)
-1. 환경 변수 설정
-2. `vercel.json` 설정 확인
-3. Git push로 자동 배포
-
-### 프론트엔드 배포 (Vercel)
-1. `config.js`에서 API URL 확인
-2. Git push로 자동 배포
-
-## 개발 환경 실행
-
-### 백엔드 (로컬)
-```bash
-cd backend
-python app.py
-```
-
-### 프론트엔드 (로컬)
-```bash
-cd frontend
-npm start
-```
-
-## 문제 해결
-
-### 데이터를 불러올 수 없는 경우
-1. 백엔드 헬스체크: `/health` 엔드포인트 접근 확인
-2. CORS 설정: 브라우저 개발자 도구에서 CORS 오류 확인
-3. 환경 변수: Vercel 환경 변수 설정 확인
-4. 로그 확인: Vercel 함수 로그에서 오류 메시지 확인 
+특정 주제를 찾으려면 각 폴더의 README.md를 참조하세요.
