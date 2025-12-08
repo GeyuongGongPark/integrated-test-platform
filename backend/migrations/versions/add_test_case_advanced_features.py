@@ -172,7 +172,20 @@ def upgrade():
             if not column_exists('TestResults', 'error_message'):
                 batch_op.add_column(sa.Column('error_message', sa.Text(), nullable=True))
 
-    # 6. 인덱스 추가 (성능 최적화)
+    # 6. TestCases 테이블에 assignee_id 컬럼 추가
+    if table_exists('TestCases'):
+        with op.batch_alter_table('TestCases', schema=None) as batch_op:
+            # assignee_id 컬럼 추가 (존재하지 않는 경우에만)
+            if not column_exists('TestCases', 'assignee_id'):
+                batch_op.add_column(sa.Column('assignee_id', sa.Integer(), nullable=True))
+                # 외래키 추가 (Users 테이블이 존재하는 경우에만)
+                if table_exists('Users'):
+                    try:
+                        batch_op.create_foreign_key('fk_testcases_assignee', 'Users', ['assignee_id'], ['id'])
+                    except Exception:
+                        pass  # 외래키가 이미 존재할 수 있음
+    
+    # 7. 인덱스 추가 (성능 최적화)
     if table_exists('TestCases'):
         with op.batch_alter_table('TestCases', schema=None) as batch_op:
             # environment 인덱스
@@ -233,6 +246,14 @@ def downgrade():
                 batch_op.drop_index('idx_testcases_result_status')
             if index_exists('TestCases', 'idx_testcases_environment'):
                 batch_op.drop_index('idx_testcases_environment')
+            
+            # assignee_id 컬럼 제거
+            if column_exists('TestCases', 'assignee_id'):
+                try:
+                    batch_op.drop_constraint('fk_testcases_assignee', type_='foreignkey')
+                except:
+                    pass
+                batch_op.drop_column('assignee_id')
 
     # TestResults 테이블 필드 제거
     if table_exists('TestResults'):
