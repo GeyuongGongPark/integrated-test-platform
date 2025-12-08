@@ -5,10 +5,8 @@ import './JiraIssuesList.css';
 import '../common/Modal.css';
 
 const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
-  console.log('[JiraIssuesList] render, modalMode =', modalMode, 'testCaseId =', testCaseId);
   // 안전 가드: 명시적으로 false가 아닌 한 모달 사용
   const useModal = modalMode !== false;
-  console.log('[JiraIssuesList] useModal =', useModal);
   const [jiraIssues, setJiraIssues] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

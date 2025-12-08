@@ -1,13 +1,16 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from datetime import datetime
 import os
 import time
 from dotenv import load_dotenv
 from sqlalchemy import text
-from models import db, Project, User, Folder, TestCase, PerformanceTest, AutomationTest, TestResult
-from utils.auth_decorators import admin_required, user_required, guest_allowed
+from sqlalchemy import inspect
+
+# 모델 및 Blueprint 임포트
+from models import db, TestCase, TestResult, Screenshot
 from routes.testcases import testcases_bp
 from routes.testcases_extended import testcases_extended_bp
 from routes.dashboard_extended import dashboard_extended_bp
@@ -17,19 +20,26 @@ from routes.folders import folders_bp
 from routes.users import users_bp
 from routes.auth import auth_bp
 from routes.test_scripts import test_scripts_bp
-# from routes.jira_integration import jira_bp  # deprecated
 from routes.jira_issues import jira_issues_bp
+from routes.schedules import schedules_bp
+from routes.queue import queue_bp
+from routes.notifications import notifications_bp
+from routes.analytics import analytics_bp
+from routes.cicd import cicd_bp
+from routes.test_data import test_data_bp
+from routes.collaboration import collaboration_bp
+from routes.dependencies import dependencies_bp
+from routes.reports import reports_bp
 from utils.cors import setup_cors
 from flask_jwt_extended import JWTManager
-from datetime import timedelta
-from utils.timezone_utils import get_kst_now, get_kst_isoformat, get_kst_datetime_string
+from utils.cors import setup_cors
 from utils.logger import get_logger
-from utils.error_handler import handle_api_error, APIError
-from utils.response_utils import success_response, error_response
-
-# .env 파일 로드 (절대 경로 사용)
-env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
-load_dotenv(env_path)
+from utils.timezone_utils import get_kst_now, get_kst_isoformat
+from utils.common_helpers import handle_options_request
+from utils.jwt_callbacks import setup_jwt_callbacks
+from utils.db_init import initialize_database
+from config.app_config import configure_app, is_vercel_environment
+from utils.auth_decorators import user_required
 
 # 로거 초기화
 logger = get_logger(__name__)
@@ -37,80 +47,14 @@ logger = get_logger(__name__)
 # Flask 앱 생성
 app = Flask(__name__)
 
-# 기본 설정
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'fallback-secret-key'
-
-# JWT 설정
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)  # 24시간으로 연장
-app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)  # 30일로 연장
+# 앱 설정 적용
+configure_app(app)
 
 # 환경 확인
-is_vercel = 'vercel.app' in os.environ.get('VERCEL_URL', '') or os.environ.get('VERCEL') == '1'
-is_local = not is_vercel
+is_vercel = is_vercel_environment()
 
-# 데이터베이스 URL 설정 (로컬 개발 환경에서는 MySQL 강제 사용)
+# CORS 설정
 if is_vercel:
-    # Vercel 환경에서는 환경 변수 사용
-    database_url = os.environ.get('DATABASE_URL')
-    
-    # DATABASE_URL이 없으면 SQLite 사용
-    if not database_url:
-        logger.warning("DATABASE_URL이 설정되지 않음, SQLite 사용")
-        database_url = 'sqlite:///:memory:'
-    elif database_url.startswith('mysql://'):
-        database_url = database_url.replace('mysql://', 'mysql+pymysql://')
-        # ssl_mode 파라미터 제거하고 기본 SSL 설정 사용
-        if '?' in database_url:
-            # 기존 파라미터가 있으면 ssl_mode만 제거
-            params = database_url.split('?')[1].split('&')
-            filtered_params = [p for p in params if not p.startswith('ssl_mode=')]
-            if filtered_params:
-                database_url = database_url.split('?')[0] + '?' + '&'.join(filtered_params)
-        logger.info("Vercel 환경에서 MySQL 연결 설정 적용")
-    else:
-        logger.info(f"Vercel 환경에서 데이터베이스 URL 사용: {database_url[:20]}...")
-else:
-    # 로컬 개발 환경에서는 로컬 MySQL 사용
-    database_url = 'mysql+pymysql://root:1q2w#E$R@localhost:3306/test_management'
-    logger.info("로컬 환경에서 로컬 MySQL 사용")
-
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# 환경별 데이터베이스 엔진 옵션 설정
-def get_database_engine_options():
-    """데이터베이스 엔진 옵션 설정"""
-    if is_vercel and 'sqlite' in database_url:
-        logger.info("Vercel 환경에서 SQLite 사용")
-        return {}
-    else:
-        # MySQL 환경 (Vercel 또는 로컬)
-        return {
-            'pool_pre_ping': True,
-            'pool_recycle': 300,
-            'connect_args': {
-                'connect_timeout': 10,
-                'read_timeout': 30,
-                'write_timeout': 30,
-                'ssl': {'ssl': True}
-            }
-        }
-
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = get_database_engine_options()
-
-# 환경 변수 로깅 (디버깅용)
-logger.debug(f"Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
-logger.debug(f"Secret Key: {app.config['SECRET_KEY']}")
-logger.debug(f"JWT Secret Key: {app.config['JWT_SECRET_KEY']}")
-logger.info(f"Environment: {'production' if is_vercel else 'development'}")
-logger.debug(f"Vercel URL: {os.environ.get('VERCEL_URL', 'Not Vercel')}")
-logger.debug(f".env 파일 경로: {env_path}")
-logger.debug(f".env 파일 존재: {os.path.exists(env_path)}")
-
-# CORS 설정 (데이터베이스 초기화 전에)
-if is_vercel:
-    from utils.cors import setup_cors
     setup_cors(app)
 else:
     # 로컬 환경에서는 모든 origin 허용
@@ -120,8 +64,17 @@ else:
 db.init_app(app)
 migrate = Migrate(app, db)
 
-# JWT 초기화
+# JWT 초기화 및 콜백 설정
 jwt = JWTManager(app)
+
+# SocketIO 초기화 (CORS 설정 포함)
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='eventlet',
+    logger=True,
+    engineio_logger=True
+)
 
 @jwt.expired_token_loader
 def expired_token_callback(jwt_header, jwt_payload):
@@ -160,8 +113,16 @@ app.register_blueprint(folders_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(test_scripts_bp, url_prefix='/api/test-scripts')
-# app.register_blueprint(jira_bp)  # deprecated
 app.register_blueprint(jira_issues_bp)
+app.register_blueprint(schedules_bp)
+app.register_blueprint(queue_bp)
+app.register_blueprint(notifications_bp)
+app.register_blueprint(analytics_bp)
+app.register_blueprint(cicd_bp)
+app.register_blueprint(test_data_bp)
+app.register_blueprint(collaboration_bp)
+app.register_blueprint(dependencies_bp)
+app.register_blueprint(reports_bp)
 
 # 헬퍼 함수들
 def create_cors_response(data=None, status_code=200):
@@ -186,29 +147,27 @@ def get_environment_folders(env):
         return [3, 6]
 
 def calculate_test_results(env_folders):
-    """환경별 테스트 결과 계산"""
+    """환경별 테스트 결과 계산 (최적화: 단일 쿼리로 통합)"""
     try:
-        passed_tests = db.session.query(TestResult).join(TestCase).filter(
-            TestCase.folder_id.in_(env_folders),
-            TestResult.result == 'Pass'
-        ).count()
-        failed_tests = db.session.query(TestResult).join(TestCase).filter(
-            TestCase.folder_id.in_(env_folders),
-            TestResult.result == 'Fail'
-        ).count()
-        nt_tests = db.session.query(TestResult).join(TestCase).filter(
-            TestCase.folder_id.in_(env_folders),
-            TestResult.result == 'N/T'
-        ).count()
-        na_tests = db.session.query(TestResult).join(TestCase).filter(
-            TestCase.folder_id.in_(env_folders),
-            TestResult.result == 'N/A'
-        ).count()
-        blocked_tests = db.session.query(TestResult).join(TestCase).filter(
-            TestCase.folder_id.in_(env_folders),
-            TestResult.result == 'Block'
-        ).count()
-        return passed_tests, failed_tests, nt_tests, na_tests, blocked_tests
+        from sqlalchemy import func
+        # 단일 쿼리로 모든 결과 타입을 한 번에 계산
+        results = db.session.query(
+            TestResult.result,
+            func.count(TestResult.id).label('count')
+        ).join(TestCase).filter(
+            TestCase.folder_id.in_(env_folders)
+        ).group_by(TestResult.result).all()
+        
+        # 결과를 딕셔너리로 변환
+        result_dict = {row.result: row.count for row in results}
+        
+        return (
+            result_dict.get('Pass', 0),
+            result_dict.get('Fail', 0),
+            result_dict.get('N/T', 0),
+            result_dict.get('N/A', 0),
+            result_dict.get('Block', 0)
+        )
     except Exception:
         return 0, 0, 0, 0, 0
 
@@ -235,20 +194,21 @@ def handle_options(path):
 # 기본 라우트들
 @app.route('/health', methods=['GET', 'OPTIONS'])
 def health_check():
+    """헬스 체크 엔드포인트"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
     try:
+        from utils.db_helper import get_database_info
+        
         # 데이터베이스 연결 테스트
-        if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
-            # SQLite의 경우 간단한 테스트
-            db.session.execute(text('SELECT 1'))
-            db_status = 'connected'
-        else:
-            # MySQL의 경우 연결 테스트
-            db.session.execute(text('SELECT 1'))
+        db.session.execute(text('SELECT 1'))
+        if 'mysql' in app.config['SQLALCHEMY_DATABASE_URI']:
             db.session.commit()
-            db_status = 'connected'
+        db_status = 'connected'
+        
+        # 데이터베이스 정보 가져오기
+        db_info = get_database_info(app.config['SQLALCHEMY_DATABASE_URI'])
         
         response = jsonify({
             'status': 'healthy', 
@@ -258,8 +218,8 @@ def health_check():
             'environment': 'production' if is_vercel else 'development',
             'database': {
                 'status': db_status,
-                'url_set': 'Yes' if os.environ.get('DATABASE_URL') else 'No',
-                'type': 'MySQL' if 'mysql' in app.config['SQLALCHEMY_DATABASE_URI'] else 'SQLite'
+                'type': db_info.get('type', 'Unknown'),
+                'info': db_info
             }
         })
         return response, 200
@@ -268,7 +228,12 @@ def health_check():
         error_msg = str(e)
         logger.error(f"Health check 오류: {error_msg}")
         
-        # 오류가 발생해도 앱은 정상 작동 중임을 표시
+        try:
+            from utils.db_helper import get_database_info
+            db_info = get_database_info(app.config['SQLALCHEMY_DATABASE_URI'])
+        except Exception:
+            db_info = {}
+        
         response = jsonify({
             'status': 'degraded', 
             'message': 'Test Platform Backend is running (with database issues)',
@@ -277,15 +242,17 @@ def health_check():
             'environment': 'production' if is_vercel else 'development',
             'database': {
                 'status': 'error',
+                'type': db_info.get('type', 'Unknown'),
                 'error': error_msg,
-                'url': app.config['SQLALCHEMY_DATABASE_URI']
+                'info': db_info
             },
             'note': 'Application is running but database connection failed'
         })
-        return response, 200  # 200으로 응답하여 앱이 작동 중임을 표시
+        return response, 200
 
 @app.route('/cors-test', methods=['GET', 'OPTIONS'])
 def cors_test():
+    """CORS 테스트 엔드포인트"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
@@ -311,7 +278,6 @@ def simple_cors_test():
     if request.method == 'OPTIONS':
         return handle_options_request()
     
-    # 실제 요청에 대한 응답
     response = jsonify({
         'status': 'success',
         'message': 'Simple CORS test successful',
@@ -333,263 +299,20 @@ def ping():
         'environment': 'production' if is_vercel else 'development'
     }), 200
 
-def test_database_connection():
-    """데이터베이스 연결 테스트 및 재시도 로직"""
-    max_retries = 3
-    retry_delay = 5 # 초 단위
-    
-    for i in range(max_retries):
-        try:
-            # 데이터베이스 연결 테스트
-            if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
-                db.session.execute(text('SELECT 1'))
-                logger.info(f"SQLite 연결 테스트 성공 (시도 {i+1}/{max_retries})")
-                return True
-            else:
-                db.session.execute(text('SELECT 1'))
-                db.session.commit()
-                logger.info(f"MySQL 연결 테스트 성공 (시도 {i+1}/{max_retries})")
-                return True
-        except Exception as e:
-            logger.error(f"데이터베이스 연결 실패 (시도 {i+1}/{max_retries}): {e}")
-            if i < max_retries - 1:
-                logger.info(f"{retry_delay}초 후 다시 시도...")
-                time.sleep(retry_delay)
-            else:
-                logger.error("데이터베이스 연결 재시도 실패. 앱을 종료합니다.")
-                return False
-    return False
-
 @app.route('/init-db', methods=['GET', 'POST', 'OPTIONS'])
 def init_database():
+    """데이터베이스 초기화 엔드포인트"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
-    try:
-        # 데이터베이스 연결 테스트 및 재시도
-        if not test_database_connection():
-            return jsonify({
-                'status': 'error',
-                'message': 'Database connection failed after multiple retries',
-                'timestamp': get_kst_isoformat(get_kst_now()),
-                'error_type': 'ConnectionError',
-                'database_url': app.config['SQLALCHEMY_DATABASE_URI'][:50] + '...' if len(app.config['SQLALCHEMY_DATABASE_URI']) > 50 else app.config['SQLALCHEMY_DATABASE_URI'],
-                'environment': 'production' if is_vercel else 'development'
-            }), 500
-        
-        with app.app_context():
-            # 테이블이 존재하지 않으면 자동 생성
-            db.create_all()
-            logger.info("데이터베이스 테이블 생성 완료")
-            
-            # 세션 격리 설정
-            db.session.autoflush = False
-            logger.info("세션 autoflush 비활성화")
-            
-            # 기본 사용자 생성 (테스트용)
-            from models import User
-            
-            # 각 사용자를 개별적으로 처리하여 세션 충돌 방지
-            users_to_create = []
-            
-            # admin 사용자 체크 및 생성 준비
-            if not User.query.filter_by(username='admin').first():
-                admin_user = User(
-                    username='admin',
-                    email='admin@test.com',
-                    first_name='관리자',
-                    last_name='시스템',
-                    role='admin',
-                    is_active=True
-                )
-                admin_user.set_password('admin123')
-                users_to_create.append(admin_user)
-                logger.info("admin 사용자 생성 준비 완료")
-            else:
-                logger.info("admin 사용자가 이미 존재합니다")
-            
-            # testuser 체크 및 생성 준비
-            if not User.query.filter_by(username='testuser').first():
-                test_user = User(
-                    username='testuser',
-                    email='test@test.com',
-                    first_name='테스트',
-                    last_name='사용자',
-                    role='user',
-                    is_active=True
-                )
-                test_user.set_password('test123')
-                users_to_create.append(test_user)
-                logger.info("testuser 생성 준비 완료")
-            else:
-                logger.info("testuser가 이미 존재합니다")
-            
-            # 준비된 사용자들을 개별적으로 추가하고 커밋
-            if users_to_create:
-                for user in users_to_create:
-                    try:
-                        db.session.add(user)
-                        db.session.commit()
-                        logger.info(f"사용자 {user.username} 생성 완료")
-                    except Exception as user_error:
-                        db.session.rollback()
-                        logger.error(f"사용자 {user.username} 생성 실패: {user_error}")
-                        # 중복 오류인 경우 무시
-                        if 'duplicate' not in str(user_error).lower() and 'unique' not in str(user_error).lower():
-                            raise user_error
-                logger.info(f"{len(users_to_create)}명의 사용자 생성 완료")
-            else:
-                logger.info("생성할 사용자가 없습니다")
-            
-            logger.info("데이터베이스 초기화 완료")
-            
-            # 세션 정리
-            db.session.close()
-            logger.info("세션 정리 완료")
-            
-        response = jsonify({
-            'status': 'success',
-            'message': 'Database initialized successfully',
-            'timestamp': get_kst_isoformat(get_kst_now())
-        })
-        return response, 200
-    except Exception as e:
-        logger.error(f"init-db 오류 발생: {str(e)}")
-        logger.error(f"오류 타입: {type(e)}")
-        import traceback
-        logger.error(f"상세 오류: {traceback.format_exc()}")
-        
-        # 세션 롤백
-        try:
-            db.session.rollback()
-            logger.info("데이터베이스 세션 롤백 완료")
-        except Exception as rollback_error:
-            logger.error(f"롤백 중 오류 발생: {rollback_error}")
-        
-        response = jsonify({
-            'status': 'error',
-            'message': f'Database initialization failed: {str(e)}',
-            'timestamp': get_kst_isoformat(get_kst_now()),
-            'error_type': str(type(e)),
-            'traceback': traceback.format_exc()
-        })
-        return response, 500
+    result, status_code = initialize_database(app)
+    response = jsonify(result)
+    return response, status_code
 
-# 테스트 케이스 API
-@app.route('/testcases', methods=['GET', 'OPTIONS'])
-def get_testcases():
-    if request.method == 'OPTIONS':
-        return handle_options_request()
-    
-    try:
-        testcases = TestCase.query.all()
-        data = [{
-            'id': tc.id,
-            'name': tc.name,
-            'description': tc.description,
-            'test_type': tc.test_type,
-            'script_path': tc.script_path,
-            'folder_id': tc.folder_id,
-            'main_category': tc.main_category,
-            'sub_category': tc.sub_category,
-            'detail_category': tc.detail_category,
-            'pre_condition': tc.pre_condition,
-            'expected_result': tc.expected_result,
-            'remark': tc.remark,
-            'automation_code_path': tc.automation_code_path,
-            'environment': tc.environment,
-            'created_at': tc.created_at.isoformat(),
-            'updated_at': tc.updated_at.isoformat()
-        } for tc in testcases]
-        response = jsonify(data)
-        return response, 200
-    except Exception as e:
-        response = jsonify({'error': str(e)})
-        return response, 500
-
-# 테스트 케이스 생성은 routes/testcases.py Blueprint에서 처리
-# 중복 제거
-
-# 성능 테스트 API는 performance.py Blueprint에서 처리
-
-# 대시보드 API는 dashboard_extended.py Blueprint에서 처리
-
-# 폴더 API는 folders.py Blueprint에서 처리
-
-# 자동화 테스트 API는 automation.py Blueprint에서 처리
-
-# 프로젝트 API
-@app.route('/projects', methods=['GET', 'OPTIONS'])
-def get_projects():
-    if request.method == 'OPTIONS':
-        return handle_options_request()
-    
-    try:
-        projects = Project.query.all()
-        data = [{
-            'id': p.id,
-            'name': p.name,
-            'description': p.description
-        } for p in projects]
-        response = jsonify(data)
-        return response, 200
-    except Exception as e:
-        response = jsonify({'error': str(e)})
-        return response, 500
-
-# 사용자 API는 users.py Blueprint에서 처리
-
-# 추가 테스트 케이스 API들
-@app.route('/testcases/summary/all', methods=['GET', 'OPTIONS'])
-@guest_allowed
-def get_testcase_summaries():
-    if request.method == 'OPTIONS':
-        return handle_options_request()
-    
-    try:
-        # 환경별 테스트 케이스 요약 데이터 생성
-        environments = ['dev', 'alpha', 'production']
-        summaries = []
-        
-        for env in environments:
-            # 해당 환경의 테스트 케이스 수 계산
-            env_folders = get_environment_folders(env)
-            total_testcases = TestCase.query.filter(TestCase.folder_id.in_(env_folders)).count()
-            
-            # TestResult 테이블에서 해당 환경의 테스트 케이스 결과 조회
-            try:
-                passed_tests, failed_tests, nt_tests, na_tests, blocked_tests = calculate_test_results(env_folders)
-            except Exception:
-                # TestResult 테이블이 없거나 조인 실패 시 기본값 사용
-                passed_tests, failed_tests, nt_tests, na_tests, blocked_tests = 0, 0, 0, 0, 0
-            
-            # TestResult 테이블에 데이터가 없으면 기본값으로 현실적인 분포 생성
-            if total_testcases > 0 and (passed_tests + failed_tests + nt_tests + na_tests + blocked_tests) == 0:
-                passed_tests, failed_tests, nt_tests, na_tests, blocked_tests = generate_realistic_test_distribution(total_testcases)
-            
-            # 프론트엔드에서 기대하는 형식으로 데이터 구성
-            summary = {
-                'environment': env,
-                'total_testcases': total_testcases,
-                'passed': passed_tests,
-                'failed': failed_tests,
-                'nt': nt_tests,
-                'na': na_tests,
-                'blocked': blocked_tests,
-                'pass_rate': round((passed_tests / total_testcases * 100) if total_testcases > 0 else 0, 2),
-                'last_updated': get_kst_datetime_string('%Y-%m-%d %H:%M:%S')
-            }
-            summaries.append(summary)
-        
-        # 프론트엔드에서 기대하는 배열 형태로 반환
-        response = jsonify(summaries)
-        return response, 200
-    except Exception as e:
-        response = jsonify({'error': str(e)})
-        return response, 500
-
+# 테스트 케이스 관련 라우트 (Blueprint에 없는 일부 라우트만 유지)
 @app.route('/testcases/<int:testcase_id>', methods=['GET', 'PUT', 'DELETE', 'OPTIONS'])
 def manage_testcase(testcase_id):
+    """테스트 케이스 관리 (단일 엔드포인트)"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
@@ -612,8 +335,8 @@ def manage_testcase(testcase_id):
                 'remark': testcase.remark,
                 'automation_code_path': testcase.automation_code_path,
                 'environment': testcase.environment,
-                            'created_at': testcase.created_at.isoformat(),
-            'updated_at': testcase.updated_at.isoformat()
+                'created_at': testcase.created_at.isoformat(),
+                'updated_at': testcase.updated_at.isoformat()
             }
             return jsonify(data), 200
         
@@ -638,6 +361,7 @@ def manage_testcase(testcase_id):
 
 @app.route('/testcases/<int:testcase_id>/status', methods=['PUT', 'OPTIONS'])
 def update_testcase_status(testcase_id):
+    """테스트 케이스 상태 업데이트"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
@@ -652,9 +376,9 @@ def update_testcase_status(testcase_id):
             test_result = TestResult(test_case_id=testcase_id)
             db.session.add(test_result)
         
-        test_result.result = new_status  # status -> result로 변경
+        test_result.result = new_status
         test_result.execution_time = data.get('execution_time', 0)
-        test_result.notes = data.get('result_data', '')  # result_data -> notes로 변경
+        test_result.notes = data.get('result_data', '')
         db.session.commit()
         
         return jsonify({'status': 'success', 'message': 'Test case status updated successfully'}), 200
@@ -663,11 +387,11 @@ def update_testcase_status(testcase_id):
 
 @app.route('/testcases/<int:testcase_id>/screenshots', methods=['GET', 'OPTIONS'])
 def get_testcase_screenshots(testcase_id):
+    """테스트 케이스 스크린샷 조회"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
     try:
-        # 테스트 결과의 스크린샷 조회 (alpha DB 스키마에 맞춤)
         test_results = TestResult.query.filter_by(test_case_id=testcase_id).all()
         screenshots = []
         
@@ -676,53 +400,29 @@ def get_testcase_screenshots(testcase_id):
             for screenshot in result_screenshots:
                 screenshots.append({
                     'id': screenshot.id,
-                    'screenshot_path': screenshot.file_path,  # alpha DB는 file_path 사용
-                    'timestamp': screenshot.created_at.isoformat() if screenshot.created_at else None  # alpha DB는 created_at 사용
+                    'screenshot_path': screenshot.file_path,
+                    'timestamp': screenshot.created_at.isoformat() if screenshot.created_at else None
                 })
         
-        # alpha DB에는 직접 test_case_id로 연결된 스크린샷이 없으므로 제거
-        
         return jsonify(screenshots), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/testcases/upload', methods=['POST', 'OPTIONS'])
-def upload_testcases():
-    if request.method == 'OPTIONS':
-        return handle_options_request()
-    
-    try:
-        # 파일 업로드 처리 (실제 구현은 파일 처리 로직 필요)
-        return jsonify({'status': 'success', 'message': 'File uploaded successfully'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/testcases/download', methods=['GET', 'OPTIONS'])
-def download_testcases():
-    if request.method == 'OPTIONS':
-        return handle_options_request()
-    
-    try:
-        # 테스트 케이스 다운로드 처리 (실제 구현은 파일 생성 로직 필요)
-        return jsonify({'status': 'success', 'message': 'Download ready'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/testcases/<int:testcase_id>/execute', methods=['POST', 'OPTIONS'])
 @user_required
 def execute_testcase(testcase_id):
+    """테스트 케이스 실행"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
     try:
         testcase = TestCase.query.get_or_404(testcase_id)
         
-        # 테스트 실행 로직 (실제 구현은 테스트 실행 엔진 필요)
         test_result = TestResult(
             test_case_id=testcase_id,
-            result='running',  # status -> result로 변경
+            result='running',
             execution_time=0,
-            notes='Test execution started'  # result_data -> notes로 변경
+            notes='Test execution started'
         )
         db.session.add(test_result)
         db.session.commit()
@@ -735,23 +435,21 @@ def execute_testcase(testcase_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# 추가 테스트 관련 엔드포인트들
+# 테스트 실행 결과 관련 라우트
 @app.route('/test', methods=['GET', 'OPTIONS'])
 def get_test_data():
+    """테스트 데이터 조회"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
     try:
-        # 테스트 데이터 반환 - status 컬럼이 없을 경우를 대비
         total_testcases = TestCase.query.count()
         
-        # TestResult 테이블의 result 컬럼 사용
         try:
             running_tests = TestResult.query.filter_by(result='running').count()
             completed_tests = TestResult.query.filter_by(result='completed').count()
             failed_tests = TestResult.query.filter_by(result='failed').count()
         except Exception:
-            # result 컬럼이 없으면 기본값 사용
             running_tests = 0
             completed_tests = 0
             failed_tests = 0
@@ -761,7 +459,7 @@ def get_test_data():
             'running_tests': running_tests,
             'completed_tests': completed_tests,
             'failed_tests': failed_tests,
-            'last_updated': get_kst_datetime_string('%Y-%m-%d %H:%M:%S')
+            'last_updated': get_kst_now().strftime('%Y-%m-%d %H:%M:%S')
         }
         return jsonify(test_data), 200
     except Exception as e:
@@ -769,15 +467,14 @@ def get_test_data():
 
 @app.route('/test-executions', methods=['GET', 'OPTIONS'])
 def get_test_executions():
+    """테스트 실행 결과 조회"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
     try:
-        # 테스트 실행 결과 조회 - status 컬럼이 없을 경우를 대비
         try:
             executions = TestResult.query.all()
         except Exception:
-            # TestResult 테이블에 result 컬럼이 없으면 빈 배열 반환
             return jsonify([]), 200
         
         data = []
@@ -787,14 +484,13 @@ def get_test_executions():
                 execution_data = {
                     'id': exe.id,
                     'test_case_id': exe.test_case_id,
-                    'status': getattr(exe, 'result', 'unknown'),  # result 컬럼 사용
+                    'status': getattr(exe, 'result', 'unknown'),
                     'execution_time': exe.execution_time,
-                    'notes': exe.notes,  # result_data -> notes로 변경
+                    'notes': exe.notes,
                     'created_at': exe.created_at.isoformat()
                 }
                 data.append(execution_data)
             except Exception:
-                # 개별 레코드에서 오류가 발생해도 계속 진행
                 continue
         
         return jsonify(data), 200
@@ -803,38 +499,37 @@ def get_test_executions():
 
 @app.route('/testresults/<int:testcase_id>', methods=['GET', 'OPTIONS'])
 def get_test_results(testcase_id):
+    """특정 테스트 케이스의 결과 조회"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
     try:
-        # 특정 테스트 케이스의 결과 조회
         results = TestResult.query.filter_by(test_case_id=testcase_id).all()
         data = [{
             'id': result.id,
             'test_case_id': result.test_case_id,
-            'status': result.result,  # status -> result로 변경
+            'status': result.result,
             'execution_time': result.execution_time,
-            'notes': result.notes,  # result_data -> notes로 변경
+            'notes': result.notes,
             'created_at': result.created_at.isoformat()
         } for result in results]
         return jsonify(data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# 기능 폴더 추가 API
+# 폴더 관련 라우트
 @app.route('/folders/feature', methods=['POST', 'OPTIONS'])
 def add_feature_folders():
+    """기능 폴더 추가"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
     try:
-        # 기존 날짜 폴더들에 기능 폴더 추가
-        from datetime import datetime
+        from models import Folder
+        from utils.timezone_utils import get_kst_now
         
-        # 날짜 폴더 ID들 (4, 5, 6)
         date_folder_ids = [4, 5, 6]
         
-        # 기능 폴더들
         feature_folders = [
             {'name': 'CLM/Draft', 'parent_id': 4},
             {'name': 'CLM/Review', 'parent_id': 4},
@@ -847,7 +542,6 @@ def add_feature_folders():
         
         added_folders = []
         for feature in feature_folders:
-            # 이미 존재하는지 확인
             existing = Folder.query.filter_by(name=feature['name'], parent_id=feature['parent_id']).first()
             if not existing:
                 new_folder = Folder(
@@ -875,50 +569,58 @@ def add_feature_folders():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-# 테스트 케이스 폴더 재배치 API
 @app.route('/testcases/reorganize', methods=['POST', 'OPTIONS'])
 def reorganize_testcases():
+    """테스트 케이스 폴더 재배치"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
     try:
-        # 테스트 케이스 이름에 따라 적절한 기능 폴더로 이동
-        testcases = TestCase.query.all()
+        # 테스트 케이스 이름에 따라 적절한 기능 폴더로 이동 (최적화: 배치 처리)
+        # 모든 테스트 케이스를 한 번에 조회하되, 필요한 필드만 선택
+        testcases = db.session.query(TestCase.id, TestCase.name, TestCase.folder_id).all()
         moved_count = 0
         
+        updates = []
         for tc in testcases:
             new_folder_id = None
             
-            # CLM 관련 테스트 케이스들을 CLM 기능 폴더로 이동
             if 'CLM' in tc.name:
                 if 'Draft' in tc.name:
-                    new_folder_id = 7  # CLM/Draft
+                    new_folder_id = 7
                 elif 'Review' in tc.name:
-                    new_folder_id = 8  # CLM/Review
+                    new_folder_id = 8
                 elif 'Sign' in tc.name:
-                    new_folder_id = 9  # CLM/Sign
+                    new_folder_id = 9
                 elif 'Process' in tc.name:
-                    new_folder_id = 10  # CLM/Process
+                    new_folder_id = 10
                 else:
-                    new_folder_id = 7  # 기본적으로 CLM/Draft
-            # Litigation 관련 테스트 케이스들을 Litigation 기능 폴더로 이동
+                    new_folder_id = 7
             elif 'Litigation' in tc.name:
                 if 'Draft' in tc.name:
-                    new_folder_id = 11  # Litigation/Draft
+                    new_folder_id = 11
                 elif 'Schedule' in tc.name:
-                    new_folder_id = 12  # Litigation/Schedule
+                    new_folder_id = 12
                 else:
-                    new_folder_id = 11  # 기본적으로 Litigation/Draft
-            # Dashboard 관련 테스트 케이스들을 Dashboard 기능 폴더로 이동
+                    new_folder_id = 11
             elif 'Dashboard' in tc.name:
-                new_folder_id = 13  # Dashboard/Setting
+                new_folder_id = 13
             
             if new_folder_id and tc.folder_id != new_folder_id:
-                tc.folder_id = new_folder_id
+                updates.append({'id': tc.id, 'folder_id': new_folder_id})
                 moved_count += 1
         
-        if moved_count > 0:
+        # 배치 업데이트 실행
+        if updates:
+            # SQLAlchemy의 bulk update 사용
+            for update in updates:
+                db.session.query(TestCase).filter(TestCase.id == update['id']).update(
+                    {TestCase.folder_id: update['folder_id']},
+                    synchronize_session=False
+                )
             db.session.commit()
+        
+        if moved_count > 0:
             return jsonify({
                 'status': 'success',
                 'message': f'{moved_count}개의 테스트 케이스가 기능 폴더로 이동되었습니다.'
@@ -933,20 +635,16 @@ def reorganize_testcases():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-# 데이터베이스 연결 상태 확인 API (기존 /health 라우트와 통합됨)
-
 @app.route('/db-status', methods=['GET', 'OPTIONS'])
 def check_database_status():
+    """데이터베이스 연결 상태 확인"""
     if request.method == 'OPTIONS':
         return handle_options_request()
     
     try:
-        # 데이터베이스 연결 상태 확인
         db.session.execute(text('SELECT 1'))
         
-        # Users 테이블 구조 확인
         try:
-            from sqlalchemy import inspect
             inspector = inspect(db.engine)
             columns = inspector.get_columns('Users')
             
@@ -969,7 +667,6 @@ def check_database_status():
                     table_info['last_login_exists'] = True
                     table_info['last_login_info'] = col_info
             
-            # 샘플 사용자 데이터 확인
             try:
                 from models import User
                 sample_user = User.query.first()
@@ -1013,7 +710,51 @@ def check_database_status():
 #     """스크린샷 파일 직접 제공 - 클라우드 전환 시 S3로 대체"""
 #     pass
 
+# 앱 종료 시 스케줄러 정리
+import atexit
+from services.scheduler_service import scheduler_service
+
+def shutdown_scheduler():
+    """앱 종료 시 스케줄러 종료"""
+    scheduler_service.shutdown()
+
+atexit.register(shutdown_scheduler)
+
+# 앱 시작 시 기존 스케줄 로드
+def load_existing_schedules():
+    """앱 시작 시 기존 활성 스케줄을 스케줄러에 로드"""
+    try:
+        from models import TestSchedule
+        from routes.schedules import execute_scheduled_test
+        import json
+        
+        active_schedules = TestSchedule.query.filter(
+            TestSchedule.enabled == True,
+            TestSchedule.active == True
+        ).all()
+        
+        for schedule in active_schedules:
+            execution_params = json.loads(schedule.execution_parameters) if schedule.execution_parameters else None
+            scheduler_service.add_schedule(
+                schedule.id,
+                schedule.test_case_id,
+                schedule.schedule_type,
+                schedule.schedule_expression,
+                schedule.environment,
+                execution_params,
+                execute_scheduled_test
+            )
+            logger.info(f"기존 스케줄 로드 완료: {schedule.name} (ID: {schedule.id})")
+    except Exception as e:
+        logger.error(f"기존 스케줄 로드 오류: {str(e)}")
+
+# SocketIO 핸들러 등록
+from socketio_handlers import register_socketio_handlers
+register_socketio_handlers(socketio)
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, host='0.0.0.0', port=8000) 
+        load_existing_schedules()
+    # SocketIO를 사용하여 앱 실행
+    socketio.run(app, debug=True, host='0.0.0.0', port=8000, allow_unsafe_werkzeug=True) 

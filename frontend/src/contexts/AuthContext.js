@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
     setToken(access_token);
     setUser(userData);
     localStorage.setItem('token', access_token);
-    console.log('🎉 인증 성공 처리 완료 - 토큰과 사용자 정보 설정됨');
+    console.log('🎉 인증 성공 처리 완료 - 토큰과 사용자 정보 설정됨', { access_token, userData });
   };
 
   const handleAuthError = (error, source = '요청') => {

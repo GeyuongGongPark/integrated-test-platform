@@ -393,14 +393,7 @@ const UnifiedDashboard = ({ setActiveTab }) => {
       setLoading(true);
       setError(null);
       
-      // 헬스체크 요청
-      try {
-        const healthRes = await axios.get('/health');
-        
-      } catch (healthErr) {
-        // 헬스체크 오류는 조용히 처리
-      }
-      
+      // 최적화: 불필요한 헬스체크 요청 제거, 병렬 요청만 유지
       const [testCasesRes, performanceTestsRes, testExecutionsRes, summariesRes, testcaseSummariesRes, jiraStatsRes, jiraEnvironmentStatsRes, jiraRecentIssuesRes] = await Promise.all([
         axios.get(`/testcases?page=1&per_page=${itemsPerPage}`),
         axios.get(`/performance-tests?page=1&per_page=${itemsPerPage}`),

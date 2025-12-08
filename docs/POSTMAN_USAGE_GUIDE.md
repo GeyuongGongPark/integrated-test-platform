@@ -13,11 +13,12 @@
 ### 2. 백엔드 서버 실행
 ```bash
 cd backend
+source venv/bin/activate
 python app.py
 ```
 
 ### 3. Postman 컬렉션 Import
-- `postman_collection.json` 파일을 Postman에 Import
+- `docs/postman_collection_v2.5.0_complete.json` 파일을 Postman에 Import
 - 또는 아래 가이드에 따라 수동으로 컬렉션 생성
 
 ## 🌐 환경 설정
@@ -35,6 +36,11 @@ python app.py
     {
       "key": "environment",
       "value": "development",
+      "enabled": true
+    },
+    {
+      "key": "auth_token",
+      "value": "",
       "enabled": true
     }
   ]
@@ -55,6 +61,11 @@ python app.py
       "key": "environment",
       "value": "production",
       "enabled": true
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "enabled": true
     }
   ]
 }
@@ -69,280 +80,310 @@ python app.py
 - **URL**: `{{base_url}}/health`
 - **Description**: 서버 상태 및 데이터베이스 연결 확인
 - **Expected Response**: 200 OK
+
+### 2. 협업 및 워크플로우 API
+
+#### GET /comments
+- **Method**: GET
+- **URL**: `{{base_url}}/comments?entity_type=test_case&entity_id=1`
+- **Headers**: `Authorization: Bearer {{auth_token}}`
+- **Description**: 댓글 목록 조회
+
+#### POST /comments
+- **Method**: POST
+- **URL**: `{{base_url}}/comments`
+- **Headers**: 
+  - `Content-Type: application/json`
+  - `Authorization: Bearer {{auth_token}}`
+- **Body**:
 ```json
 {
-  "status": "healthy",
-  "message": "Test Platform Backend is running",
-  "version": "2.0.1",
-  "timestamp": "2025-08-13T10:33:30.382318",
-  "environment": "development",
-  "database": {
-    "status": "connected",
-    "url_set": "Yes"
+  "entity_type": "test_case",
+  "entity_id": 1,
+  "content": "이 테스트 케이스는 잘 작성되었습니다. @admin 확인 부탁드립니다."
+}
+```
+
+#### GET /mentions
+- **Method**: GET
+- **URL**: `{{base_url}}/mentions`
+- **Headers**: `Authorization: Bearer {{auth_token}}`
+- **Description**: 멘션 목록 조회
+
+#### GET /workflows
+- **Method**: GET
+- **URL**: `{{base_url}}/workflows`
+- **Description**: 워크플로우 목록 조회
+
+### 3. 테스트 의존성 관리 API
+
+#### GET /dependencies
+- **Method**: GET
+- **URL**: `{{base_url}}/dependencies?test_case_id=1`
+- **Description**: 의존성 목록 조회
+
+#### POST /dependencies
+- **Method**: POST
+- **URL**: `{{base_url}}/dependencies`
+- **Headers**: 
+  - `Content-Type: application/json`
+  - `Authorization: Bearer {{auth_token}}`
+- **Body**:
+```json
+{
+  "test_case_id": 1,
+  "depends_on_test_case_id": 2,
+  "dependency_type": "required",
+  "condition": {
+    "result": "Pass"
   }
 }
 ```
 
-### 2. 폴더 관리 API
-
-#### GET /folders
+#### GET /dependencies/graph
 - **Method**: GET
-- **URL**: `{{base_url}}/folders`
-- **Description**: 모든 폴더 목록 조회
-- **Expected Response**: 200 OK
-```json
-[
-  {
-    "id": 1,
-    "folder_name": "DEV 환경",
-    "folder_type": "environment",
-    "environment": "dev",
-    "deployment_date": null,
-    "parent_folder_id": null,
-    "project_id": null,
-    "created_at": "2025-08-03 11:22:59"
-  }
-]
-```
+- **URL**: `{{base_url}}/dependencies/graph?test_case_ids=1,2,3`
+- **Description**: 의존성 그래프 조회
 
-#### GET /folders/tree
-- **Method**: GET
-- **URL**: `{{base_url}}/folders/tree`
-- **Description**: 계층적 폴더 구조 조회
-- **Expected Response**: 200 OK
-```json
-[
-  {
-    "id": 1,
-    "folder_name": "DEV 환경",
-    "folder_type": "environment",
-    "environment": "dev",
-    "type": "environment",
-    "children": [
-      {
-        "id": 4,
-        "folder_name": "2025-08-13",
-        "folder_type": "deployment_date",
-        "type": "deployment_date",
-        "children": []
-      }
-    ]
-  }
-]
-```
-
-#### POST /folders
+#### POST /dependencies/execution-order
 - **Method**: POST
-- **URL**: `{{base_url}}/folders`
-- **Headers**: `Content-Type: application/json`
+- **URL**: `{{base_url}}/dependencies/execution-order`
 - **Body**:
 ```json
 {
-  "folder_name": "새 폴더",
-  "folder_type": "feature",
+  "test_case_ids": [1, 2, 3]
+}
+```
+
+### 4. 커스텀 리포트 API
+
+#### GET /reports
+- **Method**: GET
+- **URL**: `{{base_url}}/reports`
+- **Description**: 리포트 목록 조회
+
+#### POST /reports
+- **Method**: POST
+- **URL**: `{{base_url}}/reports`
+- **Headers**: 
+  - `Content-Type: application/json`
+  - `Authorization: Bearer {{auth_token}}`
+- **Body**:
+```json
+{
+  "name": "테스트 실행 리포트",
+  "report_type": "test_execution",
+  "config": {
+    "include_summary": true,
+    "include_details": true
+  },
+  "filters": {
+    "start_date": "2025-01-01",
+    "end_date": "2025-01-09"
+  },
+  "output_format": "html"
+}
+```
+
+#### POST /reports/{id}/generate
+- **Method**: POST
+- **URL**: `{{base_url}}/reports/1/generate`
+- **Headers**: `Authorization: Bearer {{auth_token}}`
+- **Body**:
+```json
+{
+  "execution_params": {
+    "include_charts": true
+  }
+}
+```
+
+### 5. 테스트 데이터 관리 API
+
+#### GET /test-data/datasets
+- **Method**: GET
+- **URL**: `{{base_url}}/test-data/datasets?environment=dev`
+- **Description**: 데이터 세트 목록 조회
+
+#### POST /test-data/datasets
+- **Method**: POST
+- **URL**: `{{base_url}}/test-data/datasets`
+- **Headers**: 
+  - `Content-Type: application/json`
+  - `Authorization: Bearer {{auth_token}}`
+- **Body**:
+```json
+{
+  "name": "로그인 테스트 데이터",
+  "data": {
+    "username": "testuser",
+    "password": "testpass123"
+  },
   "environment": "dev",
-  "parent_folder_id": 4,
-  "deployment_date": "2025-08-13"
+  "masking_enabled": true,
+  "masking_rules": {
+    "password": {
+      "type": "mask",
+      "mask_char": "*"
+    }
+  }
 }
 ```
 
-### 3. 테스트 케이스 API
-
-#### GET /testcases
-- **Method**: GET
-- **URL**: `{{base_url}}/testcases`
-- **Description**: 모든 테스트 케이스 조회
-- **Expected Response**: 200 OK
-
-#### POST /testcases
+#### POST /test-data/generate
 - **Method**: POST
-- **URL**: `{{base_url}}/testcases`
-- **Headers**: `Content-Type: application/json`
+- **URL**: `{{base_url}}/test-data/generate`
+- **Headers**: `Authorization: Bearer {{auth_token}}`
 - **Body**:
 ```json
 {
-  "name": "로그인 테스트",
-  "description": "사용자 로그인 기능 테스트",
-  "main_category": "인증",
-  "sub_category": "로그인",
-  "detail_category": "정상 로그인",
-  "pre_condition": "사용자가 등록되어 있어야 함",
-  "expected_result": "로그인이 성공적으로 완료되어야 함",
-  "folder_id": 7,
+  "schema": {
+    "username": {
+      "type": "string",
+      "length": 10
+    },
+    "email": {
+      "type": "email"
+    }
+  },
+  "count": 5
+}
+```
+
+### 6. 알림 시스템 API
+
+#### GET /notifications
+- **Method**: GET
+- **URL**: `{{base_url}}/notifications?unread_only=true`
+- **Headers**: `Authorization: Bearer {{auth_token}}`
+- **Description**: 알림 목록 조회
+
+#### POST /notifications/{id}/read
+- **Method**: POST
+- **URL**: `{{base_url}}/notifications/1/read`
+- **Headers**: `Authorization: Bearer {{auth_token}}`
+- **Description**: 알림 읽음 처리
+
+#### GET /notifications/settings
+- **Method**: GET
+- **URL**: `{{base_url}}/notifications/settings`
+- **Headers**: `Authorization: Bearer {{auth_token}}`
+- **Description**: 알림 설정 조회
+
+### 7. 스케줄 관리 API
+
+#### GET /schedules
+- **Method**: GET
+- **URL**: `{{base_url}}/schedules`
+- **Description**: 스케줄 목록 조회
+
+#### POST /schedules
+- **Method**: POST
+- **URL**: `{{base_url}}/schedules`
+- **Headers**: 
+  - `Content-Type: application/json`
+  - `Authorization: Bearer {{auth_token}}`
+- **Body**:
+```json
+{
+  "test_case_id": 1,
+  "name": "매일 오전 9시 테스트",
+  "schedule_type": "daily",
+  "schedule_expression": "9:0",
   "environment": "dev"
 }
 ```
 
-#### GET /testcases/{id}
-- **Method**: GET
-- **URL**: `{{base_url}}/testcases/1`
-- **Description**: 특정 테스트 케이스 조회
-- **Expected Response**: 200 OK
-
-#### PUT /testcases/{id}
-- **Method**: PUT
-- **URL**: `{{base_url}}/testcases/1`
-- **Headers**: `Content-Type: application/json`
-- **Body**:
-```json
-{
-  "name": "수정된 로그인 테스트",
-  "description": "수정된 설명"
-}
-```
-
-#### DELETE /testcases/{id}
-- **Method**: DELETE
-- **URL**: `{{base_url}}/testcases/1`
-- **Description**: 테스트 케이스 삭제
-- **Expected Response**: 200 OK
-
-### 4. 테스트 케이스 확장 API
-
-#### PUT /testcases/{id}/status
-- **Method**: PUT
-- **URL**: `{{base_url}}/testcases/1/status`
-- **Headers**: `Content-Type: application/json`
-- **Body**:
-```json
-{
-  "status": "Pass"
-}
-```
-
-#### POST /testcases/upload
+#### POST /schedules/{id}/run-now
 - **Method**: POST
-- **URL**: `{{base_url}}/testcases/upload`
-- **Headers**: `Content-Type: multipart/form-data`
-- **Body**: `form-data`
-  - Key: `file`, Type: `File`, Value: Excel 파일 선택
+- **URL**: `{{base_url}}/schedules/1/run-now`
+- **Headers**: `Authorization: Bearer {{auth_token}}`
+- **Description**: 스케줄 즉시 실행
 
-#### GET /testcases/download
-- **Method**: GET
-- **URL**: `{{base_url}}/testcases/download`
-- **Description**: 테스트 케이스를 Excel 파일로 다운로드
-- **Expected Response**: 200 OK
+### 8. 큐 관리 API
 
-#### POST /testcases/{id}/execute
+#### POST /queue/testcases/{id}/execute
 - **Method**: POST
-- **URL**: `{{base_url}}/testcases/1/execute`
-- **Headers**: `Content-Type: application/json`
+- **URL**: `{{base_url}}/queue/testcases/1/execute`
+- **Headers**: `Authorization: Bearer {{auth_token}}`
 - **Body**:
 ```json
 {
   "environment": "dev",
-  "parameters": {
-    "base_url": "http://localhost:3000",
-    "username": "testuser"
+  "execution_parameters": {}
+}
+```
+
+#### GET /queue/tasks/{task_id}
+- **Method**: GET
+- **URL**: `{{base_url}}/queue/tasks/abc123`
+- **Description**: 작업 상태 조회
+
+#### GET /queue/stats
+- **Method**: GET
+- **URL**: `{{base_url}}/queue/stats`
+- **Description**: 큐 통계 조회
+
+### 9. 분석 및 트렌드 API
+
+#### GET /analytics/trends
+- **Method**: GET
+- **URL**: `{{base_url}}/analytics/trends?days=30`
+- **Description**: 트렌드 분석
+
+#### GET /analytics/flaky-tests
+- **Method**: GET
+- **URL**: `{{base_url}}/analytics/flaky-tests`
+- **Description**: Flaky 테스트 감지
+
+#### GET /analytics/test-health
+- **Method**: GET
+- **URL**: `{{base_url}}/analytics/test-health`
+- **Description**: 테스트 헬스 분석
+
+### 10. CI/CD 통합 API
+
+#### GET /cicd/integrations
+- **Method**: GET
+- **URL**: `{{base_url}}/cicd/integrations`
+- **Description**: CI/CD 통합 목록 조회
+
+#### POST /cicd/integrations
+- **Method**: POST
+- **URL**: `{{base_url}}/cicd/integrations`
+- **Headers**: 
+  - `Content-Type: application/json`
+  - `Authorization: Bearer {{auth_token}}`
+- **Body**:
+```json
+{
+  "integration_type": "github",
+  "name": "GitHub Actions 통합",
+  "config": {
+    "repository": "owner/repo",
+    "github_token": "ghp_xxx"
   }
 }
 ```
 
-### 5. 성능 테스트 API
-
-#### GET /performance-tests
-- **Method**: GET
-- **URL**: `{{base_url}}/performance-tests`
-- **Description**: 성능 테스트 목록 조회
-
-#### POST /performance-tests
-- **Method**: POST
-- **URL**: `{{base_url}}/performance-tests`
-- **Headers**: `Content-Type: application/json`
-- **Body**:
-```json
-{
-  "name": "로그인 성능 테스트",
-  "description": "로그인 기능의 성능을 테스트합니다",
-  "k6_script_path": "/test-scripts/performance/login/login.js",
-  "environment": "dev",
-  "parameters": "{\"vus\": 10, \"duration\": \"30s\"}"
-}
-```
-
-### 6. 자동화 테스트 API
-
-#### GET /automation-tests
-- **Method**: GET
-- **URL**: `{{base_url}}/automation-tests`
-- **Description**: 자동화 테스트 목록 조회
-
-#### POST /automation-tests
-- **Method**: POST
-- **URL**: `{{base_url}}/automation-tests`
-- **Headers**: `Content-Type: application/json`
-- **Body**:
-```json
-{
-  "name": "로그인 자동화 테스트",
-  "description": "로그인 기능을 자동화로 테스트합니다",
-  "test_type": "playwright",
-  "script_path": "/test-scripts/automation/login.spec.js",
-  "environment": "dev",
-  "parameters": "{\"base_url\": \"http://localhost:3000\"}"
-}
-```
-
-### 7. 대시보드 API
-
-#### GET /dashboard-summaries
-- **Method**: GET
-- **URL**: `{{base_url}}/dashboard-summaries`
-- **Description**: 대시보드 요약 정보 조회
-
-#### GET /testcases/summary/all
-- **Method**: GET
-- **URL**: `{{base_url}}/testcases/summary/all`
-- **Description**: 전체 테스트 케이스 통계 조회
-
-#### GET /test-executions
-- **Method**: GET
-- **URL**: `{{base_url}}/test-executions`
-- **Description**: 테스트 실행 기록 조회
-
-#### GET /testresults/{testcase_id}
-- **Method**: GET
-- **URL**: `{{base_url}}/testresults/1`
-- **Description**: 특정 테스트 케이스의 결과 조회
-
-### 8. 사용자 관리 API
-
-#### GET /users
-- **Method**: GET
-- **URL**: `{{base_url}}/users`
-- **Description**: 사용자 목록 조회
-
-#### GET /users/current
-- **Method**: GET
-- **URL**: `{{base_url}}/users/current`
-- **Description**: 현재 로그인한 사용자 정보
-
-### 9. 프로젝트 관리 API
-
-#### GET /projects
-- **Method**: GET
-- **URL**: `{{base_url}}/projects`
-- **Description**: 프로젝트 목록 조회
-
 ## 🧪 테스트 시나리오
 
-### 1. 기본 워크플로우 테스트
-1. **Health Check**: 서버 상태 확인
-2. **폴더 생성**: 새 폴더 생성
-3. **테스트 케이스 생성**: 새 테스트 케이스 추가
-4. **테스트 케이스 조회**: 생성된 테스트 케이스 확인
-5. **테스트 케이스 수정**: 정보 업데이트
-6. **테스트 케이스 삭제**: 정리
+### 1. 협업 워크플로우 테스트
+1. **댓글 생성**: 테스트 케이스에 댓글 추가
+2. **멘션 확인**: 멘션된 사용자에게 알림 확인
+3. **워크플로우 적용**: 테스트 케이스에 워크플로우 적용
+4. **상태 전환**: 워크플로우 상태 전환
 
-### 2. 파일 업로드/다운로드 테스트
-1. **Excel 업로드**: 테스트 케이스 일괄 등록
-2. **Excel 다운로드**: 데이터 내보내기
-3. **데이터 검증**: 업로드된 데이터 확인
+### 2. 의존성 관리 테스트
+1. **의존성 생성**: 테스트 케이스 간 의존성 정의
+2. **의존성 그래프 조회**: 의존성 관계 시각화
+3. **실행 순서 계산**: 의존성 기반 실행 순서 확인
+4. **의존성 조건 확인**: 실행 가능 여부 확인
 
-### 3. 성능 테스트 워크플로우
-1. **성능 테스트 생성**: 새 성능 테스트 등록
-2. **테스트 실행**: 성능 테스트 실행
-3. **결과 확인**: 실행 결과 조회
+### 3. 리포트 생성 테스트
+1. **리포트 생성**: 커스텀 리포트 정의
+2. **리포트 실행**: 리포트 생성 및 실행
+3. **리포트 다운로드**: 생성된 리포트 다운로드
 
 ## 🔧 Postman 고급 기능 활용
 
@@ -414,22 +455,16 @@ if (pm.response.code === 200) {
   - 환경 변수 설정 확인
 
 #### 2. 401 Authentication Required
-- **원인**: Vercel 인증 설정
+- **원인**: JWT 토큰이 없거나 만료됨
 - **해결책**: 
-  - `VERCEL_AUTH_DISABLED=true` 환경 변수 설정
-  - Vercel Dashboard에서 인증 설정 변경
+  - 로그인하여 새 토큰 획득
+  - Authorization 헤더에 토큰 포함
 
 #### 3. CORS 오류
 - **원인**: 프론트엔드와 백엔드 도메인 불일치
 - **해결책**: 
   - 백엔드 CORS 설정 확인
   - 올바른 API URL 사용
-
-#### 4. 404 Not Found
-- **원인**: 잘못된 URL 또는 존재하지 않는 리소스
-- **해결책**: 
-  - URL 경로 확인
-  - 리소스 ID 확인
 
 ### 디버깅 방법
 
@@ -473,17 +508,6 @@ pm.test("Authentication token is valid", function () {
 });
 ```
 
-### 권한 테스트
-```javascript
-// 권한 확인
-pm.test("User has required permissions", function () {
-    const response = pm.response.json();
-    if (pm.request.method === 'DELETE') {
-        pm.expect(response.status).to.not.equal('forbidden');
-    }
-});
-```
-
 ## 📚 추가 리소스
 
 ### Postman 학습 자료
@@ -497,6 +521,6 @@ pm.test("User has required permissions", function () {
 
 ---
 
-**마지막 업데이트**: 2025년 8월 13일
-**가이드 버전**: 2.0.1
+**마지막 업데이트**: 2025년 1월 9일
+**가이드 버전**: 2.5.0
 **상태**: 모든 API 엔드포인트 테스트 가능

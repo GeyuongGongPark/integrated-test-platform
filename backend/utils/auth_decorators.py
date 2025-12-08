@@ -184,3 +184,24 @@ def owner_required(fn):
         except Exception:
             return jsonify({'error': '로그인이 필요합니다.'}), 401
     return wrapper
+
+def get_user_from_token(token):
+    """JWT 토큰에서 사용자 정보 추출 (SocketIO 등에서 사용)"""
+    try:
+        from flask_jwt_extended import decode_token
+        from models import User
+        
+        decoded_token = decode_token(token)
+        user_id = decoded_token.get('sub')
+        
+        if user_id == 'guest':
+            return None
+        
+        user = User.query.get(int(user_id))
+        if user and user.is_active:
+            return user
+        
+        return None
+    except Exception as e:
+        logger.error(f"토큰에서 사용자 정보 추출 오류: {str(e)}")
+        return None

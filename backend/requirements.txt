@@ -10,4 +10,11 @@ requests==2.31.0
 cryptography==41.0.7
 pandas==2.3.1
 pytz==2024.1
-monaco-editor==0.0.1 
+monaco-editor==0.0.1
+APScheduler==3.10.4
+croniter==2.0.1
+celery==5.3.4
+redis==5.0.1
+flask-socketio==5.3.6
+python-socketio==5.10.0
+eventlet==0.33.3 

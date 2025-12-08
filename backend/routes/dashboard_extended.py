@@ -12,7 +12,7 @@ dashboard_extended_bp = Blueprint('dashboard_extended', __name__)
 @dashboard_extended_bp.route('/dashboard-summaries', methods=['GET', 'OPTIONS'])
 def get_dashboard_summaries():
     if request.method == 'OPTIONS':
-        from app import handle_options_request
+        from utils.common_helpers import handle_options_request
         return handle_options_request()
     
     try:

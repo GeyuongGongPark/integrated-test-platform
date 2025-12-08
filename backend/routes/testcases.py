@@ -2,6 +2,9 @@ from flask import Blueprint, request, jsonify, send_file
 from models import db, TestCase, TestResult, Screenshot, Project, Folder, User, TestCaseTemplate, TestPlan, TestPlanTestCase
 from utils.cors import add_cors_headers
 from utils.auth_decorators import admin_required, user_required, guest_allowed
+from utils.serializers import serialize_testcase, serialize_project, serialize_folder
+from services.testcase_service import TestCaseService
+from services.report_service import ReportService
 from datetime import datetime, timedelta
 from utils.timezone_utils import get_kst_now, get_kst_isoformat
 import pandas as pd
@@ -23,11 +26,7 @@ testcases_bp = Blueprint('testcases', __name__)
 @testcases_bp.route('/projects', methods=['GET'])
 def get_projects():
     projects = Project.query.all()
-    data = [{
-        'id': p.id,
-        'name': p.name,
-        'description': p.description
-    } for p in projects]
+    data = [serialize_project(p) for p in projects]
     response = jsonify(data)
     return add_cors_headers(response), 200
 
@@ -47,121 +46,49 @@ def create_project():
 @testcases_bp.route('/testcases', methods=['GET', 'OPTIONS'])
 def get_testcases():
     if request.method == 'OPTIONS':
-        from app import handle_options_request
+        from utils.common_helpers import handle_options_request
         return handle_options_request()
     
     try:
-        # 페이징 파라미터 처리
         page = request.args.get('page', None, type=int)
         per_page = request.args.get('per_page', None, type=int)
         
-        # 페이징 파라미터가 없으면 전체 데이터 반환
-        if page is None or per_page is None:
-            testcases = TestCase.query.all()
-            data = [{
-                'id': tc.id,
-                'name': tc.name,
-                'description': tc.description,
-                'test_type': tc.test_type,
-                'script_path': tc.script_path,
-                'folder_id': tc.folder_id,
-                'main_category': tc.main_category,
-                'sub_category': tc.sub_category,
-                'detail_category': tc.detail_category,
-                'pre_condition': tc.pre_condition,
-                'expected_result': tc.expected_result,
-                'remark': tc.remark,
-                'automation_code_path': tc.automation_code_path,
-                'environment': tc.environment,
-                'result_status': tc.result_status,
-                'creator_id': tc.creator_id,
-                'assignee_id': tc.assignee_id,
-                'creator_name': tc.creator.username if tc.creator else None,
-                'assignee_name': tc.assignee.username if tc.assignee else None,
-                'created_at': tc.created_at.isoformat(),
-                'updated_at': tc.updated_at.isoformat()
-            } for tc in testcases]
-            
-            response = jsonify(data)
-            return add_cors_headers(response), 200
+        data, pagination = TestCaseService.get_testcases(page, per_page, include_relations=True)
         
-        # 페이지 번호와 per_page 유효성 검사
-        if page < 1:
-            page = 1
-        if per_page < 1 or per_page > 100:
-            per_page = 10
-        
-        # 전체 테스트 케이스 수 조회
-        total_count = TestCase.query.count()
-        
-        # 페이징된 테스트 케이스 조회
-        offset = (page - 1) * per_page
-        testcases = TestCase.query.offset(offset).limit(per_page).all()
-        
-        # 총 페이지 수 계산
-        total_pages = (total_count + per_page - 1) // per_page
-        has_next = page < total_pages
-        has_prev = page > 1
-        next_num = page + 1 if has_next else None
-        prev_num = page - 1 if has_prev else None
-        
-        # 데이터 직렬화
-        data = [{
-            'id': tc.id,
-            'name': tc.name,
-            'description': tc.description,
-            'test_type': tc.test_type,
-            'script_path': tc.script_path,
-            'folder_id': tc.folder_id,
-            'main_category': tc.main_category,
-            'sub_category': tc.sub_category,
-            'detail_category': tc.detail_category,
-            'pre_condition': tc.pre_condition,
-            'expected_result': tc.expected_result,
-            'remark': tc.remark,
-            'automation_code_path': tc.automation_code_path,
-            'environment': tc.environment,
-            'result_status': tc.result_status,
-            'creator_id': tc.creator_id,
-            'assignee_id': tc.assignee_id,
-            'creator_name': tc.creator.username if tc.creator else None,
-            'assignee_name': tc.assignee.username if tc.assignee else None,
-            'created_at': tc.created_at.isoformat(),
-            'updated_at': tc.updated_at.isoformat()
-        } for tc in testcases]
-        
-        # 페이징 정보 포함 응답
-        response_data = {
-            'items': data,
-            'pagination': {
-                'page': page,
-                'per_page': per_page,
-                'total': total_count,
-                'pages': total_pages,
-                'has_next': has_next,
-                'has_prev': has_prev,
-                'next_num': next_num,
-                'prev_num': prev_num
+        if pagination:
+            response_data = {
+                'items': data,
+                'pagination': pagination
             }
-        }
+        else:
+            response_data = data
         
         response = jsonify(response_data)
         return add_cors_headers(response), 200
         
     except Exception as e:
+        logger.error(f"테스트 케이스 조회 오류: {str(e)}")
         response = jsonify({'error': str(e)})
         return add_cors_headers(response), 500
 
 @testcases_bp.route('/testcases/<int:id>', methods=['GET'])
 @guest_allowed
 def get_testcase(id):
-    tc = TestCase.query.get_or_404(id)
+    from sqlalchemy.orm import joinedload
+    # N+1 쿼리 문제 해결: joinedload를 사용하여 관련 데이터를 한 번에 로드
+    tc = TestCase.query.options(
+        joinedload(TestCase.creator),
+        joinedload(TestCase.assignee)
+    ).get_or_404(id)
+    
     # alpha DB 스키마에 맞춤: Screenshot은 test_result_id를 통해 연결됨
+    # 최적화: test_result_id 목록을 한 번에 가져와서 IN 쿼리로 스크린샷 조회
     test_results = TestResult.query.filter_by(test_case_id=id).all()
-    screenshots = []
-    for result in test_results:
-        result_screenshots = Screenshot.query.filter_by(test_result_id=result.id).all()
-        screenshots.extend(result_screenshots)
+    if test_results:
+        result_ids = [result.id for result in test_results]
+        screenshots = Screenshot.query.filter(Screenshot.test_result_id.in_(result_ids)).all()
+    else:
+        screenshots = []
     
     screenshot_data = [{'id': ss.id, 'screenshot_path': ss.file_path, 'timestamp': ss.created_at} for ss in screenshots]
     data = {
@@ -275,6 +202,11 @@ def create_testcase():
         db.session.add(tc)
         db.session.commit()
         
+        # 캐시 무효화
+        from services.cache_service import cache_service
+        cache_service.invalidate_entity('testcase', tc.id)
+        cache_service.delete_pattern('testcases:list:*')
+        
         # 히스토리 추적
         try:
             track_test_case_creation(tc.id, data, 1)  # TODO: 실제 사용자 ID 사용
@@ -366,6 +298,17 @@ def update_testcase_status(id):
         # 상태 업데이트
         tc.result_status = new_status
         db.session.commit()
+        
+        # 알림 생성 (상태 변경 시)
+        try:
+            from services.notification_service import notification_service
+            if new_status == 'Fail':
+                # 실패 알림은 테스트 결과가 있을 때만 생성
+                latest_result = TestResult.query.filter_by(test_case_id=id).order_by(TestResult.executed_at.desc()).first()
+                if latest_result:
+                    notification_service.notify_test_failed(id, latest_result.id)
+        except Exception as notify_error:
+            logger.warning(f"알림 생성 실패: {str(notify_error)}")
         
         # 대시보드 요약 데이터 자동 업데이트
         if update_dashboard_summary_for_environment(tc.environment):
@@ -499,53 +442,42 @@ def bulk_delete_testcases():
         
         print(f"🗑️ 다중 테스트 케이스 삭제 시도: {len(testcase_ids)}개")
         
-        deleted_count = 0
-        failed_deletions = []
-        environments_to_update = set()
+        # 최적화: 한 번에 모든 테스트 케이스 조회
+        testcases_to_delete = TestCase.query.filter(TestCase.id.in_(testcase_ids)).all()
+        valid_ids = {tc.id for tc in testcases_to_delete}
+        invalid_ids = set(testcase_ids) - valid_ids
         
-        for testcase_id in testcase_ids:
-            try:
-                tc = TestCase.query.get(testcase_id)
-                if tc:
-                    environment = tc.environment
-                    testcase_name = tc.name
-                    
-                    print(f"🗑️ 테스트 케이스 삭제: {testcase_name} ({environment})")
-                    
-                    # 환경 정보 수집 (대시보드 업데이트용)
-                    environments_to_update.add(environment)
-                    
-                    # 연관된 데이터 먼저 삭제
-                    # 1. 테스트 결과 삭제
-                    test_results = TestResult.query.filter_by(test_case_id=testcase_id).all()
-                    for result in test_results:
-                        # 테스트 결과에 연결된 스크린샷 삭제
-                        screenshots = Screenshot.query.filter_by(test_result_id=result.id).all()
-                        for screenshot in screenshots:
-                            db.session.delete(screenshot)
-                        # 테스트 결과 삭제
-                        db.session.delete(result)
-                    
-                    # 2. 테스트 계획에서의 연결 삭제
-                    test_plan_testcases = TestPlanTestCase.query.filter_by(test_case_id=testcase_id).all()
-                    for ptc in test_plan_testcases:
-                        db.session.delete(ptc)
-                    
-                    # 3. 마지막으로 테스트 케이스 삭제
-                    db.session.delete(tc)
-                    deleted_count += 1
-                else:
-                    print(f"⚠️ 테스트 케이스 ID {testcase_id}를 찾을 수 없습니다")
-                    failed_deletions.append({
-                        'id': testcase_id,
-                        'error': '테스트 케이스를 찾을 수 없습니다'
-                    })
-            except Exception as e:
-                print(f"❌ 테스트 케이스 ID {testcase_id} 삭제 실패: {str(e)}")
-                failed_deletions.append({
-                    'id': testcase_id,
-                    'error': str(e)
-                })
+        # 환경 정보 수집 (대시보드 업데이트용)
+        environments_to_update = {tc.environment for tc in testcases_to_delete}
+        
+        if invalid_ids:
+            failed_deletions = [{
+                'id': testcase_id,
+                'error': '테스트 케이스를 찾을 수 없습니다'
+            } for testcase_id in invalid_ids]
+        else:
+            failed_deletions = []
+        
+        if testcases_to_delete:
+            # 연관된 데이터를 bulk delete로 최적화
+            testcase_ids_list = [tc.id for tc in testcases_to_delete]
+            
+            # 1. 스크린샷 삭제 (test_result_id를 통해)
+            test_result_ids = db.session.query(TestResult.id).filter(
+                TestResult.test_case_id.in_(testcase_ids_list)
+            ).subquery()
+            Screenshot.query.filter(Screenshot.test_result_id.in_(test_result_ids)).delete(synchronize_session=False)
+            
+            # 2. 테스트 결과 삭제
+            TestResult.query.filter(TestResult.test_case_id.in_(testcase_ids_list)).delete(synchronize_session=False)
+            
+            # 3. 테스트 계획에서의 연결 삭제
+            TestPlanTestCase.query.filter(TestPlanTestCase.test_case_id.in_(testcase_ids_list)).delete(synchronize_session=False)
+            
+            # 4. 테스트 케이스 삭제
+            deleted_count = TestCase.query.filter(TestCase.id.in_(testcase_ids_list)).delete(synchronize_session=False)
+        else:
+            deleted_count = 0
         
         # 모든 삭제 작업을 한 번에 커밋
         db.session.commit()
@@ -605,24 +537,23 @@ def get_test_results(test_case_id):
 
 @testcases_bp.route('/testcases/<int:id>/screenshots', methods=['GET'])
 def get_testcase_screenshots(id):
-    """테스트 케이스의 스크린샷 목록 조회"""
+    """테스트 케이스의 스크린샷 목록 조회 (최적화: N+1 쿼리 문제 해결)"""
     try:
         test_case = TestCase.query.get_or_404(id)
         # alpha DB 스키마에 맞춤: Screenshot은 test_result_id를 통해 연결됨
+        # 최적화: test_result_id 목록을 한 번에 가져와서 IN 쿼리로 스크린샷 조회
         test_results = TestResult.query.filter_by(test_case_id=id).all()
-        screenshots = []
-        for result in test_results:
-            result_screenshots = Screenshot.query.filter_by(test_result_id=result.id).all()
-            screenshots.extend(result_screenshots)
+        if test_results:
+            result_ids = [result.id for result in test_results]
+            screenshots = Screenshot.query.filter(Screenshot.test_result_id.in_(result_ids)).all()
+        else:
+            screenshots = []
         
-        screenshot_list = []
-        for screenshot in screenshots:
-            screenshot_data = {
-                'id': screenshot.id,
-                'screenshot_path': screenshot.file_path,  # alpha DB는 file_path 사용
-                'timestamp': screenshot.created_at.isoformat() if screenshot.created_at else None  # alpha DB는 created_at 사용
-            }
-            screenshot_list.append(screenshot_data)
+        screenshot_list = [{
+            'id': screenshot.id,
+            'screenshot_path': screenshot.file_path,  # alpha DB는 file_path 사용
+            'timestamp': screenshot.created_at.isoformat() if screenshot.created_at else None  # alpha DB는 created_at 사용
+        } for screenshot in screenshots]
         
         response = jsonify(screenshot_list)
         return add_cors_headers(response), 200
@@ -1577,39 +1508,16 @@ def export_test_report():
     """테스트 리포트 엑셀 내보내기"""
     try:
         data = request.get_json()
-        report_type = data.get('type', 'summary')  # summary, detailed, test_plan
+        report_type = data.get('type', 'summary')
         
         if report_type == 'summary':
-            # 요약 리포트 데이터 가져오기
-            summary_data = get_test_summary_report_data()
-            
-            # 엑셀 파일 생성
-            import pandas as pd
-            from io import BytesIO
-            
-            # 환경별 통계 시트
-            env_df = pd.DataFrame(summary_data['environment_stats'])
-            
-            # 카테고리별 통계 시트
-            cat_df = pd.DataFrame(summary_data['category_stats'])
-            
-            # 엑셀 파일 생성
-            output = BytesIO()
-            with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                env_df.to_excel(writer, sheet_name='Environment_Stats', index=False)
-                cat_df.to_excel(writer, sheet_name='Category_Stats', index=False)
-                
-                # 자동화 통계 시트
-                automation_df = pd.DataFrame([summary_data['automation_stats']])
-                automation_df.to_excel(writer, sheet_name='Automation_Stats', index=False)
-            
-            output.seek(0)
+            output, filename = ReportService.generate_test_summary_report('excel')
             
             response = send_file(
                 output,
                 mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 as_attachment=True,
-                download_name=f'test_summary_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+                download_name=filename
             )
             return add_cors_headers(response), 200
             
@@ -1622,58 +1530,4 @@ def export_test_report():
         response = jsonify({'error': str(e)})
         return add_cors_headers(response), 500
 
-def get_test_summary_report_data():
-    """테스트 요약 리포트 데이터 조회 (내부 함수)"""
-    # 환경별 통계
-    environment_stats = db.session.query(
-        TestCase.environment,
-        db.func.count(TestCase.id).label('total'),
-        db.func.sum(db.case([(TestCase.result_status == 'Pass', 1)], else_=0)).label('passed'),
-        db.func.sum(db.case([(TestCase.result_status == 'Fail', 1)], else_=0)).label('failed'),
-        db.func.sum(db.case([(TestCase.result_status == 'N/T', 1)], else_=0)).label('not_tested'),
-        db.func.sum(db.case([(TestCase.result_status == 'N/A', 1)], else_=0)).label('not_applicable'),
-        db.func.sum(db.case([(TestCase.result_status == 'Block', 1)], else_=0)).label('blocked')
-    ).group_by(TestCase.environment).all()
-    
-    # 카테고리별 통계
-    category_stats = db.session.query(
-        TestCase.main_category,
-        db.func.count(TestCase.id).label('total'),
-        db.func.sum(db.case([(TestCase.result_status == 'Pass', 1)], else_=0)).label('passed'),
-        db.func.sum(db.case([(TestCase.result_status == 'Fail', 1)], else_=0)).label('failed')
-    ).group_by(TestCase.main_category).all()
-    
-    # 자동화 통계
-    automation_stats = db.session.query(
-        db.func.count(TestCase.id).label('total'),
-        db.func.sum(db.case([(TestCase.automation_code_path.isnot(None), 1)], else_=0)).label('automated'),
-        db.func.sum(db.case([(TestCase.automation_code_path.is_(None), 1)], else_=0)).label('manual')
-    ).first()
-    
-    return {
-        'environment_stats': [{
-            'environment': stat.environment or 'Unknown',
-            'total': stat.total,
-            'passed': stat.passed or 0,
-            'failed': stat.failed or 0,
-            'not_tested': stat.not_tested or 0,
-            'not_applicable': stat.not_applicable or 0,
-            'blocked': stat.blocked or 0,
-            'pass_rate': round((stat.passed or 0) / stat.total * 100, 1) if stat.total > 0 else 0
-        } for stat in environment_stats],
-        
-        'category_stats': [{
-            'category': stat.main_category or 'Unknown',
-            'total': stat.total,
-            'passed': stat.passed or 0,
-            'failed': stat.failed or 0,
-            'pass_rate': round((stat.passed or 0) / stat.total * 100, 1) if stat.total > 0 else 0
-        } for stat in category_stats],
-        
-        'automation_stats': {
-            'total': automation_stats.total,
-            'automated': automation_stats.automated or 0,
-            'manual': automation_stats.manual or 0,
-            'automation_rate': round((automation_stats.automated or 0) / automation_stats.total * 100, 1) if automation_stats.total > 0 else 0
-        }
-    } 
+# get_test_summary_report_data 함수는 ReportService로 이동됨 
