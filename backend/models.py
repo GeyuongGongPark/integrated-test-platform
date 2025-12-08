@@ -853,6 +853,11 @@ class Comment(db.Model):
             'content': self.content,
             'parent_comment_id': self.parent_comment_id,
             'author_id': self.author_id,
+            'author': {
+                'id': self.author.id if self.author else None,
+                'username': self.author.username if self.author else None,
+                'email': self.author.email if self.author else None
+            } if self.author else None,
             'author_name': self.author.username if self.author else None,
             'author_email': self.author.email if self.author else None,
             'is_edited': self.is_edited,

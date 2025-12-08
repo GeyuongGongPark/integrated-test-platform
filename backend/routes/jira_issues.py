@@ -392,8 +392,15 @@ def get_comments(issue_key):
 
 @jira_issues_bp.route('/issues/<issue_key>/comments', methods=['POST'])
 def add_comment(issue_key):
-    """이슈에 댓글 추가"""
+    """이슈에 댓글 추가 (멘션 알림 포함)"""
     try:
+        from services.collaboration_service import collaboration_service
+        from models import User
+        from utils.logger import get_logger
+        import re
+        
+        logger = get_logger(__name__)
+        
         issue = JiraIssue.query.filter_by(issue_key=issue_key).first()
         
         if not issue:
@@ -410,14 +417,54 @@ def add_comment(issue_key):
                 'error': '댓글 내용은 필수입니다.'
             }), 400
         
+        comment_body = data['body']
+        author_email = data.get('author_email', 'admin@example.com')
+        
+        # JIRA 댓글 생성
         comment = JiraComment(
             jira_issue_id=issue.id,
-            body=data['body'],
-            author_email=data.get('author_email', 'admin@example.com')
+            body=comment_body,
+            author_email=author_email
         )
         
         db.session.add(comment)
         db.session.commit()
+        
+        # 멘션 추출 및 알림 생성
+        logger.info(f"🔍 JIRA 댓글 멘션 추출 시작: Issue {issue_key}, Body: {comment_body[:100]}...")
+        
+        mention_pattern = r'@(\w+)'
+        mentions = re.findall(mention_pattern, comment_body)
+        
+        if mentions:
+            logger.info(f"🔍 발견된 멘션 패턴: {mentions}")
+            
+            for username in mentions:
+                # 사용자 찾기 (대소문자 구분 없이)
+                user = User.query.filter(
+                    db.func.lower(User.username) == db.func.lower(username)
+                ).first()
+                
+                if user:
+                    logger.info(f"✅ 사용자 발견: User {user.id} ({user.username})")
+                    
+                    # 멘션 알림 생성
+                    try:
+                        from services.notification_service import notification_service
+                        
+                        notification = notification_service.create_notification(
+                            user_id=user.id,
+                            notification_type='mention',
+                            title='JIRA 이슈 멘션 알림',
+                            message=f"JIRA 이슈 '{issue_key}' 댓글에서 멘션되었습니다: {comment_body[:50]}...",
+                            related_test_case_id=None,  # JIRA 이슈는 테스트 케이스와 직접 연결되지 않을 수 있음
+                            priority='medium'
+                        )
+                        logger.info(f"✅ JIRA 멘션 알림 생성 성공: Notification ID {notification.id if notification else 'None'}")
+                    except Exception as e:
+                        logger.error(f"❌ JIRA 멘션 알림 생성 실패: {str(e)}", exc_info=True)
+                else:
+                    logger.warning(f"⚠️ 사용자를 찾을 수 없음: @{username}")
         
         return jsonify({
             'success': True,
@@ -427,6 +474,7 @@ def add_comment(issue_key):
         
     except Exception as e:
         db.session.rollback()
+        logger.error(f"JIRA 댓글 추가 오류: {str(e)}", exc_info=True)
         return jsonify({
             'success': False,
             'error': str(e)

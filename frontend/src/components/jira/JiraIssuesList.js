@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
+import { useAuth } from '../../contexts/AuthContext';
 import './JiraIssuesList.css';
 import '../common/Modal.css';
 
 const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
+  const { user } = useAuth();
   // 안전 가드: 명시적으로 false가 아닌 한 모달 사용
   const useModal = modalMode !== false;
   const [jiraIssues, setJiraIssues] = useState([]);
@@ -91,9 +93,10 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
   // 이슈에 댓글 추가
   const addComment = async (issueKey, comment) => {
     try {
+      const authorEmail = user?.email || user?.username + '@example.com' || 'admin@example.com';
       const response = await axios.post(`${config.apiUrl}/api/jira/issues/${issueKey}/comments`, {
         body: comment,
-        author_email: 'admin@example.com'
+        author_email: authorEmail
       });
       
       if (response.data.success) {
@@ -812,21 +815,49 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                           <small>첫 번째 댓글을 작성해보세요!</small>
                         </div>
                       ) : (
-                        comments.map((comment, index) => (
-                          <div key={index} className="comment-item">
-                            <div className="comment-header">
-                              <span className="comment-author">
-                                {comment.author?.displayName || 'Unknown User'}
-                              </span>
-                              <span className="comment-date">
-                                {new Date(comment.created).toLocaleString('ko-KR')}
-                              </span>
+                        comments.map((comment, index) => {
+                          // 날짜 파싱 및 포맷팅
+                          let formattedDate = 'Invalid Date';
+                          try {
+                            if (comment.created_at) {
+                              const date = new Date(comment.created_at);
+                              if (!isNaN(date.getTime())) {
+                                formattedDate = date.toLocaleString('ko-KR', {
+                                  year: 'numeric',
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                });
+                              }
+                            }
+                          } catch (e) {
+                            console.error('날짜 파싱 오류:', e);
+                          }
+                          
+                          // 작성자 표시 (이메일에서 이름 추출 또는 이메일 전체 표시)
+                          const authorDisplay = comment.author_email 
+                            ? (comment.author_email.includes('@') 
+                                ? comment.author_email.split('@')[0] 
+                                : comment.author_email)
+                            : 'Unknown User';
+                          
+                          return (
+                            <div key={comment.id || index} className="comment-item">
+                              <div className="comment-header">
+                                <span className="comment-author">
+                                  {authorDisplay}
+                                </span>
+                                <span className="comment-date">
+                                  {formattedDate}
+                                </span>
+                              </div>
+                              <div className="comment-body">
+                                {comment.body}
+                              </div>
                             </div>
-                            <div className="comment-body">
-                              {comment.body}
-                            </div>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   )}

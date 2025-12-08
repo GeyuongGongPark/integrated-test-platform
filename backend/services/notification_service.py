@@ -202,17 +202,28 @@ class NotificationService:
     def get_user_notifications(self, user_id, unread_only=False, limit=50):
         """사용자 알림 조회"""
         try:
+            logger.info(f"🔍 알림 서비스 조회: user_id={user_id}, unread_only={unread_only}, limit={limit}")
+            
             query = Notification.query.filter_by(user_id=user_id)
+            
+            # 전체 알림 수 확인
+            total_count = query.count()
+            logger.info(f"🔍 사용자 {user_id}의 전체 알림 수: {total_count}개")
             
             if unread_only:
                 query = query.filter_by(read=False)
             
             notifications = query.order_by(Notification.created_at.desc()).limit(limit).all()
             
-            return [n.to_dict() for n in notifications]
+            logger.info(f"🔍 조회된 알림 수: {len(notifications)}개")
+            
+            result = [n.to_dict() for n in notifications]
+            logger.info(f"🔍 변환된 알림 수: {len(result)}개")
+            
+            return result
             
         except Exception as e:
-            logger.error(f"알림 조회 오류: {str(e)}")
+            logger.error(f"❌ 알림 조회 오류: {str(e)}", exc_info=True)
             return []
     
     def mark_as_read(self, notification_id, user_id):

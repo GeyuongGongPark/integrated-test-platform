@@ -134,7 +134,7 @@ app.register_blueprint(notifications_bp)
 app.register_blueprint(analytics_bp)
 app.register_blueprint(cicd_bp)
 app.register_blueprint(test_data_bp)
-app.register_blueprint(collaboration_bp)
+app.register_blueprint(collaboration_bp, url_prefix='/api/collaboration')
 app.register_blueprint(dependencies_bp)
 app.register_blueprint(reports_bp)
 

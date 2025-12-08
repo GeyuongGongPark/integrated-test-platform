@@ -10,6 +10,7 @@ import FolderManager from './components/dashboard/FolderManager';
 import Settings from './components/settings/Settings';
 import UserProfile from './components/auth/UserProfile';
 import JiraIssuesList from './components/jira/JiraIssuesList';
+import NotificationBell from './components/notifications/NotificationBell';
 import { ErrorBoundary } from './components/utils';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -121,11 +122,14 @@ function AppContent() {
           <div className="nav-brand">
             <h1>Integrated Test Platform</h1>
             {user && (
-              <div className="user-info">
-                <span>👤 {user.username}</span>
-                {user.role === 'admin' && <span className="admin-badge">관리자</span>}
-                {user.role === 'user' && <span className="user-badge">사용자</span>}
-                {user.role === 'guest' && <span className="guest-badge">게스트</span>}
+              <div className="nav-brand-right">
+                <NotificationBell />
+                <div className="user-info">
+                  <span>👤 {user.username}</span>
+                  {user.role === 'admin' && <span className="admin-badge">관리자</span>}
+                  {user.role === 'user' && <span className="user-badge">사용자</span>}
+                  {user.role === 'guest' && <span className="guest-badge">게스트</span>}
+                </div>
               </div>
             )}
           </div>

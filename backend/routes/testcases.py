@@ -196,12 +196,41 @@ def create_testcase():
         automation_code_path=data.get('automation_code_path', ''),
         automation_code_type=data.get('automation_code_type', 'playwright'),
         creator_id=request.user.id, # 현재 로그인한 사용자의 ID
-        assignee_id=data.get('assignee_id') or request.user.id # assignee_id가 있으면 사용, 없으면 현재 사용자
+        assignee_id=data.get('assignee_id')  # assignee_id가 없으면 None (담당자 미지정)
     )
 
     try:
         db.session.add(tc)
         db.session.commit()
+        
+        # 담당자 지정 시 알림 전송
+        if tc.assignee_id:
+            try:
+                from services.notification_service import notification_service
+                logger.info(f"🔔 담당자 지정 알림 생성 시도: TestCase {tc.id}, Assignee {tc.assignee_id}, Creator {request.user.id}")
+                
+                # 테스트 케이스 이름 생성 (main_category, sub_category, detail_category 조합 또는 name)
+                if tc.name:
+                    test_case_name = tc.name
+                elif tc.main_category or tc.sub_category or tc.detail_category:
+                    categories = [tc.main_category, tc.sub_category, tc.detail_category]
+                    test_case_name = ' > '.join([c for c in categories if c]) or f"테스트 케이스 #{tc.id}"
+                else:
+                    test_case_name = f"테스트 케이스 #{tc.id}"
+                
+                logger.info(f"🔔 알림 생성 파라미터: user_id={tc.assignee_id}, title='테스트 케이스 담당자 지정', message='{test_case_name}'")
+                
+                notification = notification_service.create_notification(
+                    user_id=tc.assignee_id,
+                    notification_type='assignment',
+                    title='테스트 케이스 담당자 지정',
+                    message=f"'{test_case_name}' 테스트 케이스의 담당자로 지정되었습니다.",
+                    related_test_case_id=tc.id,
+                    priority='medium'
+                )
+                logger.info(f"✅ 담당자 지정 알림 생성 성공: Notification ID {notification.id if notification else 'None'}")
+            except Exception as e:
+                logger.error(f"❌ 담당자 지정 알림 전송 실패: {str(e)}", exc_info=True)
         
         # 캐시 무효화
         from services.cache_service import cache_service
@@ -359,9 +388,43 @@ def update_testcase(id):
         tc.automation_code_path = data.get('automation_code_path', tc.automation_code_path)
         tc.automation_code_type = data.get('automation_code_type', tc.automation_code_type)
         
-        # 담당자 정보 업데이트 (새로 추가)
+        # 담당자 정보 업데이트
+        old_assignee_id = tc.assignee_id  # 기존 담당자 (None일 수 있음)
         if 'assignee_id' in data:
-            tc.assignee_id = data.get('assignee_id')
+            new_assignee_id = data.get('assignee_id')
+            tc.assignee_id = new_assignee_id
+            
+            # 알림 전송 조건:
+            # 1. 새로운 담당자가 지정되었고 (new_assignee_id가 None이 아님)
+            # 2. 기존 담당자와 다르고 (담당자가 없던 경우도 포함: None -> 사용자ID)
+            # 본인인 경우에도 알림 전송
+            if new_assignee_id and new_assignee_id != old_assignee_id:
+                try:
+                    from services.notification_service import notification_service
+                    logger.info(f"🔔 담당자 변경 알림 생성 시도: TestCase {tc.id}, Old Assignee {old_assignee_id}, New Assignee {new_assignee_id}, Creator {request.user.id}")
+                    
+                    # 테스트 케이스 이름 생성
+                    if tc.name:
+                        test_case_name = tc.name
+                    elif tc.main_category or tc.sub_category or tc.detail_category:
+                        categories = [tc.main_category, tc.sub_category, tc.detail_category]
+                        test_case_name = ' > '.join([c for c in categories if c]) or f"테스트 케이스 #{tc.id}"
+                    else:
+                        test_case_name = f"테스트 케이스 #{tc.id}"
+                    
+                    logger.info(f"🔔 알림 생성 파라미터: user_id={new_assignee_id}, title='테스트 케이스 담당자 지정', message='{test_case_name}'")
+                    
+                    notification = notification_service.create_notification(
+                        user_id=new_assignee_id,
+                        notification_type='assignment',
+                        title='테스트 케이스 담당자 지정',
+                        message=f"'{test_case_name}' 테스트 케이스의 담당자로 지정되었습니다.",
+                        related_test_case_id=tc.id,
+                        priority='medium'
+                    )
+                    logger.info(f"✅ 담당자 변경 알림 생성 성공: Notification ID {notification.id if notification else 'None'}")
+                except Exception as e:
+                    logger.error(f"❌ 담당자 변경 알림 전송 실패: {str(e)}", exc_info=True)
         
         db.session.commit()
         
@@ -676,10 +739,111 @@ def upload_testcases_excel():
 # 엑셀 다운로드 API
 @testcases_bp.route('/testcases/download', methods=['GET'])
 def download_testcases_excel():
-    """테스트 케이스를 엑셀 파일로 다운로드"""
+    """테스트 케이스를 엑셀 파일로 다운로드 (필터 적용 가능)"""
     try:
-        # 모든 테스트 케이스 조회
-        test_cases = TestCase.query.all()
+        from sqlalchemy import or_
+        
+        # 필터 파라미터 받기
+        search = request.args.get('search', '').strip()
+        status = request.args.get('status', '')
+        environment = request.args.get('environment', '')
+        category = request.args.get('category', '')
+        creator = request.args.get('creator', '')
+        assignee = request.args.get('assignee', '')
+        folder_id = request.args.get('folder_id', type=int)
+        
+        # 기본 쿼리
+        query = TestCase.query
+        
+        # 검색어 필터
+        if search:
+            search_lower = search.lower()
+            query = query.filter(
+                or_(
+                    TestCase.main_category.ilike(f'%{search}%'),
+                    TestCase.sub_category.ilike(f'%{search}%'),
+                    TestCase.detail_category.ilike(f'%{search}%'),
+                    TestCase.expected_result.ilike(f'%{search}%'),
+                    TestCase.remark.ilike(f'%{search}%')
+                )
+            )
+        
+        # 상태 필터
+        if status and status != 'all':
+            query = query.filter(TestCase.result_status == status)
+        
+        # 환경 필터
+        if environment and environment != 'all':
+            query = query.filter(TestCase.environment == environment)
+        
+        # 카테고리 필터 (main > sub > detail 형식)
+        if category and category != 'all':
+            category_parts = category.split(' > ')
+            if len(category_parts) >= 1:
+                query = query.filter(TestCase.main_category == category_parts[0])
+            if len(category_parts) >= 2:
+                query = query.filter(TestCase.sub_category == category_parts[1])
+            if len(category_parts) >= 3:
+                query = query.filter(TestCase.detail_category == category_parts[2])
+        
+        # 폴더 필터
+        if folder_id:
+            folder = Folder.query.get(folder_id)
+            if folder:
+                # 폴더 타입에 따라 필터링
+                if folder.folder_type == 'environment':
+                    # 환경 폴더인 경우, 해당 환경의 모든 하위 폴더 포함
+                    from sqlalchemy.orm import aliased
+                    env_folders = Folder.query.filter(
+                        Folder.parent_folder_id == folder_id
+                    ).all()
+                    folder_ids = [folder_id] + [f.id for f in env_folders]
+                    # 하위 폴더의 하위 폴더도 포함
+                    for env_folder in env_folders:
+                        sub_folders = Folder.query.filter(
+                            Folder.parent_folder_id == env_folder.id
+                        ).all()
+                        folder_ids.extend([f.id for f in sub_folders])
+                    query = query.filter(TestCase.folder_id.in_(folder_ids))
+                elif folder.folder_type == 'deployment_date':
+                    # 배포일자 폴더인 경우, 해당 배포일자의 모든 하위 폴더 포함
+                    dep_folders = Folder.query.filter(
+                        Folder.parent_folder_id == folder_id
+                    ).all()
+                    folder_ids = [folder_id] + [f.id for f in dep_folders]
+                    query = query.filter(TestCase.folder_id.in_(folder_ids))
+                else:
+                    # 기능명 폴더인 경우, 해당 폴더만
+                    query = query.filter(TestCase.folder_id == folder_id)
+        
+        # 작성자 필터 (User 테이블과 조인 필요)
+        if creator and creator != 'all':
+            from sqlalchemy.orm import aliased
+            CreatorUser = aliased(User)
+            query = query.join(CreatorUser, TestCase.creator_id == CreatorUser.id).filter(
+                CreatorUser.username == creator
+            )
+        
+        # 담당자 필터 (User 테이블과 조인 필요)
+        if assignee and assignee != 'all':
+            from sqlalchemy.orm import aliased
+            AssigneeUser = aliased(User)
+            # creator 조인 여부 확인
+            if creator and creator != 'all':
+                # 이미 creator로 조인되어 있으므로 별칭 사용
+                query = query.join(AssigneeUser, TestCase.assignee_id == AssigneeUser.id).filter(
+                    AssigneeUser.username == assignee
+                )
+            else:
+                # creator 조인이 없으므로 일반 조인
+                query = query.join(AssigneeUser, TestCase.assignee_id == AssigneeUser.id).filter(
+                    AssigneeUser.username == assignee
+                )
+        
+        # 필터링된 테스트 케이스 조회
+        test_cases = query.all()
+        
+        logger.info(f"다운로드 필터 적용: 검색={search}, 상태={status}, 환경={environment}, 카테고리={category}, 폴더={folder_id}, 결과={len(test_cases)}개")
         
         # DataFrame 생성
         data = []
@@ -709,15 +873,29 @@ def download_testcases_excel():
         
         output.seek(0)
         
-        return send_file(
+        # 파일명 생성
+        try:
+            filename = f'testcases_{format_kst_datetime(get_kst_now(), "%Y%m%d_%H%M%S")}.xlsx'
+        except Exception as e:
+            logger.warning(f"파일명 생성 오류: {str(e)}, 기본 파일명 사용")
+            filename = f'testcases_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        
+        # Flask 2.3.3에서는 download_name 사용
+        file_response = send_file(
             output,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             as_attachment=True,
-            download_name=f'testcases_{format_kst_datetime(get_kst_now(), "%Y%m%d_%H%M%S")}.xlsx'
+            download_name=filename
         )
         
+        # CORS 헤더 추가
+        return add_cors_headers(file_response), 200
+        
     except Exception as e:
-        print(f"다운로드 에러: {str(e)}")
+        logger.error(f"다운로드 에러: {str(e)}", exc_info=True)
+        import traceback
+        error_trace = traceback.format_exc()
+        logger.error(f"에러 상세: {error_trace}")
         response = jsonify({'error': f'파일 다운로드 중 오류가 발생했습니다: {str(e)}'})
         return add_cors_headers(response), 500
 

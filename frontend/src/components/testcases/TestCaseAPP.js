@@ -165,6 +165,13 @@ const TestCaseAPP = ({ setActiveTab }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [, setTargetFolderId] = useState('');
   
+  // 댓글 관련 상태
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentContent, setEditingCommentContent] = useState('');
+  
   // 폴더 및 정렬 상태
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [expandedFolders, setExpandedFolders] = useState(new Set());
@@ -452,6 +459,110 @@ const TestCaseAPP = ({ setActiveTab }) => {
     }
   };
 
+  // 댓글 조회
+  const fetchComments = async (testCaseId) => {
+    if (!testCaseId) return;
+    setLoadingComments(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${config.apiUrl}/api/collaboration/comments`, {
+        params: {
+          entity_type: 'test_case',
+          entity_id: testCaseId
+        },
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setComments(response.data || []);
+    } catch (err) {
+      console.error('댓글 조회 오류:', err);
+      setComments([]);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  // 댓글 추가
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !selectedTestCase) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${config.apiUrl}/api/collaboration/comments`, {
+        entity_type: 'test_case',
+        entity_id: selectedTestCase.id,
+        content: newComment.trim()
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      setNewComment('');
+      fetchComments(selectedTestCase.id);
+    } catch (err) {
+      console.error('댓글 추가 오류:', err);
+      alert('댓글 추가 중 오류가 발생했습니다: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  // 댓글 편집 시작
+  const handleStartEdit = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditingCommentContent(comment.content);
+  };
+
+  // 댓글 편집 취소
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditingCommentContent('');
+  };
+
+  // 댓글 수정
+  const handleUpdateComment = async (commentId) => {
+    if (!editingCommentContent.trim() || !selectedTestCase) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${config.apiUrl}/api/collaboration/comments/${commentId}`, {
+        content: editingCommentContent.trim()
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      setEditingCommentId(null);
+      setEditingCommentContent('');
+      fetchComments(selectedTestCase.id);
+    } catch (err) {
+      console.error('댓글 수정 오류:', err);
+      alert('댓글 수정 중 오류가 발생했습니다: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  // 댓글 삭제
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${config.apiUrl}/api/collaboration/comments/${commentId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      fetchComments(selectedTestCase.id);
+    } catch (err) {
+      console.error('댓글 삭제 오류:', err);
+      alert('댓글 삭제 중 오류가 발생했습니다: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   const handleFileUpload = async () => {
     if (!selectedFile) {
       alert('파일을 선택해주세요.');
@@ -479,17 +590,48 @@ const TestCaseAPP = ({ setActiveTab }) => {
 
   const handleDownload = async () => {
     try {
-      const response = await axios.get(`${config.apiUrl}/testcases/download`, {
+      // 현재 적용된 필터 정보를 쿼리 파라미터로 전달
+      const params = new URLSearchParams();
+      
+      if (searchTerm && searchTerm.trim()) {
+        params.append('search', searchTerm.trim());
+      }
+      if (statusFilter && statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+      if (environmentFilter && environmentFilter !== 'all') {
+        params.append('environment', environmentFilter);
+      }
+      if (categoryFilter && categoryFilter !== 'all') {
+        params.append('category', categoryFilter);
+      }
+      if (creatorFilter && creatorFilter !== 'all') {
+        params.append('creator', creatorFilter);
+      }
+      if (assigneeFilter && assigneeFilter !== 'all') {
+        params.append('assignee', assigneeFilter);
+      }
+      if (selectedFolder) {
+        params.append('folder_id', selectedFolder);
+      }
+      
+      const queryString = params.toString();
+      const url = queryString 
+        ? `${config.apiUrl}/testcases/download?${queryString}`
+        : `${config.apiUrl}/testcases/download`;
+      
+      const response = await axios.get(url, {
         responseType: 'blob',
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
-      link.href = url;
+      link.href = blobUrl;
       link.setAttribute('download', `testcases_${new Date().toISOString().slice(0, 10)}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       alert('파일 다운로드 중 오류가 발생했습니다: ' + err.message);
     }
@@ -571,22 +713,18 @@ const TestCaseAPP = ({ setActiveTab }) => {
       <div className="testcase-header">
         <h1>테스트 케이스 관리</h1>
         <div className="header-actions">
-            {user && (user.role === 'admin' || user.role === 'user') && (
-              <button 
-                className="testcase-btn testcase-btn-add"
-                onClick={() => setShowAddModal(true)}
-              >
-                ➕ 테스트 케이스 추가
-              </button>
-            )}
-            {user && (user.role === 'admin' || user.role === 'user') && (
-              <button 
-                className="testcase-btn testcase-btn-upload"
-                onClick={() => setShowUploadModal(true)}
-              >
-                📤 엑셀 업로드
-              </button>
-            )}
+            <button 
+              className="testcase-btn testcase-btn-add"
+              onClick={() => setShowAddModal(true)}
+            >
+              ➕ 테스트 케이스 추가
+            </button>
+            <button 
+              className="testcase-btn testcase-btn-upload"
+              onClick={() => setShowUploadModal(true)}
+            >
+              📤 엑셀 업로드
+            </button>
             <button 
               className="testcase-btn testcase-btn-download"
               onClick={handleDownload}
@@ -693,6 +831,7 @@ const TestCaseAPP = ({ setActiveTab }) => {
             onViewDetails={(testCase) => {
               setSelectedTestCase(testCase);
               setShowDetailModal(true);
+              fetchComments(testCase.id);
             }}
             users={users}
             user={user}
@@ -830,6 +969,108 @@ const TestCaseAPP = ({ setActiveTab }) => {
                 </table>
               </div>
               
+          {/* 댓글 섹션 */}
+          <div className="testcase-comments-section" style={{ marginTop: '24px' }}>
+            <h5>💬 댓글 ({comments.length})</h5>
+            <div className="comments-container">
+              {loadingComments ? (
+                <div className="comments-loading">댓글을 불러오는 중...</div>
+              ) : comments.length === 0 ? (
+                <div className="no-comments">
+                  <p>아직 댓글이 없습니다. 첫 번째 댓글을 작성해보세요!</p>
+                </div>
+              ) : (
+                <div className="comments-list">
+                  {comments.map((comment) => {
+                    const isOwnComment = user && (comment.author_id === user.id || comment.author?.id === user.id);
+                    const isEditing = editingCommentId === comment.id;
+                    
+                    return (
+                      <div key={comment.id} className="comment-item">
+                        <div className="comment-header">
+                          <div className="comment-header-left">
+                            <span className="comment-author">
+                              👤 {comment.author_name || comment.author?.username || 'Unknown User'}
+                            </span>
+                            <span className="comment-date">
+                              {comment.created_at ? formatUTCToKST(comment.created_at) : ''}
+                              {comment.is_edited && <span className="comment-edited-badge"> (수정됨)</span>}
+                            </span>
+                          </div>
+                          {isOwnComment && !isEditing && (
+                            <div className="comment-actions">
+                              <button
+                                className="comment-edit-btn"
+                                onClick={() => handleStartEdit(comment)}
+                                title="댓글 수정"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className="comment-delete-btn"
+                                onClick={() => handleDeleteComment(comment.id)}
+                                title="댓글 삭제"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        {isEditing ? (
+                          <div className="comment-edit-form">
+                            <textarea
+                              className="comment-textarea"
+                              value={editingCommentContent}
+                              onChange={(e) => setEditingCommentContent(e.target.value)}
+                              rows="3"
+                            />
+                            <div className="comment-edit-actions">
+                              <button
+                                className="testcase-btn testcase-btn-primary"
+                                onClick={() => handleUpdateComment(comment.id)}
+                                disabled={!editingCommentContent.trim()}
+                              >
+                                저장
+                              </button>
+                              <button
+                                className="testcase-btn testcase-btn-secondary"
+                                onClick={handleCancelEdit}
+                              >
+                                취소
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="comment-body">
+                            {comment.content}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
+              {/* 댓글 작성 */}
+              <div className="comment-add">
+                <textarea
+                  className="comment-textarea"
+                  placeholder="댓글을 입력하세요... (@username 형식으로 멘션 가능)"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows="3"
+                />
+                <button
+                  className="testcase-btn testcase-btn-primary"
+                  onClick={handleAddComment}
+                  disabled={!newComment.trim()}
+                >
+                  댓글 작성
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* 이슈 관리: 목록 컴포넌트로 교체 */}
               <div className="testcase-jira-integration" style={{ marginTop: '24px' }}>
                 <h5>🔗 이슈 관리</h5>
