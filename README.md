@@ -67,7 +67,20 @@ npm start
 # Docker로 MySQL 실행
 docker-compose up -d mysql
 
-# 또는 docs/mysql-init/ 스크립트 실행
+# 또는 스크립트 사용
+./scripts/start-ubuntu-mysql.sh
+
+# 데이터베이스 복구 (필요한 경우)
+./scripts/restore_local_mysql.sh
+```
+
+### 5. 애플리케이션 재시작
+```bash
+# 전체 애플리케이션 재시작
+./scripts/restart-all.sh
+
+# 백엔드만 재시작
+./scripts/restart-backend.sh
 ```
 
 ## 📁 프로젝트 구조
@@ -89,15 +102,23 @@ integrated-test-platform/
 │   │   └── config.js       # API 설정
 │   └── package.json
 ├── docs/                    # 문서 및 설정 파일
-│   ├── postman_collection_v2.3.0.json
-│   ├── postman_environment_v2.3.0.json
-│   ├── PERMISSION_GUIDE.md # 권한별 기능 가이드
+│   ├── database/           # 데이터베이스 설정 가이드
+│   ├── deployment/         # 배포 가이드
+│   ├── reports/            # 프로젝트 리포트
 │   ├── API_TESTING_GUIDE.md # API 테스트 가이드
 │   ├── TESTING_GUIDE.md    # 테스트 가이드
 │   └── PROJECT_STRUCTURE.md # 프로젝트 구조
+├── scripts/                 # 실행 및 관리 스크립트
+│   ├── restart-all.sh      # 전체 애플리케이션 재시작
+│   ├── restart-backend.sh  # 백엔드 재시작
+│   ├── restore_database.sh # 데이터베이스 복구
+│   └── ...                 # 기타 유틸리티 스크립트
 ├── test-scripts/            # 테스트 스크립트
 │   ├── performance/        # K6 성능 테스트
 │   └── playwright/         # Playwright 자동화 테스트
+├── slack_reporter/          # Slack 리포트 리포터
+│   ├── slack_reporter.ts   # Playwright Slack 리포터
+│   └── playwright.config.ts # Playwright 설정
 └── README.md               # 이 파일
 ```
 
@@ -131,12 +152,29 @@ FLASK_ENV=production
 
 ## 📚 문서
 
+### 일반 문서
 - **API 가이드**: `docs/API_TESTING_GUIDE.md`
 - **Postman 사용법**: `docs/POSTMAN_USAGE_GUIDE.md`
 - **프로젝트 구조**: `docs/PROJECT_STRUCTURE.md`
-- **배포 요약**: `docs/DEPLOYMENT_SUMMARY.md`
 - **테스트 가이드**: `docs/TESTING_GUIDE.md`
 - **권한 가이드**: `docs/PERMISSION_GUIDE.md`
+
+### 데이터베이스 관련
+- **데이터베이스 설정**: `docs/database/README.md`
+- **로컬 MySQL 설정**: `docs/database/LOCAL_DATABASE_SETUP.md`
+- **MySQL Workbench 연결**: `docs/database/MYSQL_WORKBENCH_CONNECTION.md`
+
+### 배포 관련
+- **배포 가이드**: `docs/deployment/README.md`
+- **Vercel 배포**: `docs/deployment/VERCEL_DEPLOYMENT_GUIDE.md`
+- **S3 백업**: `docs/deployment/S3_BACKUP_GUIDE.md`
+
+### 리포트
+- **테스트 케이스 분석**: `docs/reports/TESTCASE_ANALYSIS_REPORT.md`
+- **프로젝트 정리 요약**: `docs/reports/PROJECT_CLEANUP_SUMMARY.md`
+
+### 스크립트
+- **스크립트 사용법**: `scripts/README.md`
 
 ## 🧪 테스트
 
@@ -256,7 +294,11 @@ npx playwright test
 
 ---
 
-**마지막 업데이트**: 2025년 1월 9일  
-**버전**: 2.5.0  
+**마지막 업데이트**: 2025년 12월 8일  
+**버전**: 2.6.0  
 **상태**: 프로덕션 배포 완료 ✅  
-**주요 업데이트**: 협업 기능, 의존성 관리, 리포트 시스템, 성능 최적화, 실시간 알림, 스케줄링, CI/CD 통합, 테스트 데이터 관리, 고급 분석
+**주요 업데이트**: 
+- 프로젝트 파일 구조 정리 (문서 및 스크립트 정리)
+- Slack 리포트 기능 추가 (Playwright 테스트 결과 자동 전송)
+- 데이터베이스 스키마 개선 (assignee_id 컬럼 추가)
+- JIRA 환경별 통계 API 추가
