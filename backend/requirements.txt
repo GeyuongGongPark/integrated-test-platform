@@ -1,13 +1,13 @@
 Flask==2.3.3
 Flask-SQLAlchemy==3.0.5
 Flask-Migrate==4.0.5
-Flask-CORS==4.0.0
+Flask-CORS==6.0.0
 Flask-JWT-Extended==4.5.3
-PyMySQL==1.1.0
+PyMySQL==1.1.1
 psycopg2-binary==2.9.10
 python-dotenv==1.0.0
-requests==2.31.0
-cryptography==41.0.7
+requests==2.32.4
+cryptography==44.0.1
 pandas==2.3.1
 pytz==2024.1
 monaco-editor==0.0.1
@@ -16,5 +16,5 @@ croniter==2.0.1
 celery==5.3.4
 redis==5.0.1
 flask-socketio==5.3.6
-python-socketio==5.10.0
-eventlet==0.33.3 
+python-socketio==5.14.0
+eventlet==0.40.3 
