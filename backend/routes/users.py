@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import db, User
-from utils.auth_decorators import admin_required, user_required, owner_required
+from utils.auth_decorators import admin_required, user_required, owner_required, guest_allowed
 from utils.cors import add_cors_headers
 from utils.timezone_utils import get_kst_now
 from datetime import datetime
@@ -40,9 +40,9 @@ def get_users():
         return add_cors_headers(response), 500
 
 @users_bp.route('/users/list', methods=['GET'])
-@user_required
+@guest_allowed
 def get_users_list():
-    """사용자 목록 조회 (일반 사용자용 - 담당자 선택용)"""
+    """사용자 목록 조회 (게스트 포함 - 담당자 선택용)"""
     try:
         # 활성 사용자만 조회 (비밀번호 등 민감한 정보 제외)
         users = User.query.filter_by(is_active=True).all()

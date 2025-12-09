@@ -588,6 +588,18 @@ const TestScriptsManager = () => {
     <div className="test-scripts-manager">
       <div className="manager-header">
         <h2>📁 테스트 스크립트 관리</h2>
+        {user && user.role === 'guest' && (
+          <div className="guest-notice" style={{ 
+            padding: '10px', 
+            backgroundColor: '#fff3cd', 
+            border: '1px solid #ffc107', 
+            borderRadius: '4px',
+            marginBottom: '10px',
+            fontSize: '14px'
+          }}>
+            👀 게스트 모드: 조회만 가능합니다.
+          </div>
+        )}
         <div className="header-actions">
           <div className="tab-buttons">
             <button 

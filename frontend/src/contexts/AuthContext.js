@@ -274,16 +274,25 @@ export const AuthProvider = ({ children }) => {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        const { access_token, user: userData } = data;
+        const result = await response.json();
+        // 백엔드 응답 구조: { success: true, data: { access_token, user } }
+        const { access_token, user: userData } = result.data || result;
+        
+        if (!access_token || !userData) {
+          console.error('게스트 로그인 응답 형식 오류:', result);
+          return { success: false, error: '게스트 로그인 응답 형식이 올바르지 않습니다.' };
+        }
         
         handleAuthSuccess(access_token, userData, '게스트 로그인');
         return { success: true };
       } else {
         const errorData = await response.json();
-        return { success: false, error: errorData.error || '게스트 로그인에 실패했습니다.' };
+        const errorMessage = errorData.message || errorData.error || '게스트 로그인에 실패했습니다.';
+        console.error('게스트 로그인 실패:', errorData);
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
+      console.error('게스트 로그인 네트워크 오류:', error);
       handleAuthError(error, '게스트 로그인');
       return { success: false, error: '네트워크 오류가 발생했습니다.' };
     }

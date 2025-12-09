@@ -45,6 +45,7 @@ def create_project():
     return add_cors_headers(response), 201
 
 @testcases_bp.route('/testcases', methods=['GET', 'OPTIONS'])
+@guest_allowed
 def get_testcases():
     if request.method == 'OPTIONS':
         from utils.common_helpers import handle_options_request

@@ -712,19 +712,35 @@ const TestCaseAPP = ({ setActiveTab }) => {
     <div className="testcase-container">
       <div className="testcase-header">
         <h1>테스트 케이스 관리</h1>
+        {user && user.role === 'guest' && (
+          <div className="guest-notice" style={{ 
+            padding: '10px', 
+            backgroundColor: '#fff3cd', 
+            border: '1px solid #ffc107', 
+            borderRadius: '4px',
+            marginBottom: '10px',
+            fontSize: '14px'
+          }}>
+            👀 게스트 모드: 조회만 가능합니다.
+          </div>
+        )}
         <div className="header-actions">
-            <button 
-              className="testcase-btn testcase-btn-add"
-              onClick={() => setShowAddModal(true)}
-            >
-              ➕ 테스트 케이스 추가
-            </button>
-            <button 
-              className="testcase-btn testcase-btn-upload"
-              onClick={() => setShowUploadModal(true)}
-            >
-              📤 엑셀 업로드
-            </button>
+            {user && (user.role === 'admin' || user.role === 'user') && (
+              <>
+                <button 
+                  className="testcase-btn testcase-btn-add"
+                  onClick={() => setShowAddModal(true)}
+                >
+                  ➕ 테스트 케이스 추가
+                </button>
+                <button 
+                  className="testcase-btn testcase-btn-upload"
+                  onClick={() => setShowUploadModal(true)}
+                >
+                  📤 엑셀 업로드
+                </button>
+              </>
+            )}
             <button 
               className="testcase-btn testcase-btn-download"
               onClick={handleDownload}

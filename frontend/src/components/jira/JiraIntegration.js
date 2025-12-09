@@ -221,27 +221,45 @@ const JiraIntegration = ({ testId, testType, testName, testResult, errorMessage,
               </div>
               
               <div className="issue-actions">
-                <select
-                  className="status-select"
-                  value={issue.status}
-                  onChange={(e) => updateIssueStatus(issue.issue_key, e.target.value)}
-                >
-                  <option value="To Do">To Do</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Done">Done</option>
-                </select>
+                {/* 게스트는 상태 변경 불가 */}
+                {user && (user.role === 'admin' || user.role === 'user') && (
+                  <>
+                    <select
+                      className="status-select"
+                      value={issue.status}
+                      onChange={(e) => updateIssueStatus(issue.issue_key, e.target.value)}
+                    >
+                      <option value="To Do">To Do</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Done">Done</option>
+                    </select>
+                    
+                    <button 
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        const comment = prompt('댓글을 입력하세요:');
+                        if (comment) {
+                          addComment(issue.issue_key, comment);
+                        }
+                      }}
+                    >
+                      💬 댓글 추가
+                    </button>
+                  </>
+                )}
                 
-                <button 
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => {
-                    const comment = prompt('댓글을 입력하세요:');
-                    if (comment) {
-                      addComment(issue.issue_key, comment);
-                    }
-                  }}
-                >
-                  💬 댓글 추가
-                </button>
+                {/* 게스트는 읽기 전용 상태 표시 */}
+                {user && user.role === 'guest' && (
+                  <span className="status-readonly" style={{ 
+                    padding: '4px 8px', 
+                    backgroundColor: '#e9ecef', 
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    marginRight: '8px'
+                  }}>
+                    상태: {issue.status}
+                  </span>
+                )}
                 
                 <button 
                   className="btn btn-primary btn-sm"

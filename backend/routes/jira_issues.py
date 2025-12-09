@@ -5,6 +5,7 @@ Mock JIRA 서버 대신 데이터베이스에 직접 저장
 
 from flask import Blueprint, request, jsonify
 from models import db, JiraIssue, JiraComment, TestCase
+from utils.auth_decorators import user_required, guest_allowed
 from datetime import datetime
 import json
 import uuid
@@ -81,6 +82,7 @@ def get_jira_stats():
         }), 500
 
 @jira_issues_bp.route('/issues', methods=['GET'])
+@guest_allowed
 def get_issues():
     """이슈 목록 조회 (페이지네이션 지원)"""
     try:
@@ -202,6 +204,7 @@ def get_issues_by_testcase(test_case_id):
         }), 500
 
 @jira_issues_bp.route('/issues', methods=['POST'])
+@user_required
 def create_issue():
     """새 이슈 생성"""
     try:
@@ -260,6 +263,7 @@ def create_issue():
         }), 500
 
 @jira_issues_bp.route('/issues/<issue_key>', methods=['GET'])
+@guest_allowed
 def get_issue(issue_key):
     """특정 이슈 조회"""
     try:
@@ -283,6 +287,7 @@ def get_issue(issue_key):
         }), 500
 
 @jira_issues_bp.route('/issues/<issue_key>', methods=['PUT'])
+@user_required
 def update_issue(issue_key):
     """이슈 업데이트"""
     try:
@@ -366,6 +371,7 @@ def delete_issue(issue_key):
         }), 500
 
 @jira_issues_bp.route('/issues/<issue_key>/comments', methods=['GET'])
+@guest_allowed
 def get_comments(issue_key):
     """이슈 댓글 조회"""
     try:
@@ -391,6 +397,7 @@ def get_comments(issue_key):
         }), 500
 
 @jira_issues_bp.route('/issues/<issue_key>/comments', methods=['POST'])
+@user_required
 def add_comment(issue_key):
     """이슈에 댓글 추가 (멘션 알림 포함)"""
     try:

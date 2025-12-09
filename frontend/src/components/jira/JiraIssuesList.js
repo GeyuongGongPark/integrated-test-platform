@@ -348,6 +348,18 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
     <div className="jira-issues-list-container">
       <div className="jira-issues-header">
         <h1>🔗 이슈 관리</h1>
+        {user && user.role === 'guest' && (
+          <div className="guest-notice" style={{ 
+            padding: '10px', 
+            backgroundColor: '#fff3cd', 
+            border: '1px solid #ffc107', 
+            borderRadius: '4px',
+            marginBottom: '10px',
+            fontSize: '14px'
+          }}>
+            👀 게스트 모드: 조회만 가능합니다.
+          </div>
+        )}
         <div className="header-actions">
           <button 
             className="btn btn-primary"
@@ -356,13 +368,15 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
           >
             🔄 새로고침
           </button>
-          <button 
-            className="btn btn-success"
-            onClick={() => setShowCreateModal(true)}
-            style={{ marginLeft: '10px' }}
-          >
-            ➕ 새 이슈 생성
-          </button>
+          {user && (user.role === 'admin' || user.role === 'user') && (
+            <button 
+              className="btn btn-success"
+              onClick={() => setShowCreateModal(true)}
+              style={{ marginLeft: '10px' }}
+            >
+              ➕ 새 이슈 생성
+            </button>
+          )}
         </div>
       </div>
 
@@ -583,50 +597,67 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                     상세보기
                   </button>
                   
-                  <select
-                    className="status-select"
-                    value={issue.status}
-                    onChange={(e) => updateIssueStatus(issue.issue_key, e.target.value)}
-                  >
-                    <option value="To Do">To Do</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Done">Done</option>
-                  </select>
+                  {/* 게스트는 상태 변경 불가 */}
+                  {user && (user.role === 'admin' || user.role === 'user') && (
+                    <>
+                      <select
+                        className="status-select"
+                        value={issue.status}
+                        onChange={(e) => updateIssueStatus(issue.issue_key, e.target.value)}
+                      >
+                        <option value="To Do">To Do</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Done">Done</option>
+                      </select>
+                      
+                      <button 
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setSelectedIssue(issue);
+                          setShowAssigneeModal(true);
+                        }}
+                        title="담당자 할당"
+                      >
+                        👤 담당자
+                      </button>
+                      
+                      <button 
+                        className="btn btn-warning btn-sm"
+                        onClick={() => {
+                          setSelectedIssue(issue);
+                          setShowLabelModal(true);
+                        }}
+                        title="레이블 추가"
+                      >
+                        🏷️ 레이블
+                      </button>
+                      
+                      <button 
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          const comment = prompt('댓글을 입력하세요:');
+                          if (comment) {
+                            addComment(issue.issue_key, comment);
+                          }
+                        }}
+                        title="댓글 추가"
+                      >
+                        💬 댓글
+                      </button>
+                    </>
+                  )}
                   
-                  <button 
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      setSelectedIssue(issue);
-                      setShowAssigneeModal(true);
-                    }}
-                    title="담당자 할당"
-                  >
-                    👤 담당자
-                  </button>
-                  
-                  <button 
-                    className="btn btn-warning btn-sm"
-                    onClick={() => {
-                      setSelectedIssue(issue);
-                      setShowLabelModal(true);
-                    }}
-                    title="레이블 추가"
-                  >
-                    🏷️ 레이블
-                  </button>
-                  
-                  <button 
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      const comment = prompt('댓글을 입력하세요:');
-                      if (comment) {
-                        addComment(issue.issue_key, comment);
-                      }
-                    }}
-                    title="댓글 추가"
-                  >
-                    💬 댓글
-                  </button>
+                  {/* 게스트는 읽기 전용 상태 표시 */}
+                  {user && user.role === 'guest' && (
+                    <span className="status-readonly" style={{ 
+                      padding: '4px 8px', 
+                      backgroundColor: '#e9ecef', 
+                      borderRadius: '4px',
+                      fontSize: '12px'
+                    }}>
+                      상태: {issue.status}
+                    </span>
+                  )}
                   
                 </div>
               </div>
