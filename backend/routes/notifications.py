@@ -210,6 +210,8 @@ def update_notification_settings():
             settings.email_enabled = data['email_enabled']
         if 'slack_enabled' in data:
             settings.slack_enabled = data['slack_enabled']
+        if 'slack_webhook_url' in data:
+            settings.slack_webhook_url = data['slack_webhook_url']
         if 'in_app_enabled' in data:
             settings.in_app_enabled = data['in_app_enabled']
         

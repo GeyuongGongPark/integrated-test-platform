@@ -508,6 +508,7 @@ class NotificationSettings(db.Model):
     # 전역 설정
     email_enabled = db.Column(db.Boolean, default=True)
     slack_enabled = db.Column(db.Boolean, default=False)
+    slack_webhook_url = db.Column(db.String(500), nullable=True)  # 사용자별 슬랙 웹훅 URL
     in_app_enabled = db.Column(db.Boolean, default=True)
     
     # 업데이트 시간
@@ -525,6 +526,7 @@ class NotificationSettings(db.Model):
             'settings': json.loads(self.settings) if self.settings else {},
             'email_enabled': self.email_enabled,
             'slack_enabled': self.slack_enabled,
+            'slack_webhook_url': self.slack_webhook_url,
             'in_app_enabled': self.in_app_enabled,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
