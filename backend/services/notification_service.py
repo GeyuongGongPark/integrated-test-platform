@@ -6,6 +6,8 @@ from models import db, Notification, NotificationSettings, User, TestCase, TestR
 from utils.timezone_utils import get_kst_now
 from utils.logger import get_logger
 import json
+import os
+import requests
 
 logger = get_logger(__name__)
 
@@ -59,6 +61,9 @@ class NotificationService:
             
             # WebSocket을 통해 실시간 알림 전송
             self._send_realtime_notification(notification)
+            
+            # 슬랙 웹훅으로 알림 전송 (설정된 경우)
+            self._send_slack_notification(notification, user_id)
             
             logger.info(f"알림 생성 완료: {title} (User: {user_id})")
             return notification
@@ -198,6 +203,137 @@ class NotificationService:
             
         except Exception as e:
             logger.error(f"실시간 알림 전송 오류: {str(e)}")
+    
+    def _send_slack_notification(self, notification, user_id):
+        """슬랙 웹훅을 통해 알림 전송"""
+        try:
+            # 사용자별 슬랙 설정 확인
+            user_settings = NotificationSettings.query.filter_by(user_id=user_id).first()
+            
+            # 슬랙 웹훅 URL 확인 (사용자별 설정 우선, 없으면 전역 환경 변수)
+            slack_webhook_url = None
+            slack_enabled = False
+            
+            if user_settings:
+                # 사용자별 설정이 있는 경우
+                slack_enabled = user_settings.slack_enabled
+                if user_settings.slack_webhook_url:
+                    slack_webhook_url = user_settings.slack_webhook_url
+                    logger.info(f"🔔 사용자별 슬랙 웹훅 URL 사용: User {user_id}, enabled={slack_enabled}")
+                else:
+                    # 사용자별 URL이 없으면 전역 환경 변수 사용
+                    slack_webhook_url = os.getenv('SLACK_WEBHOOK_URL')
+                    logger.info(f"🔔 전역 슬랙 웹훅 URL 사용: User {user_id}, enabled={slack_enabled}")
+            else:
+                # 사용자별 설정이 없는 경우 전역 환경 변수 사용
+                slack_webhook_url = os.getenv('SLACK_WEBHOOK_URL')
+                logger.info(f"🔔 사용자 설정 없음, 전역 슬랙 웹훅 URL 사용: User {user_id}")
+            
+            # 슬랙 웹훅 URL이 없으면 건너뛰기
+            if not slack_webhook_url:
+                logger.warning(f"⚠️ 슬랙 웹훅 URL이 설정되지 않음: User {user_id}, 환경변수 확인 필요")
+                return
+            
+            # 사용자별 설정이 있고 slack_enabled가 False면 건너뛰기
+            if user_settings and not slack_enabled:
+                logger.info(f"🔔 사용자 {user_id}의 슬랙 알림이 비활성화되어 있음 (slack_enabled=False)")
+                return
+            
+            logger.info(f"🔔 슬랙 알림 전송 시도: User {user_id}, URL={slack_webhook_url[:30]}...")
+            
+            # 사용자 정보 가져오기
+            user = User.query.get(user_id)
+            username = user.username if user else 'Unknown User'
+            
+            # 알림 타입에 따른 이모지 및 색상 설정
+            emoji_map = {
+                'assignment': '👤',
+                'mention': '💬',
+                'test_failed': '❌',
+                'test_completed': '✅',
+                'test_started': '🚀',
+                'schedule_run': '⏰'
+            }
+            
+            color_map = {
+                'high': '#dc3545',      # 빨간색
+                'medium': '#ffc107',     # 노란색
+                'low': '#17a2b8'         # 파란색
+            }
+            
+            emoji = emoji_map.get(notification.notification_type, '🔔')
+            color = color_map.get(notification.priority, '#6c757d')
+            
+            # 슬랙 메시지 포맷팅
+            slack_message = {
+                "text": f"{emoji} {notification.title}",
+                "blocks": [
+                    {
+                        "type": "header",
+                        "text": {
+                            "type": "plain_text",
+                            "text": f"{emoji} {notification.title}",
+                            "emoji": True
+                        }
+                    },
+                    {
+                        "type": "section",
+                        "fields": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*사용자:*\n{username}"
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*타입:*\n{notification.notification_type}"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*메시지:*\n{notification.message}"
+                        }
+                    }
+                ],
+                "attachments": [
+                    {
+                        "color": color,
+                        "footer": "Integrated Test Platform",
+                        "ts": int(notification.created_at.timestamp()) if notification.created_at else None
+                    }
+                ]
+            }
+            
+            # 관련 테스트 케이스 정보 추가
+            if notification.related_test_case_id:
+                test_case = TestCase.query.get(notification.related_test_case_id)
+                if test_case:
+                    slack_message["blocks"].append({
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*관련 테스트 케이스:*\n{test_case.name}"
+                        }
+                    })
+            
+            # 슬랙 웹훅으로 전송
+            response = requests.post(
+                slack_webhook_url,
+                json=slack_message,
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"슬랙 알림 전송 성공: User {user_id}, Notification {notification.id}")
+            else:
+                logger.warning(f"슬랙 알림 전송 실패: Status {response.status_code}, Response: {response.text}")
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"슬랙 웹훅 요청 오류: {str(e)}")
+        except Exception as e:
+            logger.error(f"슬랙 알림 전송 오류: {str(e)}", exc_info=True)
     
     def get_user_notifications(self, user_id, unread_only=False, limit=50):
         """사용자 알림 조회"""
