@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
+import PromptModal from '../common/PromptModal';
 import './JiraIssuesList.css';
 import '../common/Modal.css';
 
@@ -44,6 +45,8 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
     priority: 'Medium',
     assignee_email: ''
   });
+  const [showCommentPrompt, setShowCommentPrompt] = useState(false);
+  const [commentIssueKey, setCommentIssueKey] = useState(null);
 
 
   // 이슈 목록 조회
@@ -532,6 +535,12 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                           if (window.setActiveTab) {
                             window.setActiveTab('testcases');
                           }
+                          // 테스트 케이스 상세 모달 열기
+                          setTimeout(() => {
+                            if (window.openTestCaseDetail) {
+                              window.openTestCaseDetail(issue.test_case_id);
+                            }
+                          }, 100);
                         }}
                         title="테스트 케이스로 이동"
                       >
@@ -635,10 +644,8 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                       <button 
                         className="btn btn-secondary btn-sm"
                         onClick={() => {
-                          const comment = prompt('댓글을 입력하세요:');
-                          if (comment) {
-                            addComment(issue.issue_key, comment);
-                          }
+                          setCommentIssueKey(issue.issue_key);
+                          setShowCommentPrompt(true);
                         }}
                         title="댓글 추가"
                       >
@@ -799,6 +806,80 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                     <h4>담당자</h4>
                     <div className="assignee-detail">
                       <span className="assignee-name">{selectedIssue.assignee_email}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* 연결된 테스트 케이스 정보 */}
+                {(selectedIssue.test_case_id || selectedIssue.automation_test_id || selectedIssue.performance_test_id) && (
+                  <div className="detail-section">
+                    <h4>연결된 테스트</h4>
+                    <div className="linked-test-cases-detail">
+                      {selectedIssue.test_case_id && (
+                        <div className="linked-test-item">
+                          <span className="linked-test-label">테스트 케이스:</span>
+                          <button 
+                            className="test-case-link-detail"
+                            onClick={() => {
+                              // 클로저 문제 방지를 위해 변수에 저장
+                              const testCaseId = selectedIssue.test_case_id;
+                              
+                              // 이슈 모달 닫기
+                              setShowDetailModal(false);
+                              setSelectedIssue(null);
+                              
+                              // 탭 이동
+                              if (window.setActiveTab) {
+                                window.setActiveTab('testcases');
+                              }
+                              
+                              // 테스트 케이스 상세 모달 열기
+                              setTimeout(() => {
+                                if (window.openTestCaseDetail) {
+                                  window.openTestCaseDetail(testCaseId);
+                                }
+                              }, 200);
+                            }}
+                            title="테스트 케이스로 이동"
+                          >
+                            테스트 케이스 #{selectedIssue.test_case_id}
+                          </button>
+                        </div>
+                      )}
+                      {selectedIssue.automation_test_id && (
+                        <div className="linked-test-item">
+                          <span className="linked-test-label">자동화 테스트:</span>
+                          <button 
+                            className="test-case-link-detail"
+                            onClick={() => {
+                              if (window.setActiveTab) {
+                                window.setActiveTab('automation');
+                              }
+                              setShowDetailModal(false);
+                            }}
+                            title="자동화 테스트로 이동"
+                          >
+                            자동화 테스트 #{selectedIssue.automation_test_id}
+                          </button>
+                        </div>
+                      )}
+                      {selectedIssue.performance_test_id && (
+                        <div className="linked-test-item">
+                          <span className="linked-test-label">성능 테스트:</span>
+                          <button 
+                            className="test-case-link-detail"
+                            onClick={() => {
+                              if (window.setActiveTab) {
+                                window.setActiveTab('performance');
+                              }
+                              setShowDetailModal(false);
+                            }}
+                            title="성능 테스트로 이동"
+                          >
+                            성능 테스트 #{selectedIssue.performance_test_id}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1213,6 +1294,23 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
           </div>
         </div>
       )}
+
+      {/* 댓글 입력 모달 */}
+      <PromptModal
+        isOpen={showCommentPrompt}
+        onClose={() => {
+          setShowCommentPrompt(false);
+          setCommentIssueKey(null);
+        }}
+        title="댓글 추가"
+        message="댓글을 입력하세요:"
+        placeholder="댓글을 입력하세요..."
+        onConfirm={(comment) => {
+          if (comment && commentIssueKey) {
+            addComment(commentIssueKey, comment);
+          }
+        }}
+      />
     </div>
   )
 };

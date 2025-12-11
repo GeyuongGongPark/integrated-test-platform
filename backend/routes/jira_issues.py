@@ -49,6 +49,21 @@ def get_jira_stats():
         for issue_type, count in type_counts:
             issues_by_type[issue_type] = count
         
+        # 레이블별 이슈 수
+        issues_by_labels = {}
+        all_issues = JiraIssue.query.all()
+        for issue in all_issues:
+            if issue.labels:
+                try:
+                    labels = json.loads(issue.labels)
+                    if isinstance(labels, list):
+                        for label in labels:
+                            if label:
+                                issues_by_labels[label] = issues_by_labels.get(label, 0) + 1
+                except (json.JSONDecodeError, TypeError):
+                    # JSON 파싱 실패 시 무시
+                    pass
+        
         # 최근 이슈 (최근 5개)
         recent_issues = JiraIssue.query.order_by(
             JiraIssue.created_at.desc()
@@ -71,6 +86,7 @@ def get_jira_stats():
                 'issues_by_status': issues_by_status,
                 'issues_by_priority': issues_by_priority,
                 'issues_by_type': issues_by_type,
+                'issues_by_labels': issues_by_labels,
                 'recent_issues': recent_issues_data
             }
         })

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
+import PromptModal from '../common/PromptModal';
 import './JiraIntegration.css';
 
 const JiraIntegration = ({ testId, testType, testName, testResult, errorMessage, setActiveTab }) => {
@@ -12,6 +13,8 @@ const JiraIntegration = ({ testId, testType, testName, testResult, errorMessage,
   const [comments, setComments] = useState([]);
   const [showComments, setShowComments] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [showCommentPrompt, setShowCommentPrompt] = useState(false);
+  const [commentIssueKey, setCommentIssueKey] = useState(null);
 
   // Jira 이슈 조회
   const fetchJiraIssues = async () => {
@@ -237,10 +240,8 @@ const JiraIntegration = ({ testId, testType, testName, testResult, errorMessage,
                     <button 
                       className="btn btn-secondary btn-sm"
                       onClick={() => {
-                        const comment = prompt('댓글을 입력하세요:');
-                        if (comment) {
-                          addComment(issue.issue_key, comment);
-                        }
+                        setCommentIssueKey(issue.issue_key);
+                        setShowCommentPrompt(true);
                       }}
                     >
                       💬 댓글 추가
@@ -547,6 +548,23 @@ const CommentsModal = ({ issue, comments, loading, onClose, onAddComment }) => {
           </div>
         </div>
       </div>
+
+      {/* 댓글 입력 모달 */}
+      <PromptModal
+        isOpen={showCommentPrompt}
+        onClose={() => {
+          setShowCommentPrompt(false);
+          setCommentIssueKey(null);
+        }}
+        title="댓글 추가"
+        message="댓글을 입력하세요:"
+        placeholder="댓글을 입력하세요..."
+        onConfirm={(comment) => {
+          if (comment && commentIssueKey) {
+            addComment(commentIssueKey, comment);
+          }
+        }}
+      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import {TestCaseApp} from './components/testcases';
 import PerformanceTestManager from './components/performance';
@@ -18,6 +18,17 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { user, logout } = useAuth();
+
+  // window 객체에 setActiveTab 등록 (다른 컴포넌트에서 호출 가능하도록)
+  useEffect(() => {
+    window.setActiveTab = setActiveTab;
+    
+    return () => {
+      if (window.setActiveTab === setActiveTab) {
+        delete window.setActiveTab;
+      }
+    };
+  }, [setActiveTab]);
 
   const renderContent = () => {
     switch (activeTab) {

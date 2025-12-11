@@ -3,6 +3,7 @@ import axios from 'axios';
 import config from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 import MonacoEditor from '@monaco-editor/react';
+import PromptModal from '../common/PromptModal';
 import './TestScriptsManager.css';
 
 const TestScriptsManager = () => {
@@ -36,6 +37,9 @@ const TestScriptsManager = () => {
   const [localBasePath, setLocalBasePath] = useState('test-scripts');
   // S3 폴더 컨텍스트 메뉴 상태
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, folder: null });
+  const [showFileNamePrompt, setShowFileNamePrompt] = useState(false);
+  const [fileNamePromptDefault, setFileNamePromptDefault] = useState('');
+  const [fileNamePromptCallback, setFileNamePromptCallback] = useState(null);
 
   // 파일 확장자에 따른 언어 감지
   const getFileLanguage = (filename) => {
@@ -525,34 +529,37 @@ const TestScriptsManager = () => {
   // S3 폴더 컨텍스트 메뉴에서 "여기에 저장"
   const saveHereToS3 = async () => {
     if (!contextMenu.folder) return;
-    try {
-      const folderKey = contextMenu.folder.key.endsWith('/') ? contextMenu.folder.key : `${contextMenu.folder.key}/`;
-      const defaultName = (selectedFile?.name) || (selectedFile?.key ? selectedFile.key.split('/').pop() : 'new-script.js');
-      const name = window.prompt('저장할 파일명을 입력하세요', defaultName);
+    const folderKey = contextMenu.folder.key.endsWith('/') ? contextMenu.folder.key : `${contextMenu.folder.key}/`;
+    const defaultName = (selectedFile?.name) || (selectedFile?.key ? selectedFile.key.split('/').pop() : 'new-script.js');
+    setFileNamePromptDefault(defaultName);
+    setFileNamePromptCallback(async (name) => {
       if (!name) return;
-      const fullPath = folderKey + name;
-      await axios.post(`${config.apiUrl}/api/test-scripts/s3/upload-content`, {
-        content: fileContent,
-        filename: fullPath,
-        is_new_file: true
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      try {
+        const fullPath = folderKey + name;
+        await axios.post(`${config.apiUrl}/api/test-scripts/s3/upload-content`, {
+          content: fileContent,
+          filename: fullPath,
+          is_new_file: true
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        alert(`파일이 "${fullPath}"에 저장되었습니다.`);
+        // 현재 폴더가 컨텍스트 폴더와 같으면 목록 새로고침
+        const currentPrefix = (s3PathHistory[s3PathHistory.length - 1] || s3BasePrefix);
+        if (currentPrefix === folderKey) {
+          await loadS3Files();
         }
-      });
-      alert(`파일이 "${fullPath}"에 저장되었습니다.`);
-      // 현재 폴더가 컨텍스트 폴더와 같으면 목록 새로고침
-      const currentPrefix = (s3PathHistory[s3PathHistory.length - 1] || s3BasePrefix);
-      if (currentPrefix === folderKey) {
-        await loadS3Files();
+      } catch (e) {
+        console.error('여기에 저장 오류:', e);
+        alert('저장 중 오류가 발생했습니다.');
+      } finally {
+        setContextMenu({ visible: false, x: 0, y: 0, folder: null });
       }
-    } catch (e) {
-      console.error('여기에 저장 오류:', e);
-      alert('저장 중 오류가 발생했습니다.');
-    } finally {
-      setContextMenu({ visible: false, x: 0, y: 0, folder: null });
-    }
+    });
+    setShowFileNamePrompt(true);
   };
 
   useEffect(() => {
@@ -1079,6 +1086,28 @@ const TestScriptsManager = () => {
           </div>
         </div>
       )}
+
+      {/* 파일명 입력 모달 */}
+      <PromptModal
+        isOpen={showFileNamePrompt}
+        onClose={() => {
+          setShowFileNamePrompt(false);
+          setFileNamePromptDefault('');
+          setFileNamePromptCallback(null);
+        }}
+        title="파일 저장"
+        message="저장할 파일명을 입력하세요:"
+        defaultValue={fileNamePromptDefault}
+        placeholder="파일명을 입력하세요..."
+        onConfirm={(name) => {
+          if (fileNamePromptCallback && name) {
+            fileNamePromptCallback(name);
+          }
+          setShowFileNamePrompt(false);
+          setFileNamePromptDefault('');
+          setFileNamePromptCallback(null);
+        }}
+      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 // src/TestCaseApp.js - 리팩토링된 버전
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
@@ -318,6 +318,31 @@ const TestCaseAPP = ({ setActiveTab }) => {
     handleItemsPerPageChange
   } = useTestCasePagination(filteredTestCases);
 
+  // 특정 테스트 케이스를 여는 함수 (다른 컴포넌트에서 호출 가능)
+  const openTestCaseDetail = (testCaseId) => {
+    const testCase = testCases.find(tc => tc.id === testCaseId);
+    if (testCase) {
+      setSelectedTestCase(testCase);
+      setShowDetailModal(true);
+      fetchComments(testCaseId);
+    } else {
+      console.warn(`테스트 케이스 #${testCaseId}를 찾을 수 없습니다.`);
+    }
+  };
+
+  // window 객체에 함수 등록 (다른 컴포넌트에서 호출 가능하도록)
+  useEffect(() => {
+    if (setActiveTab) {
+      window.setActiveTab = setActiveTab;
+    }
+    window.openTestCaseDetail = openTestCaseDetail;
+    
+    return () => {
+      if (window.openTestCaseDetail === openTestCaseDetail) {
+        delete window.openTestCaseDetail;
+      }
+    };
+  }, [testCases, setActiveTab]);
 
   // 이벤트 핸들러들
   const handleFolderSelect = (folderId) => {
