@@ -22,6 +22,7 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
   // const [totalItems, setTotalItems] = useState(0);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [showAssigneeModal, setShowAssigneeModal] = useState(false);
   const [showLabelModal, setShowLabelModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -32,7 +33,8 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
     description: '',
     status: '',
     priority: '',
-    issue_type: ''
+    issue_type: '',
+    environment: 'dev'
   });
   const [comments, setComments] = useState([]);
   const [showComments, setShowComments] = useState(false);
@@ -43,7 +45,8 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
     description: '',
     issue_type: 'Task',
     priority: 'Medium',
-    assignee_email: ''
+    assignee_email: '',
+    environment: 'dev'
   });
   const [showCommentPrompt, setShowCommentPrompt] = useState(false);
   const [commentIssueKey, setCommentIssueKey] = useState(null);
@@ -228,7 +231,8 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
           description: '',
           issue_type: 'Task',
           priority: 'Medium',
-          assignee_email: ''
+          assignee_email: '',
+          environment: 'dev'
         });
       }
     } catch (err) {
@@ -242,6 +246,7 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
     console.log('[JiraIssuesList] showIssueDetail clicked. useModal =', useModal, 'issue =', issue?.issue_key);
     setSelectedIssue(issue);
     setShowDetailModal(true);
+    setIsEditMode(false);
     fetchComments(issue.issue_key);
   };
 
@@ -253,7 +258,8 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
       description: issue.description || '',
       status: issue.status || 'To Do',
       priority: issue.priority || 'Medium',
-      issue_type: issue.issue_type || 'Task'
+      issue_type: issue.issue_type || 'Task',
+      environment: issue.environment || 'dev'
     });
     setShowEditModal(true);
   };
@@ -268,14 +274,33 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
         description: editFormData.description,
         status: editFormData.status,
         priority: editFormData.priority,
-        issue_type: editFormData.issue_type
+        issue_type: editFormData.issue_type,
+        environment: editFormData.environment
       });
       
       if (response.data.success) {
-        fetchJiraIssues();
+        await fetchJiraIssues();
         alert('이슈가 성공적으로 수정되었습니다.');
-        setShowEditModal(false);
-        setShowDetailModal(false);
+        // 수정 모드에서 호출된 경우 상세 모달의 수정 모드만 종료
+        if (isEditMode) {
+          setIsEditMode(false);
+          // 업데이트된 이슈 정보 다시 조회
+          const url = testCaseId 
+            ? `${config.apiUrl}/api/jira/issues/testcase/${testCaseId}`
+            : `${config.apiUrl}/api/jira/issues`;
+          const updatedIssuesResponse = await axios.get(url);
+          if (updatedIssuesResponse.data.success) {
+            const foundIssue = updatedIssuesResponse.data.data.issues.find(
+              issue => issue.issue_key === selectedIssue.issue_key
+            );
+            if (foundIssue) {
+              setSelectedIssue(foundIssue);
+            }
+          }
+        } else {
+          setShowEditModal(false);
+          setShowDetailModal(false);
+        }
       }
     } catch (err) {
       console.error('이슈 수정 오류:', err);
@@ -492,6 +517,9 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                   </span>
                   <span className={`issue-priority priority-${issue.priority.toLowerCase()}`}>
                     {issue.priority}
+                  </span>
+                  <span className="issue-environment-badge">
+                    {issue.environment || 'dev'}
                   </span>
                 </div>
               </div>
@@ -725,12 +753,13 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
           <div className="modal-overlay fullscreen-modal">
             <div className="modal fullscreen-modal-content">
               <div className="modal-header">
-                <h3>📋 이슈 상세 정보</h3>
+                <h3>{isEditMode ? '✏️ 이슈 수정' : '📋 이슈 상세 정보'}</h3>
                 <button 
                   className="modal-close"
                   onClick={() => {
                     setShowDetailModal(false);
                     setSelectedIssue(null);
+                    setIsEditMode(false);
                   }}
                 >
                   ×
@@ -746,38 +775,125 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                       <label>이슈 키:</label>
                       <span className="issue-key">{selectedIssue.issue_key}</span>
                     </div>
-                    <div className="detail-item">
-                      <label>상태:</label>
-                      <span className={`issue-status status-${selectedIssue.status.toLowerCase().replace(' ', '-')}`}>
-                        {selectedIssue.status}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <label>타입:</label>
-                      <span className={`issue-type type-${selectedIssue.issue_type.toLowerCase()}`}>
-                        {selectedIssue.issue_type}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <label>우선순위:</label>
-                      <span className={`issue-priority priority-${selectedIssue.priority.toLowerCase()}`}>
-                        {selectedIssue.priority}
-                      </span>
-                    </div>
+                    {isEditMode ? (
+                      <>
+                        <div className="detail-item">
+                          <label>상태:</label>
+                          <select
+                            className="form-control"
+                            value={editFormData.status}
+                            onChange={(e) => setEditFormData({...editFormData, status: e.target.value})}
+                            style={{ width: 'auto', display: 'inline-block', marginLeft: '8px' }}
+                          >
+                            <option value="To Do">To Do</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Done">Done</option>
+                          </select>
+                        </div>
+                        <div className="detail-item">
+                          <label>타입:</label>
+                          <select
+                            className="form-control"
+                            value={editFormData.issue_type}
+                            onChange={(e) => setEditFormData({...editFormData, issue_type: e.target.value})}
+                            style={{ width: 'auto', display: 'inline-block', marginLeft: '8px' }}
+                          >
+                            <option value="Bug">🐛 Bug</option>
+                            <option value="Task">📋 Task</option>
+                            <option value="Story">📖 Story</option>
+                            <option value="Epic">🏗️ Epic</option>
+                          </select>
+                        </div>
+                        <div className="detail-item">
+                          <label>우선순위:</label>
+                          <select
+                            className="form-control"
+                            value={editFormData.priority}
+                            onChange={(e) => setEditFormData({...editFormData, priority: e.target.value})}
+                            style={{ width: 'auto', display: 'inline-block', marginLeft: '8px' }}
+                          >
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                          </select>
+                        </div>
+                        <div className="detail-item">
+                          <label>환경:</label>
+                          <select
+                            className="form-control"
+                            value={editFormData.environment}
+                            onChange={(e) => setEditFormData({...editFormData, environment: e.target.value})}
+                            style={{ width: 'auto', display: 'inline-block', marginLeft: '8px' }}
+                          >
+                            <option value="alpha">alpha</option>
+                            <option value="prod">prod</option>
+                          </select>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="detail-item">
+                          <label>상태:</label>
+                          <span className={`issue-status status-${selectedIssue.status.toLowerCase().replace(' ', '-')}`}>
+                            {selectedIssue.status}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <label>타입:</label>
+                          <span className={`issue-type type-${selectedIssue.issue_type.toLowerCase()}`}>
+                            {selectedIssue.issue_type}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <label>우선순위:</label>
+                          <span className={`issue-priority priority-${selectedIssue.priority.toLowerCase()}`}>
+                            {selectedIssue.priority}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <label>환경:</label>
+                          <span className="issue-environment">
+                            {selectedIssue.environment || 'alpha'}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
                 
                 <div className="detail-section">
                   <h4>제목</h4>
-                  <p className="issue-summary">{selectedIssue.summary}</p>
+                  {isEditMode ? (
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={editFormData.summary}
+                      onChange={(e) => setEditFormData({...editFormData, summary: e.target.value})}
+                      placeholder="이슈 제목을 입력하세요"
+                      required
+                    />
+                  ) : (
+                    <p className="issue-summary">{selectedIssue.summary}</p>
+                  )}
                 </div>
                 
                 <div className="detail-section">
                   <h4>설명</h4>
-                  <div className="issue-description-full">
-                    {selectedIssue.description || '설명이 없습니다.'}
-                  </div>
+                  {isEditMode ? (
+                    <textarea
+                      className="form-control"
+                      value={editFormData.description}
+                      onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                      placeholder="이슈 설명을 입력하세요"
+                      rows="5"
+                    />
+                  ) : (
+                    <div className="issue-description-full">
+                      {selectedIssue.description || '설명이 없습니다.'}
+                    </div>
+                  )}
                 </div>
                 
                 
@@ -977,21 +1093,65 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
               </div>
               
               <div className="modal-actions">
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    setSelectedIssue(null);
-                  }}
-                >
-                  닫기
-                </button>
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => openEditModal(selectedIssue)}
-                >
-                  ✏️ 수정
-                </button>
+                {isEditMode ? (
+                  <>
+                    <button 
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setIsEditMode(false);
+                        // 수정 취소 시 원래 데이터로 복원
+                        setEditFormData({
+                          summary: selectedIssue.summary || '',
+                          description: selectedIssue.description || '',
+                          status: selectedIssue.status || 'To Do',
+                          priority: selectedIssue.priority || 'Medium',
+                          issue_type: selectedIssue.issue_type || 'Task',
+                          environment: selectedIssue.environment || 'dev'
+                        });
+                      }}
+                    >
+                      취소
+                    </button>
+                    <button 
+                      className="btn btn-primary"
+                      onClick={updateIssue}
+                      disabled={!editFormData.summary.trim()}
+                    >
+                      💾 저장
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button 
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setShowDetailModal(false);
+                        setSelectedIssue(null);
+                        setIsEditMode(false);
+                      }}
+                    >
+                      닫기
+                    </button>
+                    {user && (user.role === 'admin' || user.role === 'user') && (
+                      <button 
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setIsEditMode(true);
+                          setEditFormData({
+                            summary: selectedIssue.summary || '',
+                            description: selectedIssue.description || '',
+                            status: selectedIssue.status || 'To Do',
+                            priority: selectedIssue.priority || 'Medium',
+                            issue_type: selectedIssue.issue_type || 'Task',
+                            environment: selectedIssue.environment || 'dev'
+                          });
+                        }}
+                      >
+                        ✏️ 수정
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1172,6 +1332,18 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                     <option value="Critical">Critical</option>
                   </select>
                 </div>
+                
+                <div className="form-group">
+                  <label>환경</label>
+                  <select
+                    className="form-control"
+                    value={editFormData.environment}
+                    onChange={(e) => setEditFormData({...editFormData, environment: e.target.value})}
+                  >
+                    <option value="alpha">alpha</option>
+                    <option value="prod">prod</option>
+                  </select>
+                </div>
               </div>
               
               <div className="form-group">
@@ -1263,6 +1435,18 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                     <option value="Medium">🟡 Medium</option>
                     <option value="High">🟠 High</option>
                     <option value="Critical">🔴 Critical</option>
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label>환경</label>
+                  <select
+                    className="form-control"
+                    value={newIssue.environment}
+                    onChange={(e) => setNewIssue({...newIssue, environment: e.target.value})}
+                  >
+                    <option value="alpha">alpha</option>
+                    <option value="prod">prod</option>
                   </select>
                 </div>
               </div>

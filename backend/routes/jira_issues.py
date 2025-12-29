@@ -244,6 +244,14 @@ def create_issue():
             new_number = 1
         
         issue_key = f"TEST-{new_number}"
+
+        # 환경 결정: 요청 값 → 연결된 테스트 케이스 환경 → 기본값
+        issue_environment = data.get('environment')
+        if not issue_environment and data.get('test_case_id'):
+            linked_tc = TestCase.query.filter_by(id=data['test_case_id']).first()
+            if linked_tc and linked_tc.environment:
+                issue_environment = linked_tc.environment
+        issue_environment = issue_environment or 'dev'
         
         # 새 이슈 생성
         issue = JiraIssue(
@@ -257,6 +265,7 @@ def create_issue():
             assignee_email=data.get('assignee_email'),
             labels=json.dumps(data.get('labels', [])) if data.get('labels') else None,
             reporter_email=data.get('reporter_email', 'admin@example.com'),
+            environment=issue_environment,
             test_case_id=data.get('test_case_id'),
             automation_test_id=data.get('automation_test_id'),
             performance_test_id=data.get('performance_test_id')
@@ -338,6 +347,8 @@ def update_issue(issue_key):
             issue.automation_test_id = data['automation_test_id']
         if 'performance_test_id' in data:
             issue.performance_test_id = data['performance_test_id']
+        if 'environment' in data:
+            issue.environment = data['environment']
         
         issue.updated_at = datetime.utcnow()
         
@@ -549,31 +560,33 @@ def get_jira_stats_by_environment():
     try:
         from sqlalchemy import func
         
-        # TestCase를 통해 환경별 이슈 통계 계산
         environment_stats = {}
-        
-        # 각 환경별로 이슈 수 집계
-        # TestCase의 environment를 기준으로 연결된 JiraIssue를 조회
-        environments = ['dev', 'alpha', 'staging', 'production', 'prod']
-        
-        for env in environments:
-            # 해당 환경의 테스트 케이스에 연결된 이슈 수
-            issue_count = db.session.query(func.count(JiraIssue.id)).join(
-                TestCase, JiraIssue.test_case_id == TestCase.id
-            ).filter(TestCase.environment == env).scalar() or 0
-            
-            # 상태별 통계
-            status_counts = db.session.query(
-                JiraIssue.status,
-                func.count(JiraIssue.id)
-            ).join(
-                TestCase, JiraIssue.test_case_id == TestCase.id
-            ).filter(TestCase.environment == env).group_by(JiraIssue.status).all()
-            
-            environment_stats[env] = {
-                'totalIssues': issue_count,
-                'issuesByStatus': dict(status_counts) if status_counts else {}
+
+        # 1) 환경별 총 이슈 수 (JiraIssue.environment 기반)
+        env_totals = db.session.query(
+            JiraIssue.environment,
+            func.count(JiraIssue.id)
+        ).group_by(JiraIssue.environment).all()
+
+        # 2) 환경별 상태별 이슈 수
+        env_status_totals = db.session.query(
+            JiraIssue.environment,
+            JiraIssue.status,
+            func.count(JiraIssue.id)
+        ).group_by(JiraIssue.environment, JiraIssue.status).all()
+
+        for env, total in env_totals:
+            env_key = env or 'unknown'
+            environment_stats[env_key] = {
+                'totalIssues': total,
+                'issuesByStatus': {}
             }
+
+        for env, status, count in env_status_totals:
+            env_key = env or 'unknown'
+            if env_key not in environment_stats:
+                environment_stats[env_key] = {'totalIssues': 0, 'issuesByStatus': {}}
+            environment_stats[env_key]['issuesByStatus'][status] = count
         
         return jsonify({
             'success': True,
