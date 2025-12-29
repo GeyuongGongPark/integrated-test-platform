@@ -324,17 +324,41 @@ def update_testcase_status(id):
         old_status = tc.result_status
         new_status = data.get('status', tc.result_status)
         
+        # 상태가 변경되지 않으면 알림 발송하지 않음
+        if old_status == new_status:
+            response = jsonify({
+                'message': '테스트 케이스 상태가 변경되지 않았습니다.',
+                'old_status': old_status,
+                'new_status': new_status,
+                'environment': tc.environment
+            })
+            return add_cors_headers(response), 200
+        
         print(f"🔄 테스트 케이스 상태 변경: {tc.name} ({old_status} → {new_status})")
+        
+        # 현재 사용자 ID 가져오기
+        current_user_id = None
+        if hasattr(request, 'user') and request.user:
+            current_user_id = request.user.id
         
         # 상태 업데이트
         tc.result_status = new_status
         db.session.commit()
         
-        # 알림 생성 (상태 변경 시)
+        # 알림 생성 (상태 변경 시 작성자와 담당자에게 발송)
         try:
             from services.notification_service import notification_service
+            
+            # 상태 변경 알림 발송 (작성자와 담당자에게)
+            notification_service.notify_test_status_changed(
+                test_case_id=id,
+                old_status=old_status,
+                new_status=new_status,
+                changed_by_user_id=current_user_id
+            )
+            
+            # 실패 알림은 테스트 결과가 있을 때만 추가로 생성
             if new_status == 'Fail':
-                # 실패 알림은 테스트 결과가 있을 때만 생성
                 latest_result = TestResult.query.filter_by(test_case_id=id).order_by(TestResult.executed_at.desc()).first()
                 if latest_result:
                     notification_service.notify_test_failed(id, latest_result.id)

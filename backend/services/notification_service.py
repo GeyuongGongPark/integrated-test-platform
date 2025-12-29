@@ -192,6 +192,82 @@ class NotificationService:
         except Exception as e:
             logger.error(f"스케줄 실행 알림 생성 오류: {str(e)}")
     
+    def notify_test_status_changed(self, test_case_id, old_status, new_status, changed_by_user_id=None):
+        """테스트 케이스 상태 변경 알림 (작성자와 담당자에게 발송)"""
+        try:
+            test_case = TestCase.query.get(test_case_id)
+            if not test_case:
+                return
+            
+            # 상태 텍스트 매핑
+            status_map = {
+                'pending': 'Pending',
+                'passed': 'Pass',
+                'failed': 'Fail',
+                'blocked': 'Blocked',
+                'Pass': 'Pass',
+                'Fail': 'Fail',
+                'Pending': 'Pending',
+                'Blocked': 'Blocked'
+            }
+            
+            old_status_text = status_map.get(old_status, old_status)
+            new_status_text = status_map.get(new_status, new_status)
+            
+            # 변경한 사용자 정보 가져오기
+            changed_by_user = None
+            if changed_by_user_id:
+                changed_by_user = User.query.get(changed_by_user_id)
+            changed_by_name = changed_by_user.username if changed_by_user else '시스템'
+            
+            title = f"테스트 케이스 상태 변경: {test_case.name}"
+            message = f"테스트 케이스 '{test_case.name}'의 상태가 '{old_status_text}'에서 '{new_status_text}'로 변경되었습니다.\n변경자: {changed_by_name}"
+            
+            # 우선순위 설정 (실패 상태일 때 높은 우선순위)
+            priority = 'high' if new_status in ['Fail', 'failed'] else 'medium'
+            
+            notifications = []
+            
+            # 작성자에게 알림 발송
+            if test_case.creator_id:
+                try:
+                    notification = self.create_notification(
+                        user_id=test_case.creator_id,
+                        notification_type='test_status_changed',
+                        title=title,
+                        message=message,
+                        related_test_case_id=test_case_id,
+                        priority=priority,
+                        channels='all'  # in_app, slack 모두 발송
+                    )
+                    notifications.append(notification)
+                    logger.info(f"테스트 케이스 상태 변경 알림 발송: 작성자 (User {test_case.creator_id})")
+                except Exception as e:
+                    logger.error(f"작성자 알림 발송 오류: {str(e)}")
+            
+            # 담당자에게 알림 발송 (작성자와 다른 경우에만)
+            if test_case.assignee_id and test_case.assignee_id != test_case.creator_id:
+                try:
+                    notification = self.create_notification(
+                        user_id=test_case.assignee_id,
+                        notification_type='test_status_changed',
+                        title=title,
+                        message=message,
+                        related_test_case_id=test_case_id,
+                        priority=priority,
+                        channels='all'  # in_app, slack 모두 발송
+                    )
+                    notifications.append(notification)
+                    logger.info(f"테스트 케이스 상태 변경 알림 발송: 담당자 (User {test_case.assignee_id})")
+                except Exception as e:
+                    logger.error(f"담당자 알림 발송 오류: {str(e)}")
+            
+            return notifications
+            
+        except Exception as e:
+            logger.error(f"테스트 케이스 상태 변경 알림 생성 오류: {str(e)}")
+            return []
+    
     def _send_realtime_notification(self, notification):
         """WebSocket을 통해 실시간 알림 전송"""
         try:
@@ -252,7 +328,8 @@ class NotificationService:
                 'test_failed': '❌',
                 'test_completed': '✅',
                 'test_started': '🚀',
-                'schedule_run': '⏰'
+                'schedule_run': '⏰',
+                'test_status_changed': '🔄'
             }
             
             color_map = {

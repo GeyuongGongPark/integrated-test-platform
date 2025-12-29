@@ -329,6 +329,7 @@ class JiraIssue(db.Model):
     assignee_email = db.Column(db.String(100))  # 담당자 이메일
     labels = db.Column(db.Text)  # JSON 형태로 저장
     reporter_email = db.Column(db.String(100), default='admin@example.com')
+    environment = db.Column(db.String(50), default='dev')  # 이슈 환경 정보
     # 테스트 케이스 연결 필드
     test_case_id = db.Column(db.Integer, db.ForeignKey('TestCases.id'), nullable=True)
     automation_test_id = db.Column(db.Integer, db.ForeignKey('AutomationTests.id'), nullable=True)
@@ -355,6 +356,7 @@ class JiraIssue(db.Model):
             'assignee_email': self.assignee_email,
             'labels': self.labels,
             'reporter_email': self.reporter_email,
+            'environment': self.environment,
             'test_case_id': self.test_case_id,
             'automation_test_id': self.automation_test_id,
             'performance_test_id': self.performance_test_id,
