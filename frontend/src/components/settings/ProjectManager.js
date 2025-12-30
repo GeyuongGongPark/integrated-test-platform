@@ -30,6 +30,10 @@ const ProjectManager = () => {
     return currentUser?.role === 'admin';
   };
 
+  const getErrorMessage = (err, fallback) => {
+    return err?.response?.data?.error || err?.response?.data?.message || err?.message || fallback;
+  };
+
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -64,7 +68,8 @@ const ProjectManager = () => {
       setNewProject({ name: '', description: '' });
       fetchProjects();
     } catch (err) {
-      alert('프로젝트 추가 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+      const message = getErrorMessage(err, '프로젝트 추가 중 오류가 발생했습니다.');
+      alert(message);
     }
   };
 
@@ -81,7 +86,8 @@ const ProjectManager = () => {
       setEditingProject(null);
       fetchProjects();
     } catch (err) {
-      alert('프로젝트 수정 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+      const message = getErrorMessage(err, '프로젝트 수정 중 오류가 발생했습니다.');
+      alert(message);
     }
   };
 
@@ -95,7 +101,8 @@ const ProjectManager = () => {
       alert('프로젝트가 성공적으로 삭제되었습니다.');
       fetchProjects();
     } catch (err) {
-      alert('프로젝트 삭제 중 오류가 발생했습니다: ' + err.response?.data?.error || err.message);
+      const message = getErrorMessage(err, '프로젝트 삭제 중 오류가 발생했습니다.');
+      alert(message);
     }
   };
 

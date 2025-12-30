@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Folder, TestCase
+from models import db, Folder, TestCase, Project
 from utils.cors import add_cors_headers
 from utils.auth_decorators import guest_allowed, user_required, admin_required
 from utils.response_utils import (
@@ -27,6 +27,7 @@ def get_folders():
             'folder_type': f.folder_type,
             'environment': f.environment,
             'deployment_date': f.deployment_date.strftime('%Y-%m-%d') if f.deployment_date else None,
+            'project_id': f.project_id,
             'created_at': f.created_at.isoformat() if f.created_at else None
         } for f in folders]
         
@@ -42,18 +43,44 @@ def get_folders():
 def create_folder():
     try:
         data = request.get_json()
+        parent_id = data.get('parent_folder_id')
+        folder_type = data.get('folder_type', 'environment')
         
         # 필수 필드 검증
         if not data.get('folder_name'):
             response = jsonify({'error': '폴더명은 필수입니다'})
             return add_cors_headers(response), 400
+
+        # 부모 폴더 검증 및 타입 제한
+        parent_folder = None
+        if parent_id:
+            parent_folder = Folder.query.get_or_404(parent_id)
+            if parent_folder.folder_type in (None, 'environment') and folder_type != 'deployment_date':
+                return add_cors_headers(jsonify({'error': '환경 폴더 아래에는 배포일자 폴더만 생성할 수 있습니다.'})), 400
+            if parent_folder.folder_type == 'deployment_date' and folder_type != 'feature':
+                return add_cors_headers(jsonify({'error': '배포일자 폴더 아래에는 기능 폴더만 생성할 수 있습니다.'})), 400
+            if parent_folder.folder_type == 'feature':
+                return add_cors_headers(jsonify({'error': '기능 폴더 아래에는 더 이상 하위 폴더를 만들 수 없습니다.'})), 400
+
+        # 프로젝트 결정: 부모 우선, 없으면 요청값, 최종 기본 2
+        project_id = parent_folder.project_id if parent_folder else data.get('project_id') or 2
+
+        # 환경 값 결정
+        environment = data.get('environment')
+        if parent_folder:
+            environment = parent_folder.environment
+        if folder_type == 'environment' and not environment:
+            environment = 'dev'
+
+        deployment_date = datetime.strptime(data.get('deployment_date'), '%Y-%m-%d').date() if data.get('deployment_date') else None
         
         folder = Folder(
             folder_name=data.get('folder_name'),
-            parent_folder_id=data.get('parent_folder_id'),
-            folder_type=data.get('folder_type', 'environment'),
-            environment=data.get('environment'),
-            deployment_date=datetime.strptime(data.get('deployment_date'), '%Y-%m-%d').date() if data.get('deployment_date') else None
+            parent_folder_id=parent_id,
+            folder_type=folder_type,
+            environment=environment,
+            deployment_date=deployment_date,
+            project_id=project_id
         )
         
         db.session.add(folder)
@@ -85,6 +112,7 @@ def get_folder(id):
             'folder_type': folder.folder_type,
             'environment': folder.environment,
             'deployment_date': folder.deployment_date.strftime('%Y-%m-%d') if folder.deployment_date else None,
+            'project_id': folder.project_id,
             'created_at': folder.created_at.isoformat() if folder.created_at else None
         }
         
@@ -101,11 +129,30 @@ def update_folder(id):
     try:
         folder = Folder.query.get_or_404(id)
         data = request.get_json()
-        
+
+        parent_id = data.get('parent_folder_id', folder.parent_folder_id)
+        parent_folder = Folder.query.get(parent_id) if parent_id else None
+        new_folder_type = data.get('folder_type', folder.folder_type)
+
+        # 타입 검증
+        if parent_folder:
+            if parent_folder.folder_type in (None, 'environment') and new_folder_type != 'deployment_date':
+                return add_cors_headers(jsonify({'error': '환경 폴더 아래에는 배포일자 폴더만 둘 수 있습니다.'})), 400
+            if parent_folder.folder_type == 'deployment_date' and new_folder_type != 'feature':
+                return add_cors_headers(jsonify({'error': '배포일자 폴더 아래에는 기능 폴더만 둘 수 있습니다.'})), 400
+            if parent_folder.folder_type == 'feature':
+                return add_cors_headers(jsonify({'error': '기능 폴더 아래에는 더 이상 하위 폴더를 둘 수 없습니다.'})), 400
+
         folder.folder_name = data.get('folder_name', folder.folder_name)
-        folder.parent_folder_id = data.get('parent_folder_id', folder.parent_folder_id)
-        folder.folder_type = data.get('folder_type', folder.folder_type)
-        folder.environment = data.get('environment', folder.environment)
+        folder.parent_folder_id = parent_id
+        folder.folder_type = new_folder_type
+
+        if parent_folder:
+            folder.project_id = parent_folder.project_id
+            folder.environment = parent_folder.environment
+        else:
+            folder.project_id = data.get('project_id', folder.project_id or 2)
+            folder.environment = data.get('environment', folder.environment)
         
         if data.get('deployment_date'):
             folder.deployment_date = datetime.strptime(data.get('deployment_date'), '%Y-%m-%d').date()
@@ -153,99 +200,78 @@ def delete_folder(id):
 @folders_bp.route('/folders/tree', methods=['GET'])
 @guest_allowed
 def get_folder_tree():
-    """환경별 → 배포일자별 → 기능명별 폴더 트리 구조 반환"""
+    """프로젝트 → 환경 → 배포일자 → 기능 폴더 트리 구조 반환"""
     try:
-        # 환경별 폴더 조회 (folder_type이 'environment'이거나 null인 상위 폴더들)
-        environment_folders = Folder.query.filter(
-            (Folder.folder_type == 'environment') | 
-            ((Folder.folder_type.is_(None)) & (Folder.parent_folder_id.is_(None)))
-        ).all()
-        
-        print(f"🔍 환경 폴더 수: {len(environment_folders)}")
-        
+        # 기존 project_id 없는 폴더는 기본 프로젝트(2)로 매칭
+        legacy_folders = Folder.query.filter(Folder.project_id.is_(None)).all()
+        if legacy_folders:
+            for lf in legacy_folders:
+                lf.project_id = 2
+            db.session.commit()
+
         tree = []
-        for env_folder in environment_folders:
-            # folder_type이 null인 경우 환경 이름에서 타입 추정
-            folder_type = env_folder.folder_type
-            if folder_type is None:
-                if 'DEV' in env_folder.folder_name.upper():
-                    folder_type = 'environment'
-                    env_folder.environment = 'dev'
-                elif 'ALPHA' in env_folder.folder_name.upper():
-                    folder_type = 'environment'
-                    env_folder.environment = 'alpha'
-                elif 'PRODUCTION' in env_folder.folder_name.upper():
-                    folder_type = 'environment'
-                    env_folder.environment = 'production'
-                else:
-                    folder_type = 'environment'
-                    env_folder.environment = 'unknown'
-            
-            env_node = {
-                'id': env_folder.id,
-                'name': env_folder.folder_name,
-                'type': 'environment',
-                'environment': env_folder.environment,
+
+        projects = Project.query.all()
+        for project in projects:
+            project_node = {
+                'id': project.id,
+                'name': project.name,
+                'type': 'project',
                 'children': []
             }
-            
-            print(f"🌍 환경 폴더: {env_folder.folder_name} (ID: {env_folder.id})")
-            
-            # 해당 환경의 배포일자별 폴더 조회 (folder_type이 'deployment_date'이거나 null인 하위 폴더들)
-            deployment_folders = Folder.query.filter(
-                ((Folder.folder_type == 'deployment_date') | (Folder.folder_type.is_(None))) &
-                (Folder.parent_folder_id == env_folder.id)
+
+            environment_folders = Folder.query.filter(
+                (Folder.project_id == project.id) &
+                (Folder.parent_folder_id.is_(None)) &
+                ((Folder.folder_type == 'environment') | (Folder.folder_type.is_(None)))
             ).all()
-            
-            print(f"📅 배포일자 폴더 수: {len(deployment_folders)}")
-            
-            for dep_folder in deployment_folders:
-                # folder_type이 null인 경우 배포일자로 추정
-                dep_folder_type = dep_folder.folder_type
-                if dep_folder_type is None:
-                    dep_folder_type = 'deployment_date'
-                
-                dep_node = {
-                    'id': dep_folder.id,
-                    'name': dep_folder.folder_name,
-                    'type': 'deployment_date',
-                    'deployment_date': dep_folder.deployment_date.strftime('%Y-%m-%d') if dep_folder.deployment_date else (dep_folder.folder_name or 'Unknown'),
+
+            for env_folder in environment_folders:
+                env_node = {
+                    'id': env_folder.id,
+                    'name': env_folder.folder_name,
+                    'type': 'environment',
+                    'environment': env_folder.environment or 'dev',
+                    'project_id': env_folder.project_id,
                     'children': []
                 }
-                
-                print(f"📅 배포일자 폴더: {dep_folder.folder_name} (ID: {dep_folder.id})")
-                
-                # 해당 배포일자의 기능명별 폴더 조회 (folder_type이 'feature'이거나 null인 하위 폴더들)
-                feature_folders = Folder.query.filter(
-                    ((Folder.folder_type == 'feature') | (Folder.folder_type.is_(None))) &
-                    (Folder.parent_folder_id == dep_folder.id)
+
+                deployment_folders = Folder.query.filter(
+                    (Folder.parent_folder_id == env_folder.id) &
+                    ((Folder.folder_type == 'deployment_date') | (Folder.folder_type.is_(None)))
                 ).all()
-                
-                print(f"🔧 기능명 폴더 수: {len(feature_folders)}")
-                
-                for feature_folder in feature_folders:
-                    # folder_type이 null인 경우 기능명으로 추정
-                    feature_folder_type = feature_folder.folder_type
-                    if feature_folder_type is None:
-                        feature_folder_type = 'feature'
-                    
-                    feature_node = {
-                        'id': feature_folder.id,
-                        'name': feature_folder.folder_name,
-                        'type': 'feature',
+
+                for dep_folder in deployment_folders:
+                    dep_node = {
+                        'id': dep_folder.id,
+                        'name': dep_folder.folder_name,
+                        'type': 'deployment_date',
+                        'deployment_date': dep_folder.deployment_date.strftime('%Y-%m-%d') if dep_folder.deployment_date else (dep_folder.folder_name or 'Unknown'),
+                        'project_id': dep_folder.project_id,
                         'children': []
                     }
-                    
-                    print(f"🔧 기능명 폴더: {feature_folder.folder_name} (ID: {feature_folder.id})")
-                    
-                    # 기능명 폴더에 하위 폴더가 있을 수 있지만, 여기서는 3단계까지만 표시
-                    dep_node['children'].append(feature_node)
-                
-                # 테스트 케이스는 제외하고 폴더만 반환
-                env_node['children'].append(dep_node)
-            
-            tree.append(env_node)
-        
+
+                    feature_folders = Folder.query.filter(
+                        (Folder.parent_folder_id == dep_folder.id) &
+                        ((Folder.folder_type == 'feature') | (Folder.folder_type.is_(None)))
+                    ).all()
+
+                    for feature_folder in feature_folders:
+                        feature_node = {
+                            'id': feature_folder.id,
+                            'name': feature_folder.folder_name,
+                            'type': 'feature',
+                            'project_id': feature_folder.project_id,
+                            'children': []
+                        }
+                        dep_node['children'].append(feature_node)
+
+                    env_node['children'].append(dep_node)
+
+                project_node['children'].append(env_node)
+
+            tree.append(project_node)
+
         response = jsonify(tree)
         return add_cors_headers(response), 200
         

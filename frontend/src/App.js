@@ -131,7 +131,7 @@ function AppContent() {
       <div className="App">
         <nav className="navbar">
           <div className="nav-brand">
-            <h1>Integrated Test Platform</h1>
+            <h1>LTMS</h1>
             {user && (
               <div className="nav-brand-right">
                 <NotificationBell />

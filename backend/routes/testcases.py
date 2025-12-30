@@ -44,6 +44,48 @@ def create_project():
     response = jsonify({'message': '프로젝트 생성 완료', 'id': project.id})
     return add_cors_headers(response), 201
 
+
+@testcases_bp.route('/projects/<int:project_id>', methods=['PUT'])
+@admin_required
+def update_project(project_id):
+    """프로젝트 수정"""
+    try:
+        project = Project.query.get_or_404(project_id)
+        data = request.get_json() or {}
+
+        project.name = data.get('name', project.name)
+        project.description = data.get('description', project.description)
+
+        db.session.commit()
+        response = jsonify({
+            'message': '프로젝트 수정 완료',
+            'project': serialize_project(project)
+        })
+        return add_cors_headers(response), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"프로젝트 수정 오류: {str(e)}")
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
+
+@testcases_bp.route('/projects/<int:project_id>', methods=['DELETE'])
+@admin_required
+def delete_project(project_id):
+    """프로젝트 삭제"""
+    try:
+        project = Project.query.get_or_404(project_id)
+        db.session.delete(project)
+        db.session.commit()
+
+        response = jsonify({'message': '프로젝트 삭제 완료'})
+        return add_cors_headers(response), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"프로젝트 삭제 오류: {str(e)}")
+        response = jsonify({'error': str(e)})
+        return add_cors_headers(response), 500
+
 @testcases_bp.route('/testcases', methods=['GET', 'OPTIONS'])
 @guest_allowed
 def get_testcases():

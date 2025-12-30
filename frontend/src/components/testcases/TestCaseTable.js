@@ -104,7 +104,7 @@ const TestCaseTable = ({
                   <div className="testcase-meta">
                     <span className="environment-badge">{testCase.environment || 'dev'}</span>
                     {testCase.automation_code_path && (
-                      <span className="automation-badge">🤖 자동화</span>
+                      <span className="automation-badge">자동화</span>
                     )}
                   </div>
                 </div>

@@ -1148,7 +1148,7 @@ const UnifiedDashboard = ({ setActiveTab }) => {
                 onDrop={(e) => handleDrop(e, cardKey)}
               >
                 <div className="card-header">
-                  <h3>🏷️ 이슈 레이블 통계</h3>
+                  <h3>이슈 레이블 통계</h3>
                   <button 
                     className="btn-move-to-tab"
                     onClick={() => setActiveTab('jira')}
