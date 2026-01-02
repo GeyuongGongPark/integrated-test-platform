@@ -678,7 +678,8 @@ const TestCaseAPP = ({ setActiveTab }) => {
     return nodes.map(node => {
       const hasChildren = node.children && node.children.length > 0;
       const isExpanded = expandedFolders.has(node.id);
-      const isFolder = node.type === 'environment' || node.type === 'deployment_date' || node.type === 'feature';
+      const nodeType = node.type || getFolderType(node.id, folderTree);
+      const isFolder = nodeType === 'environment' || nodeType === 'deployment_date' || nodeType === 'feature';
       
       return (
         <div key={node.id} style={{ marginLeft: level * 20 }}>
@@ -702,16 +703,22 @@ const TestCaseAPP = ({ setActiveTab }) => {
               </span>
             )}
             <span className="folder-icon">
-              {getFolderType(node.id, folderTree) === 'environment' ? '🌍' : 
-               getFolderType(node.id, folderTree) === 'deployment_date' ? '📅' : 
-               getFolderType(node.id, folderTree) === 'feature' ? '🔧' : '📄'}
+              {
+                nodeType === 'project' ? '🗂️' :
+                nodeType === 'environment' ? '🌍' : 
+                nodeType === 'deployment_date' ? '📅' : 
+                nodeType === 'feature' ? '🔧' : '📄'
+              }
             </span>
             <span className="folder-name">{node.name}</span>
             {isFolder && (
               <span className="folder-type-badge">
-                {getFolderType(node.id, folderTree) === 'environment' ? '환경' : 
-                 getFolderType(node.id, folderTree) === 'deployment_date' ? '배포일자' : 
-                 getFolderType(node.id, folderTree) === 'feature' ? '기능명' : ''}
+                {
+                  nodeType === 'project' ? '프로젝트' :
+                  nodeType === 'environment' ? '환경' : 
+                  nodeType === 'deployment_date' ? '배포일자' : 
+                  nodeType === 'feature' ? '기능명' : ''
+                }
               </span>
             )}
           </div>
@@ -830,7 +837,9 @@ const TestCaseAPP = ({ setActiveTab }) => {
             )}
           </div>
           <div className="tree-container">
-            {renderFolderTree(folderTree)}
+            <div className="tree-scroll-inner">
+              {renderFolderTree(folderTree)}
+            </div>
           </div>
         </div>
 

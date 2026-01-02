@@ -123,6 +123,13 @@
 .tree-container {
   max-height: 600px;
   overflow-y: auto;
+  overflow-x: auto; /* 긴 폴더명이나 깊은 중첩 대비 가로 스크롤 허용 */
+  padding-bottom: 4px; /* 스크롤바 여백 */
+}
+
+.tree-scroll-inner {
+  width: max-content;   /* 내부 내용 길이만큼 가로 확장 */
+  min-width: 100%;      /* 최소한 컨테이너 폭은 유지 */
 }
 
 .folder-item {
@@ -135,6 +142,14 @@
   transition: all 0.2s ease;
   border: 1px solid transparent;
   position: relative;
+  width: max-content; /* 들여쓰기/긴 이름 시 가로 스크롤 발동 */
+  min-width: 280px; /* 너무 좁아지지 않도록 기본 폭 확보 */
+  white-space: nowrap; /* 긴 이름 줄바꿈 방지 */
+  overflow: visible;
+}
+
+.folder-name {
+  white-space: nowrap; /* 폴더명 줄바꿈 방지 */
 }
 
 .folder-toggle {
