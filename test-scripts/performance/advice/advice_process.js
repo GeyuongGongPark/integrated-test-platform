@@ -2,7 +2,7 @@ import { check } from "k6";
 import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
 import { browser } from "k6/browser";
 import advice_clm from "./advice_clm.js";
-import { URLS } from '../url/base.js';
+import { URLS } from '../url/url_base.js';
 import { getFormattedTimestamp } from "../common/utils.js";
 
 export const options = {

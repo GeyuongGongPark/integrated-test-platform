@@ -1,8 +1,6 @@
-// URL configuration index
-const base = require('./base.js');
-const config = require('./config.js');
+// URL 설정을 한 곳에서 관리하는 인덱스 파일
+export * from './url_base.js';
+export * from './config.js';
 
-module.exports = {
-    base,
-    config
-}; 
+// 편의를 위한 추가 export
+export { URLS as default } from './url_base.js';
