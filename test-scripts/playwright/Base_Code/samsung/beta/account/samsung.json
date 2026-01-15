@@ -1,0 +1,39 @@
+{
+    "DEV": {
+        "base_url": "https://samsung.business.lfdev.io",
+        "master": {
+            "id": "ggpark+sam_m@amicuslex.net",
+            "password": "1q2w#E$R"
+        },
+    "sub-master":{
+            "id": "ggpark+sam_sm@amicuslex.net",
+            "password": "1q2w#E$R"
+    },
+    "user1":{
+            "id": "ggpark+sam_n1@amicuslex.net",
+            "password": "1q2w#E$R"
+        },
+    "user2":{
+            "id": "ggpark+sam_n2@amicuslex.net",
+            "password": "1q2w#E$R"
+    },
+    "PROD": {
+        "base_url": "https://samsung.business.lawform.io",
+        "master": {
+            "id": "ggpark+sam_m@amicuslex.net",
+            "password": "1q2w#E$R"
+        },
+        "sub-master":{
+            "id": "ggpark+sam_sm@amicuslex.net",
+            "password": "1q2w#E$R"
+        },
+        "user1":{
+            "id": "ggpark+sam_n1@amicuslex.net",
+            "password": "1q2w#E$R"
+        },
+        "user2":{
+            "id": "ggpark+sam_n2@amicuslex.net",
+            "password": "1q2w#E$R"
+        }
+    }
+}}

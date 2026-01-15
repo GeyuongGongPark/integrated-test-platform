@@ -1,0 +1,48 @@
+{
+    "DEV": {
+        "base_url": "https://alpha.business.lfdev.io",
+        "master": {
+            "id": "ggpark+id20250211092023378_m@amicuslex.net",
+            "password": "1q2w#E$R"
+    },
+    "approver":{
+            "id": "ggpark+id20250211092023378_s1@amicuslex.net",
+            "password": "1q2w#E$R"
+    },
+    "legal_advisor":{
+            "id": "ggpark+id20250211092023378_s2@amicuslex.net",
+            "password": "1q2w#E$R"
+        },
+    "legal":{
+            "id": "ggpark+id20250211092023378_s3@amicuslex.net",
+            "password": "1q2w#E$R"
+    },
+    "user":{
+            "id": "ggpark+id20250211092023378_s4@amicuslex.net",
+            "password": "1q2w#E$R"
+        }
+    },
+    "PROD": {
+        "base_url": "https://business.lawform.io",
+        "master": {
+            "id": "ggpark+id20250211162329770_m@amicuslex.net",
+            "password": "1q2w#E$R"
+        },
+        "approver":{
+            "id": "ggpark+id20250211162329770_s1@amicuslex.net",
+            "password": "1q2w#E$R"
+        },
+        "legal_advisor":{
+            "id": "ggpark+id20250211162329770_s2@amicuslex.net",
+            "password": "1q2w#E$R"
+        },
+        "legal":{
+            "id": "ggpark+id20250211162329770_s3@amicuslex.net",
+            "password": "1q2w#E$R"
+        },
+        "user":{
+            "id": "ggpark+id20250211162329770_s4@amicuslex.net",
+            "password": "1q2w#E$R"
+        }
+    }
+}

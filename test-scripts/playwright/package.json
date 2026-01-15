@@ -1,0 +1,26 @@
+{
+  "name": "lfbz-auto",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "LFBZ 자동화 테스트 레포",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "migrate:accounts": "node Account/migrate_json_to_db.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^24.10.0"
+  },
+  "dependencies": {
+    "mysql2": "^3.11.0",
+    "dotenv": "^16.3.1",
+    "playwright": "^1.57.0",
+    "vibium": "^0.0.1"
+  }
+}
