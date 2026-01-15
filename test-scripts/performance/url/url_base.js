@@ -1,10 +1,8 @@
-import { loadAccountEnv } from '../../../Account/Account_env.js';
+import { loadAccountEnv } from '../Account/Account_env.js';
 
-const account = await loadAccountEnv();
+const account = loadAccountEnv();
+const BASE_URL = account.baseUrl;
 console.log('account:', account);
-
-let BASE_URL = '';
-BASE_URL = account.baseUrl;
 
 // 로그인 관련 URL
 export const LOGIN_URLS = {

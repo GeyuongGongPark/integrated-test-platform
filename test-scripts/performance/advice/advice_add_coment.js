@@ -1,4 +1,4 @@
-import { htmlReport } from "https://raw.githubsercoutent.com/benc-uk/k6-reporter/main/dist/bundle.js";
+import {htmlReport} from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
 import { browser } from 'k6/browser';
 import login_to_dashboard from "../login/login_to_dashboard";
 import { URLS } from "../url/url_base";
@@ -19,7 +19,7 @@ export const options = {
             }
         }
     },
-    threshold:{
+    threshold:{ 
         checks: ['rate==1.0'],
     }
 }
@@ -34,7 +34,10 @@ export default async function () {
 
     try {
         const page = await login_to_dashboard();
-        await page.goto(URLS.ADVICE.DRAFT);
+        await page.goto(URLS.ADVICE.REVIEW);
+        console.log(`URL: ${URLS.ADVICE.REVIEW}`);
+        let timestamp = getNewTimestamp();
+        await page.screenshot({path: `screenshots/${timestamp}_advice_review.png`});
 
     }
     finally {}
