@@ -244,7 +244,7 @@ def get_issue(issue_key):
         }), 500
 
 @jira_bp.route('/issues/<issue_key>', methods=['PUT'])
-# @user_required  # 개발 단계에서 임시로 비활성화
+@user_required
 def update_issue(issue_key):
     """이슈 업데이트"""
     try:
@@ -287,7 +287,7 @@ def update_issue(issue_key):
         }), 500
 
 @jira_bp.route('/issues/<issue_key>/comment', methods=['POST'])
-# @user_required  # 개발 단계에서 임시로 비활성화
+@user_required
 def add_comment(issue_key):
     """이슈에 댓글 추가"""
     try:

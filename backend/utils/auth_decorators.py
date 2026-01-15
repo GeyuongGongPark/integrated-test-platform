@@ -43,6 +43,10 @@ def user_required(fn):
     """일반 사용자 권한 확인 데코레이터 (admin, user)"""
     @wraps(fn)
     def wrapper(*args, **kwargs):
+        # OPTIONS 요청은 인증 없이 통과 (CORS preflight)
+        if request.method == 'OPTIONS':
+            return fn(*args, **kwargs)
+        
         try:
             logger.debug(f"user_required 데코레이터 실행 - 요청 URL: {request.url}")
             logger.debug(f"Authorization 헤더: {request.headers.get('Authorization', '없음')}")
@@ -77,6 +81,10 @@ def guest_allowed(fn):
     """게스트 사용자도 허용하는 데코레이터 (모든 사용자)"""
     @wraps(fn)
     def wrapper(*args, **kwargs):
+        # OPTIONS 요청은 인증 없이 통과 (CORS preflight)
+        if request.method == 'OPTIONS':
+            return fn(*args, **kwargs)
+        
         try:
             verify_jwt_in_request()
             current_user_id = get_jwt_identity()

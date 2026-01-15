@@ -12,25 +12,50 @@ const FolderManager = () => {
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingFolder, setEditingFolder] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [editFormData, setEditFormData] = useState({
     folder_name: '',
     parent_folder_id: null,
     folder_type: 'environment',
     environment: 'dev',
-    deployment_date: ''
+    deployment_date: '',
+    project_id: null
   });
   const [formData, setFormData] = useState({
     folder_name: '',
     parent_folder_id: null,
     folder_type: 'environment',
     environment: 'dev',
-    deployment_date: ''
+    deployment_date: '',
+    project_id: null
   });
 
   useEffect(() => {
-    fetchFolders();
-    fetchFolderTree();
+    fetchProjects();
   }, []);
+
+  useEffect(() => {
+    if (selectedProjectId) {
+      fetchFolders();
+      fetchFolderTree();
+      setFormData((prev) => ({ ...prev, project_id: selectedProjectId }));
+      setEditFormData((prev) => ({ ...prev, project_id: selectedProjectId }));
+    }
+  }, [selectedProjectId]);
+
+  const fetchProjects = async () => {
+    try {
+      const res = await axios.get(`${config.apiUrl}/projects`);
+      setProjects(res.data || []);
+      const defaultProjectId = (res.data && res.data.length > 0 && res.data[0].id) || 2;
+      setSelectedProjectId(defaultProjectId);
+      setFormData((prev) => ({ ...prev, project_id: defaultProjectId }));
+      setEditFormData((prev) => ({ ...prev, project_id: defaultProjectId }));
+    } catch (err) {
+      console.error('프로젝트 조회 오류:', err);
+    }
+  };
 
   const fetchFolders = async () => {
     try {
@@ -59,7 +84,10 @@ const FolderManager = () => {
   const handleCreateFolder = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${config.apiUrl}/folders`, formData);
+      const response = await axios.post(`${config.apiUrl}/folders`, {
+        ...formData,
+        project_id: formData.project_id || selectedProjectId
+      });
       if (process.env.NODE_ENV === 'development') {
         console.log('폴더 생성 완료:', response.data);
       }
@@ -69,7 +97,8 @@ const FolderManager = () => {
         parent_folder_id: null,
         folder_type: 'environment',
         environment: 'dev',
-        deployment_date: ''
+        deployment_date: '',
+        project_id: selectedProjectId
       });
       fetchFolders();
       fetchFolderTree();
@@ -81,7 +110,10 @@ const FolderManager = () => {
 
   const handleUpdateFolder = async (id) => {
     try {
-      await axios.put(`${config.apiUrl}/folders/${id}`, editFormData);
+      await axios.put(`${config.apiUrl}/folders/${id}`, {
+        ...editFormData,
+        project_id: editFormData.project_id || selectedProjectId
+      });
       if (process.env.NODE_ENV === 'development') {
         console.log('폴더 수정 완료');
       }
@@ -91,7 +123,8 @@ const FolderManager = () => {
         parent_folder_id: null,
         folder_type: 'environment',
         environment: 'dev',
-        deployment_date: ''
+        deployment_date: '',
+        project_id: selectedProjectId
       });
       fetchFolders();
       fetchFolderTree();
@@ -121,15 +154,16 @@ const FolderManager = () => {
 
   const renderFolderTree = (nodes, level = 0) => {
     return nodes.map((node) => (
-      <div key={node.id} style={{ marginLeft: level * 20 }}>
+      <div key={`${node.type}-${node.id}`} style={{ marginLeft: level * 20 }}>
         <div className="folder-node">
           <span className="folder-icon">
-            {node.type === 'environment' ? '🌍' : 
+            {node.type === 'project' ? '🗂️' :
+             node.type === 'environment' ? '🌍' : 
              node.type === 'deployment_date' ? '📅' : '📄'}
           </span>
           <span className="folder-name">{node.name}</span>
           <div className="folder-actions">
-            {user && (user.role === 'admin' || user.role === 'user') && node.type !== 'test_case' && (
+            {user && (user.role === 'admin' || user.role === 'user') && node.type !== 'test_case' && node.type !== 'project' && (
               <>
                 <button 
                   className="btn-edit"
@@ -140,7 +174,8 @@ const FolderManager = () => {
                       parent_folder_id: node.parent_folder_id || null,
                       folder_type: node.type,
                       environment: node.environment || 'dev',
-                      deployment_date: node.deployment_date || ''
+                      deployment_date: node.deployment_date || '',
+                      project_id: node.project_id || selectedProjectId
                     });
                   }}
                 >
@@ -171,14 +206,41 @@ const FolderManager = () => {
     return <div className="loading">폴더 정보를 불러오는 중...</div>;
   }
 
+  const getFilteredFolders = (projectId) =>
+    projectId ? folders.filter((f) => f.project_id === projectId) : folders;
+
+  const filteredFolders = selectedProjectId
+    ? getFilteredFolders(selectedProjectId)
+    : folders;
+  const filteredTree = selectedProjectId
+    ? (folderTree || []).filter((n) =>
+        (n.type === 'project' && n.id === selectedProjectId) ||
+        n.project_id === selectedProjectId
+      )
+    : folderTree;
+
   return (
     <div className="folder-manager">
       <div className="folder-header">
         <h2>📁 폴더 관리</h2>
+        <div className="project-filter">
+          <label>프로젝트 선택</label>
+          <select
+            value={selectedProjectId || ''}
+            onChange={(e) => setSelectedProjectId(Number(e.target.value))}
+          >
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
         {user && (user.role === 'admin' || user.role === 'user') && (
           <button 
             className="btn-create"
-            onClick={() => setShowCreateForm(true)}
+            onClick={() => {
+              setFormData((prev) => ({ ...prev, project_id: selectedProjectId }));
+              setShowCreateForm(true);
+            }}
           >
             + 새 폴더 생성
           </button>
@@ -214,6 +276,26 @@ const FolderManager = () => {
                     onChange={(e) => setFormData({...formData, folder_name: e.target.value})}
                     required
                   />
+                </div>
+                
+                <div className="form-group">
+                  <label>프로젝트</label>
+                  <select
+                    value={formData.project_id || ''}
+                    onChange={(e) => {
+                      const pid = e.target.value ? Number(e.target.value) : null;
+                      setFormData({
+                        ...formData,
+                        project_id: pid,
+                        parent_folder_id: null
+                      });
+                    }}
+                  >
+                    <option value="">선택하세요</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div className="form-group">
@@ -257,7 +339,7 @@ const FolderManager = () => {
                     onChange={(e) => setFormData({...formData, parent_folder_id: e.target.value ? parseInt(e.target.value) : null})}
                   >
                     <option value="">없음 (최상위)</option>
-                    {folders.map(folder => (
+                    {getFilteredFolders(formData.project_id || selectedProjectId).map(folder => (
                       <option key={folder.id} value={folder.id}>
                         {folder.folder_name}
                       </option>
@@ -298,7 +380,8 @@ const FolderManager = () => {
                     parent_folder_id: null,
                     folder_type: 'environment',
                     environment: 'dev',
-                    deployment_date: ''
+                    deployment_date: '',
+                    project_id: selectedProjectId
                   });
                 }}
               >
@@ -315,6 +398,26 @@ const FolderManager = () => {
                     onChange={(e) => setEditFormData({...editFormData, folder_name: e.target.value})}
                     required
                   />
+                </div>
+                
+                <div className="form-group">
+                  <label>프로젝트</label>
+                  <select
+                    value={editFormData.project_id || ''}
+                    onChange={(e) => {
+                      const pid = e.target.value ? Number(e.target.value) : null;
+                      setEditFormData({
+                        ...editFormData,
+                        project_id: pid,
+                        parent_folder_id: null
+                      });
+                    }}
+                  >
+                    <option value="">선택하세요</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div className="form-group">
@@ -358,7 +461,9 @@ const FolderManager = () => {
                     onChange={(e) => setEditFormData({...editFormData, parent_folder_id: e.target.value ? parseInt(e.target.value) : null})}
                   >
                     <option value="">없음 (최상위)</option>
-                    {folders.filter(f => f.id !== editingFolder.id).map(folder => (
+                    {getFilteredFolders(editFormData.project_id || selectedProjectId)
+                      .filter(f => f.id !== editingFolder.id)
+                      .map(folder => (
                       <option key={folder.id} value={folder.id}>
                         {folder.folder_name}
                       </option>
@@ -397,8 +502,8 @@ const FolderManager = () => {
       <div className="folder-content">
         <div className="folder-tree">
           <h3>📂 폴더 구조</h3>
-          {folderTree.length > 0 ? (
-            renderFolderTree(folderTree)
+          {filteredTree.length > 0 ? (
+            renderFolderTree(filteredTree)
           ) : (
             <p>폴더가 없습니다. 새 폴더를 생성해보세요.</p>
           )}
@@ -418,7 +523,7 @@ const FolderManager = () => {
               </tr>
             </thead>
             <tbody>
-              {Array.isArray(folders) && folders.map(folder => (
+              {Array.isArray(filteredFolders) && filteredFolders.map(folder => (
                 <tr key={folder.id}>
                   <td>{folder.id}</td>
                   <td>{folder.folder_name}</td>

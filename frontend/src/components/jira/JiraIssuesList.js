@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
+import { useAuth } from '../../contexts/AuthContext';
+import PromptModal from '../common/PromptModal';
 import './JiraIssuesList.css';
 import '../common/Modal.css';
 
 const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
+  const { user } = useAuth();
   // 안전 가드: 명시적으로 false가 아닌 한 모달 사용
   const useModal = modalMode !== false;
   const [jiraIssues, setJiraIssues] = useState([]);
@@ -19,6 +22,7 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
   // const [totalItems, setTotalItems] = useState(0);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [showAssigneeModal, setShowAssigneeModal] = useState(false);
   const [showLabelModal, setShowLabelModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -29,7 +33,8 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
     description: '',
     status: '',
     priority: '',
-    issue_type: ''
+    issue_type: '',
+    environment: 'dev'
   });
   const [comments, setComments] = useState([]);
   const [showComments, setShowComments] = useState(false);
@@ -40,8 +45,11 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
     description: '',
     issue_type: 'Task',
     priority: 'Medium',
-    assignee_email: ''
+    assignee_email: '',
+    environment: 'dev'
   });
+  const [showCommentPrompt, setShowCommentPrompt] = useState(false);
+  const [commentIssueKey, setCommentIssueKey] = useState(null);
 
 
   // 이슈 목록 조회
@@ -91,9 +99,10 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
   // 이슈에 댓글 추가
   const addComment = async (issueKey, comment) => {
     try {
+      const authorEmail = user?.email || user?.username + '@example.com' || 'admin@example.com';
       const response = await axios.post(`${config.apiUrl}/api/jira/issues/${issueKey}/comments`, {
         body: comment,
-        author_email: 'admin@example.com'
+        author_email: authorEmail
       });
       
       if (response.data.success) {
@@ -222,7 +231,8 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
           description: '',
           issue_type: 'Task',
           priority: 'Medium',
-          assignee_email: ''
+          assignee_email: '',
+          environment: 'dev'
         });
       }
     } catch (err) {
@@ -236,6 +246,7 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
     console.log('[JiraIssuesList] showIssueDetail clicked. useModal =', useModal, 'issue =', issue?.issue_key);
     setSelectedIssue(issue);
     setShowDetailModal(true);
+    setIsEditMode(false);
     fetchComments(issue.issue_key);
   };
 
@@ -247,7 +258,8 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
       description: issue.description || '',
       status: issue.status || 'To Do',
       priority: issue.priority || 'Medium',
-      issue_type: issue.issue_type || 'Task'
+      issue_type: issue.issue_type || 'Task',
+      environment: issue.environment || 'dev'
     });
     setShowEditModal(true);
   };
@@ -262,14 +274,33 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
         description: editFormData.description,
         status: editFormData.status,
         priority: editFormData.priority,
-        issue_type: editFormData.issue_type
+        issue_type: editFormData.issue_type,
+        environment: editFormData.environment
       });
       
       if (response.data.success) {
-        fetchJiraIssues();
+        await fetchJiraIssues();
         alert('이슈가 성공적으로 수정되었습니다.');
-        setShowEditModal(false);
-        setShowDetailModal(false);
+        // 수정 모드에서 호출된 경우 상세 모달의 수정 모드만 종료
+        if (isEditMode) {
+          setIsEditMode(false);
+          // 업데이트된 이슈 정보 다시 조회
+          const url = testCaseId 
+            ? `${config.apiUrl}/api/jira/issues/testcase/${testCaseId}`
+            : `${config.apiUrl}/api/jira/issues`;
+          const updatedIssuesResponse = await axios.get(url);
+          if (updatedIssuesResponse.data.success) {
+            const foundIssue = updatedIssuesResponse.data.data.issues.find(
+              issue => issue.issue_key === selectedIssue.issue_key
+            );
+            if (foundIssue) {
+              setSelectedIssue(foundIssue);
+            }
+          }
+        } else {
+          setShowEditModal(false);
+          setShowDetailModal(false);
+        }
       }
     } catch (err) {
       console.error('이슈 수정 오류:', err);
@@ -345,6 +376,18 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
     <div className="jira-issues-list-container">
       <div className="jira-issues-header">
         <h1>🔗 이슈 관리</h1>
+        {user && user.role === 'guest' && (
+          <div className="guest-notice" style={{ 
+            padding: '10px', 
+            backgroundColor: '#fff3cd', 
+            border: '1px solid #ffc107', 
+            borderRadius: '4px',
+            marginBottom: '10px',
+            fontSize: '14px'
+          }}>
+            👀 게스트 모드: 조회만 가능합니다.
+          </div>
+        )}
         <div className="header-actions">
           <button 
             className="btn btn-primary"
@@ -353,13 +396,15 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
           >
             🔄 새로고침
           </button>
-          <button 
-            className="btn btn-success"
-            onClick={() => setShowCreateModal(true)}
-            style={{ marginLeft: '10px' }}
-          >
-            ➕ 새 이슈 생성
-          </button>
+          {user && (user.role === 'admin' || user.role === 'user') && (
+            <button 
+              className="btn btn-success"
+              onClick={() => setShowCreateModal(true)}
+              style={{ marginLeft: '10px' }}
+            >
+              ➕ 새 이슈 생성
+            </button>
+          )}
         </div>
       </div>
 
@@ -473,6 +518,9 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                   <span className={`issue-priority priority-${issue.priority.toLowerCase()}`}>
                     {issue.priority}
                   </span>
+                  <span className="issue-environment-badge">
+                    {issue.environment || 'dev'}
+                  </span>
                 </div>
               </div>
               
@@ -515,6 +563,12 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                           if (window.setActiveTab) {
                             window.setActiveTab('testcases');
                           }
+                          // 테스트 케이스 상세 모달 열기
+                          setTimeout(() => {
+                            if (window.openTestCaseDetail) {
+                              window.openTestCaseDetail(issue.test_case_id);
+                            }
+                          }, 100);
                         }}
                         title="테스트 케이스로 이동"
                       >
@@ -580,50 +634,65 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                     상세보기
                   </button>
                   
-                  <select
-                    className="status-select"
-                    value={issue.status}
-                    onChange={(e) => updateIssueStatus(issue.issue_key, e.target.value)}
-                  >
-                    <option value="To Do">To Do</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Done">Done</option>
-                  </select>
+                  {/* 게스트는 상태 변경 불가 */}
+                  {user && (user.role === 'admin' || user.role === 'user') && (
+                    <>
+                      <select
+                        className="status-select"
+                        value={issue.status}
+                        onChange={(e) => updateIssueStatus(issue.issue_key, e.target.value)}
+                      >
+                        <option value="To Do">To Do</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Done">Done</option>
+                      </select>
+                      
+                      <button 
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setSelectedIssue(issue);
+                          setShowAssigneeModal(true);
+                        }}
+                        title="담당자 할당"
+                      >
+                        👤 담당자
+                      </button>
+                      
+                      <button 
+                        className="btn btn-warning btn-sm"
+                        onClick={() => {
+                          setSelectedIssue(issue);
+                          setShowLabelModal(true);
+                        }}
+                        title="레이블 추가"
+                      >
+                        🏷️ 레이블
+                      </button>
+                      
+                      <button 
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setCommentIssueKey(issue.issue_key);
+                          setShowCommentPrompt(true);
+                        }}
+                        title="댓글 추가"
+                      >
+                        💬 댓글
+                      </button>
+                    </>
+                  )}
                   
-                  <button 
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      setSelectedIssue(issue);
-                      setShowAssigneeModal(true);
-                    }}
-                    title="담당자 할당"
-                  >
-                    👤 담당자
-                  </button>
-                  
-                  <button 
-                    className="btn btn-warning btn-sm"
-                    onClick={() => {
-                      setSelectedIssue(issue);
-                      setShowLabelModal(true);
-                    }}
-                    title="레이블 추가"
-                  >
-                    🏷️ 레이블
-                  </button>
-                  
-                  <button 
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      const comment = prompt('댓글을 입력하세요:');
-                      if (comment) {
-                        addComment(issue.issue_key, comment);
-                      }
-                    }}
-                    title="댓글 추가"
-                  >
-                    💬 댓글
-                  </button>
+                  {/* 게스트는 읽기 전용 상태 표시 */}
+                  {user && user.role === 'guest' && (
+                    <span className="status-readonly" style={{ 
+                      padding: '4px 8px', 
+                      backgroundColor: '#e9ecef', 
+                      borderRadius: '4px',
+                      fontSize: '12px'
+                    }}>
+                      상태: {issue.status}
+                    </span>
+                  )}
                   
                 </div>
               </div>
@@ -684,12 +753,13 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
           <div className="modal-overlay fullscreen-modal">
             <div className="modal fullscreen-modal-content">
               <div className="modal-header">
-                <h3>📋 이슈 상세 정보</h3>
+                <h3>{isEditMode ? '✏️ 이슈 수정' : '📋 이슈 상세 정보'}</h3>
                 <button 
                   className="modal-close"
                   onClick={() => {
                     setShowDetailModal(false);
                     setSelectedIssue(null);
+                    setIsEditMode(false);
                   }}
                 >
                   ×
@@ -705,38 +775,125 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                       <label>이슈 키:</label>
                       <span className="issue-key">{selectedIssue.issue_key}</span>
                     </div>
-                    <div className="detail-item">
-                      <label>상태:</label>
-                      <span className={`issue-status status-${selectedIssue.status.toLowerCase().replace(' ', '-')}`}>
-                        {selectedIssue.status}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <label>타입:</label>
-                      <span className={`issue-type type-${selectedIssue.issue_type.toLowerCase()}`}>
-                        {selectedIssue.issue_type}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <label>우선순위:</label>
-                      <span className={`issue-priority priority-${selectedIssue.priority.toLowerCase()}`}>
-                        {selectedIssue.priority}
-                      </span>
-                    </div>
+                    {isEditMode ? (
+                      <>
+                        <div className="detail-item">
+                          <label>상태:</label>
+                          <select
+                            className="form-control"
+                            value={editFormData.status}
+                            onChange={(e) => setEditFormData({...editFormData, status: e.target.value})}
+                            style={{ width: 'auto', display: 'inline-block', marginLeft: '8px' }}
+                          >
+                            <option value="To Do">To Do</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Done">Done</option>
+                          </select>
+                        </div>
+                        <div className="detail-item">
+                          <label>타입:</label>
+                          <select
+                            className="form-control"
+                            value={editFormData.issue_type}
+                            onChange={(e) => setEditFormData({...editFormData, issue_type: e.target.value})}
+                            style={{ width: 'auto', display: 'inline-block', marginLeft: '8px' }}
+                          >
+                            <option value="Bug">🐛 Bug</option>
+                            <option value="Task">📋 Task</option>
+                            <option value="Story">📖 Story</option>
+                            <option value="Epic">🏗️ Epic</option>
+                          </select>
+                        </div>
+                        <div className="detail-item">
+                          <label>우선순위:</label>
+                          <select
+                            className="form-control"
+                            value={editFormData.priority}
+                            onChange={(e) => setEditFormData({...editFormData, priority: e.target.value})}
+                            style={{ width: 'auto', display: 'inline-block', marginLeft: '8px' }}
+                          >
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                          </select>
+                        </div>
+                        <div className="detail-item">
+                          <label>환경:</label>
+                          <select
+                            className="form-control"
+                            value={editFormData.environment}
+                            onChange={(e) => setEditFormData({...editFormData, environment: e.target.value})}
+                            style={{ width: 'auto', display: 'inline-block', marginLeft: '8px' }}
+                          >
+                            <option value="alpha">alpha</option>
+                            <option value="prod">prod</option>
+                          </select>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="detail-item">
+                          <label>상태:</label>
+                          <span className={`issue-status status-${selectedIssue.status.toLowerCase().replace(' ', '-')}`}>
+                            {selectedIssue.status}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <label>타입:</label>
+                          <span className={`issue-type type-${selectedIssue.issue_type.toLowerCase()}`}>
+                            {selectedIssue.issue_type}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <label>우선순위:</label>
+                          <span className={`issue-priority priority-${selectedIssue.priority.toLowerCase()}`}>
+                            {selectedIssue.priority}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <label>환경:</label>
+                          <span className="issue-environment">
+                            {selectedIssue.environment || 'alpha'}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
                 
                 <div className="detail-section">
                   <h4>제목</h4>
-                  <p className="issue-summary">{selectedIssue.summary}</p>
+                  {isEditMode ? (
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={editFormData.summary}
+                      onChange={(e) => setEditFormData({...editFormData, summary: e.target.value})}
+                      placeholder="이슈 제목을 입력하세요"
+                      required
+                    />
+                  ) : (
+                    <p className="issue-summary">{selectedIssue.summary}</p>
+                  )}
                 </div>
                 
                 <div className="detail-section">
                   <h4>설명</h4>
-                  <div className="issue-description-full">
-                    {selectedIssue.description || '설명이 없습니다.'}
-                  </div>
+                  {isEditMode ? (
+                    <textarea
+                      className="form-control"
+                      value={editFormData.description}
+                      onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                      placeholder="이슈 설명을 입력하세요"
+                      rows="5"
+                    />
+                  ) : (
+                    <div className="issue-description-full">
+                      {selectedIssue.description || '설명이 없습니다.'}
+                    </div>
+                  )}
                 </div>
                 
                 
@@ -765,6 +922,80 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                     <h4>담당자</h4>
                     <div className="assignee-detail">
                       <span className="assignee-name">{selectedIssue.assignee_email}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* 연결된 테스트 케이스 정보 */}
+                {(selectedIssue.test_case_id || selectedIssue.automation_test_id || selectedIssue.performance_test_id) && (
+                  <div className="detail-section">
+                    <h4>연결된 테스트</h4>
+                    <div className="linked-test-cases-detail">
+                      {selectedIssue.test_case_id && (
+                        <div className="linked-test-item">
+                          <span className="linked-test-label">테스트 케이스:</span>
+                          <button 
+                            className="test-case-link-detail"
+                            onClick={() => {
+                              // 클로저 문제 방지를 위해 변수에 저장
+                              const testCaseId = selectedIssue.test_case_id;
+                              
+                              // 이슈 모달 닫기
+                              setShowDetailModal(false);
+                              setSelectedIssue(null);
+                              
+                              // 탭 이동
+                              if (window.setActiveTab) {
+                                window.setActiveTab('testcases');
+                              }
+                              
+                              // 테스트 케이스 상세 모달 열기
+                              setTimeout(() => {
+                                if (window.openTestCaseDetail) {
+                                  window.openTestCaseDetail(testCaseId);
+                                }
+                              }, 200);
+                            }}
+                            title="테스트 케이스로 이동"
+                          >
+                            테스트 케이스 #{selectedIssue.test_case_id}
+                          </button>
+                        </div>
+                      )}
+                      {selectedIssue.automation_test_id && (
+                        <div className="linked-test-item">
+                          <span className="linked-test-label">자동화 테스트:</span>
+                          <button 
+                            className="test-case-link-detail"
+                            onClick={() => {
+                              if (window.setActiveTab) {
+                                window.setActiveTab('automation');
+                              }
+                              setShowDetailModal(false);
+                            }}
+                            title="자동화 테스트로 이동"
+                          >
+                            자동화 테스트 #{selectedIssue.automation_test_id}
+                          </button>
+                        </div>
+                      )}
+                      {selectedIssue.performance_test_id && (
+                        <div className="linked-test-item">
+                          <span className="linked-test-label">성능 테스트:</span>
+                          <button 
+                            className="test-case-link-detail"
+                            onClick={() => {
+                              if (window.setActiveTab) {
+                                window.setActiveTab('performance');
+                              }
+                              setShowDetailModal(false);
+                            }}
+                            title="성능 테스트로 이동"
+                          >
+                            성능 테스트 #{selectedIssue.performance_test_id}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -812,21 +1043,49 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                           <small>첫 번째 댓글을 작성해보세요!</small>
                         </div>
                       ) : (
-                        comments.map((comment, index) => (
-                          <div key={index} className="comment-item">
-                            <div className="comment-header">
-                              <span className="comment-author">
-                                {comment.author?.displayName || 'Unknown User'}
-                              </span>
-                              <span className="comment-date">
-                                {new Date(comment.created).toLocaleString('ko-KR')}
-                              </span>
+                        comments.map((comment, index) => {
+                          // 날짜 파싱 및 포맷팅
+                          let formattedDate = 'Invalid Date';
+                          try {
+                            if (comment.created_at) {
+                              const date = new Date(comment.created_at);
+                              if (!isNaN(date.getTime())) {
+                                formattedDate = date.toLocaleString('ko-KR', {
+                                  year: 'numeric',
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                });
+                              }
+                            }
+                          } catch (e) {
+                            console.error('날짜 파싱 오류:', e);
+                          }
+                          
+                          // 작성자 표시 (이메일에서 이름 추출 또는 이메일 전체 표시)
+                          const authorDisplay = comment.author_email 
+                            ? (comment.author_email.includes('@') 
+                                ? comment.author_email.split('@')[0] 
+                                : comment.author_email)
+                            : 'Unknown User';
+                          
+                          return (
+                            <div key={comment.id || index} className="comment-item">
+                              <div className="comment-header">
+                                <span className="comment-author">
+                                  {authorDisplay}
+                                </span>
+                                <span className="comment-date">
+                                  {formattedDate}
+                                </span>
+                              </div>
+                              <div className="comment-body">
+                                {comment.body}
+                              </div>
                             </div>
-                            <div className="comment-body">
-                              {comment.body}
-                            </div>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   )}
@@ -834,21 +1093,65 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
               </div>
               
               <div className="modal-actions">
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    setSelectedIssue(null);
-                  }}
-                >
-                  닫기
-                </button>
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => openEditModal(selectedIssue)}
-                >
-                  ✏️ 수정
-                </button>
+                {isEditMode ? (
+                  <>
+                    <button 
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setIsEditMode(false);
+                        // 수정 취소 시 원래 데이터로 복원
+                        setEditFormData({
+                          summary: selectedIssue.summary || '',
+                          description: selectedIssue.description || '',
+                          status: selectedIssue.status || 'To Do',
+                          priority: selectedIssue.priority || 'Medium',
+                          issue_type: selectedIssue.issue_type || 'Task',
+                          environment: selectedIssue.environment || 'dev'
+                        });
+                      }}
+                    >
+                      취소
+                    </button>
+                    <button 
+                      className="btn btn-primary"
+                      onClick={updateIssue}
+                      disabled={!editFormData.summary.trim()}
+                    >
+                      💾 저장
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button 
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setShowDetailModal(false);
+                        setSelectedIssue(null);
+                        setIsEditMode(false);
+                      }}
+                    >
+                      닫기
+                    </button>
+                    {user && (user.role === 'admin' || user.role === 'user') && (
+                      <button 
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setIsEditMode(true);
+                          setEditFormData({
+                            summary: selectedIssue.summary || '',
+                            description: selectedIssue.description || '',
+                            status: selectedIssue.status || 'To Do',
+                            priority: selectedIssue.priority || 'Medium',
+                            issue_type: selectedIssue.issue_type || 'Task',
+                            environment: selectedIssue.environment || 'dev'
+                          });
+                        }}
+                      >
+                        ✏️ 수정
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1029,6 +1332,18 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                     <option value="Critical">Critical</option>
                   </select>
                 </div>
+                
+                <div className="form-group">
+                  <label>환경</label>
+                  <select
+                    className="form-control"
+                    value={editFormData.environment}
+                    onChange={(e) => setEditFormData({...editFormData, environment: e.target.value})}
+                  >
+                    <option value="alpha">alpha</option>
+                    <option value="prod">prod</option>
+                  </select>
+                </div>
               </div>
               
               <div className="form-group">
@@ -1122,6 +1437,18 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
                     <option value="Critical">🔴 Critical</option>
                   </select>
                 </div>
+                
+                <div className="form-group">
+                  <label>환경</label>
+                  <select
+                    className="form-control"
+                    value={newIssue.environment}
+                    onChange={(e) => setNewIssue({...newIssue, environment: e.target.value})}
+                  >
+                    <option value="alpha">alpha</option>
+                    <option value="prod">prod</option>
+                  </select>
+                </div>
               </div>
               
               <div className="form-group">
@@ -1151,6 +1478,23 @@ const JiraIssuesList = ({ modalMode = true, testCaseId = null }) => {
           </div>
         </div>
       )}
+
+      {/* 댓글 입력 모달 */}
+      <PromptModal
+        isOpen={showCommentPrompt}
+        onClose={() => {
+          setShowCommentPrompt(false);
+          setCommentIssueKey(null);
+        }}
+        title="댓글 추가"
+        message="댓글을 입력하세요:"
+        placeholder="댓글을 입력하세요..."
+        onConfirm={(comment) => {
+          if (comment && commentIssueKey) {
+            addComment(commentIssueKey, comment);
+          }
+        }}
+      />
     </div>
   )
 };

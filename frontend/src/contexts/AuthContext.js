@@ -75,17 +75,66 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 페이지 로드 시 토큰 검증
+  // 페이지 로드 시 토큰 검증 및 사용자 정보 복원
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    if (savedToken && isTokenExpired(savedToken)) {
-      console.log('⏰ 페이지 로드 시 저장된 토큰이 만료됨, 제거');
-      localStorage.removeItem('token');
-      setToken(null);
-    }
-  }, []);
+    const initializeAuth = async () => {
+      const savedToken = localStorage.getItem('token');
+      
+      if (!savedToken) {
+        console.log('🚫 저장된 토큰 없음, 로딩 종료');
+        setLoading(false);
+        return;
+      }
+      
+      // 토큰 만료 체크
+      if (isTokenExpired(savedToken)) {
+        console.log('⏰ 페이지 로드 시 저장된 토큰이 만료됨, 제거');
+        localStorage.removeItem('token');
+        setToken(null);
+        setLoading(false);
+        return;
+      }
+      
+      // 토큰이 유효하면 상태에 설정하고 사용자 정보 가져오기
+      console.log('✅ 저장된 토큰 발견, 사용자 정보 복원 시작');
+      setToken(savedToken);
+      
+      // 사용자 정보 가져오기
+      try {
+        const authHeader = `Bearer ${savedToken}`;
+        const response = await fetch(`${config.apiUrl}/auth/profile`, {
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json'
+          }
+        });
 
-  // 토큰이 있으면 사용자 정보 가져오기
+        if (response.ok) {
+          const userData = await response.json();
+          console.log('✅ 사용자 정보 복원 성공:', userData);
+          setUser(userData);
+        } else if (response.status === 401) {
+          // 401 오류는 토큰이 무효함을 의미
+          console.log('🔐 프로필 API 401 오류 - 토큰 무효, 로그아웃');
+          localStorage.removeItem('token');
+          setToken(null);
+          setUser(null);
+        } else {
+          console.warn('⚠️ 프로필 API 오류 (401 아님):', response.status);
+          // 다른 오류는 기본 사용자 정보로 처리하지 않고 그냥 넘어감
+        }
+      } catch (error) {
+        console.warn('⚠️ 프로필 API 네트워크 오류:', error);
+        // 네트워크 오류는 사용자 정보 없이 진행
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initializeAuth();
+  }, []); // 초기 마운트 시 한 번만 실행
+
+  // 토큰이 변경될 때 사용자 정보 가져오기 (로그인/로그아웃 시)
   useEffect(() => {
     console.log('🔄 useEffect 토큰 변경 감지:', { token: !!token, user: !!user });
     
@@ -97,16 +146,17 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       
-      // 이미 사용자 정보가 있으면 fetchUserProfile 호출하지 않음
+      // 사용자 정보가 없으면 가져오기 (초기 로드는 위의 useEffect에서 처리)
       if (!user) {
         console.log('👤 사용자 정보 없음, 프로필 가져오기');
         fetchUserProfile();
       } else {
-        console.log('👤 사용자 정보 이미 있음, 프로필 가져오기 건너뛰기');
+        console.log('👤 사용자 정보 이미 있음');
         setLoading(false);
       }
     } else {
-      console.log('🚫 토큰 없음, 로딩 종료');
+      console.log('🚫 토큰 없음, 사용자 정보 초기화');
+      setUser(null);
       setLoading(false);
     }
   }, [token]);
@@ -224,16 +274,25 @@ export const AuthProvider = ({ children }) => {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        const { access_token, user: userData } = data;
+        const result = await response.json();
+        // 백엔드 응답 구조: { success: true, data: { access_token, user } }
+        const { access_token, user: userData } = result.data || result;
+        
+        if (!access_token || !userData) {
+          console.error('게스트 로그인 응답 형식 오류:', result);
+          return { success: false, error: '게스트 로그인 응답 형식이 올바르지 않습니다.' };
+        }
         
         handleAuthSuccess(access_token, userData, '게스트 로그인');
         return { success: true };
       } else {
         const errorData = await response.json();
-        return { success: false, error: errorData.error || '게스트 로그인에 실패했습니다.' };
+        const errorMessage = errorData.message || errorData.error || '게스트 로그인에 실패했습니다.';
+        console.error('게스트 로그인 실패:', errorData);
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
+      console.error('게스트 로그인 네트워크 오류:', error);
       handleAuthError(error, '게스트 로그인');
       return { success: false, error: '네트워크 오류가 발생했습니다.' };
     }

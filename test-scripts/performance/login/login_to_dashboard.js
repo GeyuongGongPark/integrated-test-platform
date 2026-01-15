@@ -1,24 +1,25 @@
-// Login to dashboard test script
-const loginToDashboard = {
-    // Test login functionality
-    testLogin: async (page) => {
-        console.log('Testing login functionality...');
-        
-        // Navigate to login page
-        await page.goto('/login');
-        
-        // Fill login form
-        await page.fill('[data-testid="username"]', 'testuser');
-        await page.fill('[data-testid="password"]', 'testpass');
-        
-        // Submit form
-        await page.click('[data-testid="login-button"]');
-        
-        // Wait for redirect to dashboard
-        await page.waitForURL('/dashboard');
-        
-        console.log('Login test completed successfully');
-    }
-};
+import { getCurrentLoginCredentials, SELECTORS } from '../url/config.js';
+import { URLS } from '../url/url_base.js';
+import { getFormattedTimestamp } from "../common/utils.js";
 
-module.exports = loginToDashboard; 
+export default async function login_to_dashborad(page) {
+    const credentials = getCurrentLoginCredentials();
+
+    await page.goto(URLS.LOGIN.HOME);
+    await page.screenshot({ path: `screenshots/screenshot_${getFormattedTimestamp().replace(/:/g, '_')}_home.png` });
+
+    await page.goto(URLS.LOGIN.LOGIN);
+    await page.screenshot({ path: `screenshots/screenshot_${getFormattedTimestamp().replace(/:/g, '_')}_login.png` });
+
+    await page.waitForSelector(SELECTORS.LOGIN.EMAIL_INPUT);
+    await page.type(SELECTORS.LOGIN.EMAIL_INPUT, credentials.EMAIL);
+
+    await page.waitForSelector(SELECTORS.LOGIN.PASSWORD_INPUT);
+    await page.type(SELECTORS.LOGIN.PASSWORD_INPUT, credentials.PASSWORD);
+
+    await page.click(SELECTORS.LOGIN.SUBMIT_BUTTON);
+
+    await page.goto(URLS.LOGIN.DASHBOARD);
+    await page.screenshot({ path: `screenshots/screenshot_${getFormattedTimestamp().replace(/:/g, '_')}_dashboard.png` });
+}
+

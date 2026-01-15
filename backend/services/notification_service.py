@@ -6,6 +6,8 @@ from models import db, Notification, NotificationSettings, User, TestCase, TestR
 from utils.timezone_utils import get_kst_now
 from utils.logger import get_logger
 import json
+import os
+import requests
 
 logger = get_logger(__name__)
 
@@ -59,6 +61,9 @@ class NotificationService:
             
             # WebSocket을 통해 실시간 알림 전송
             self._send_realtime_notification(notification)
+            
+            # 슬랙 웹훅으로 알림 전송 (설정된 경우)
+            self._send_slack_notification(notification, user_id)
             
             logger.info(f"알림 생성 완료: {title} (User: {user_id})")
             return notification
@@ -187,6 +192,82 @@ class NotificationService:
         except Exception as e:
             logger.error(f"스케줄 실행 알림 생성 오류: {str(e)}")
     
+    def notify_test_status_changed(self, test_case_id, old_status, new_status, changed_by_user_id=None):
+        """테스트 케이스 상태 변경 알림 (작성자와 담당자에게 발송)"""
+        try:
+            test_case = TestCase.query.get(test_case_id)
+            if not test_case:
+                return
+            
+            # 상태 텍스트 매핑
+            status_map = {
+                'pending': 'Pending',
+                'passed': 'Pass',
+                'failed': 'Fail',
+                'blocked': 'Blocked',
+                'Pass': 'Pass',
+                'Fail': 'Fail',
+                'Pending': 'Pending',
+                'Blocked': 'Blocked'
+            }
+            
+            old_status_text = status_map.get(old_status, old_status)
+            new_status_text = status_map.get(new_status, new_status)
+            
+            # 변경한 사용자 정보 가져오기
+            changed_by_user = None
+            if changed_by_user_id:
+                changed_by_user = User.query.get(changed_by_user_id)
+            changed_by_name = changed_by_user.username if changed_by_user else '시스템'
+            
+            title = f"테스트 케이스 상태 변경: {test_case.name}"
+            message = f"테스트 케이스 '{test_case.name}'의 상태가 '{old_status_text}'에서 '{new_status_text}'로 변경되었습니다.\n변경자: {changed_by_name}"
+            
+            # 우선순위 설정 (실패 상태일 때 높은 우선순위)
+            priority = 'high' if new_status in ['Fail', 'failed'] else 'medium'
+            
+            notifications = []
+            
+            # 작성자에게 알림 발송
+            if test_case.creator_id:
+                try:
+                    notification = self.create_notification(
+                        user_id=test_case.creator_id,
+                        notification_type='test_status_changed',
+                        title=title,
+                        message=message,
+                        related_test_case_id=test_case_id,
+                        priority=priority,
+                        channels='all'  # in_app, slack 모두 발송
+                    )
+                    notifications.append(notification)
+                    logger.info(f"테스트 케이스 상태 변경 알림 발송: 작성자 (User {test_case.creator_id})")
+                except Exception as e:
+                    logger.error(f"작성자 알림 발송 오류: {str(e)}")
+            
+            # 담당자에게 알림 발송 (작성자와 다른 경우에만)
+            if test_case.assignee_id and test_case.assignee_id != test_case.creator_id:
+                try:
+                    notification = self.create_notification(
+                        user_id=test_case.assignee_id,
+                        notification_type='test_status_changed',
+                        title=title,
+                        message=message,
+                        related_test_case_id=test_case_id,
+                        priority=priority,
+                        channels='all'  # in_app, slack 모두 발송
+                    )
+                    notifications.append(notification)
+                    logger.info(f"테스트 케이스 상태 변경 알림 발송: 담당자 (User {test_case.assignee_id})")
+                except Exception as e:
+                    logger.error(f"담당자 알림 발송 오류: {str(e)}")
+            
+            return notifications
+            
+        except Exception as e:
+            logger.error(f"테스트 케이스 상태 변경 알림 생성 오류: {str(e)}")
+            return []
+    
     def _send_realtime_notification(self, notification):
         """WebSocket을 통해 실시간 알림 전송"""
         try:
@@ -199,20 +280,163 @@ class NotificationService:
         except Exception as e:
             logger.error(f"실시간 알림 전송 오류: {str(e)}")
     
+    def _send_slack_notification(self, notification, user_id):
+        """슬랙 웹훅을 통해 알림 전송"""
+        try:
+            # 사용자별 슬랙 설정 확인
+            user_settings = NotificationSettings.query.filter_by(user_id=user_id).first()
+            
+            # 슬랙 웹훅 URL 확인 (사용자별 설정 우선, 없으면 전역 환경 변수)
+            slack_webhook_url = None
+            slack_enabled = False
+            
+            if user_settings:
+                # 사용자별 설정이 있는 경우
+                slack_enabled = user_settings.slack_enabled
+                if user_settings.slack_webhook_url:
+                    slack_webhook_url = user_settings.slack_webhook_url
+                    logger.info(f"🔔 사용자별 슬랙 웹훅 URL 사용: User {user_id}, enabled={slack_enabled}")
+                else:
+                    # 사용자별 URL이 없으면 전역 환경 변수 사용
+                    slack_webhook_url = os.getenv('SLACK_WEBHOOK_URL')
+                    logger.info(f"🔔 전역 슬랙 웹훅 URL 사용: User {user_id}, enabled={slack_enabled}")
+            else:
+                # 사용자별 설정이 없는 경우 전역 환경 변수 사용
+                slack_webhook_url = os.getenv('SLACK_WEBHOOK_URL')
+                logger.info(f"🔔 사용자 설정 없음, 전역 슬랙 웹훅 URL 사용: User {user_id}")
+            
+            # 슬랙 웹훅 URL이 없으면 건너뛰기
+            if not slack_webhook_url:
+                logger.warning(f"⚠️ 슬랙 웹훅 URL이 설정되지 않음: User {user_id}, 환경변수 확인 필요")
+                return
+            
+            # 사용자별 설정이 있고 slack_enabled가 False면 건너뛰기
+            if user_settings and not slack_enabled:
+                logger.info(f"🔔 사용자 {user_id}의 슬랙 알림이 비활성화되어 있음 (slack_enabled=False)")
+                return
+            
+            logger.info(f"🔔 슬랙 알림 전송 시도: User {user_id}, URL={slack_webhook_url[:30]}...")
+            
+            # 사용자 정보 가져오기
+            user = User.query.get(user_id)
+            username = user.username if user else 'Unknown User'
+            
+            # 알림 타입에 따른 이모지 및 색상 설정
+            emoji_map = {
+                'assignment': '👤',
+                'mention': '💬',
+                'test_failed': '❌',
+                'test_completed': '✅',
+                'test_started': '🚀',
+                'schedule_run': '⏰',
+                'test_status_changed': '🔄'
+            }
+            
+            color_map = {
+                'high': '#dc3545',      # 빨간색
+                'medium': '#ffc107',     # 노란색
+                'low': '#17a2b8'         # 파란색
+            }
+            
+            emoji = emoji_map.get(notification.notification_type, '🔔')
+            color = color_map.get(notification.priority, '#6c757d')
+            
+            # 슬랙 메시지 포맷팅
+            slack_message = {
+                "text": f"{emoji} {notification.title}",
+                "blocks": [
+                    {
+                        "type": "header",
+                        "text": {
+                            "type": "plain_text",
+                            "text": f"{emoji} {notification.title}",
+                            "emoji": True
+                        }
+                    },
+                    {
+                        "type": "section",
+                        "fields": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*사용자:*\n{username}"
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*타입:*\n{notification.notification_type}"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*메시지:*\n{notification.message}"
+                        }
+                    }
+                ],
+                "attachments": [
+                    {
+                        "color": color,
+                        "footer": "Integrated Test Platform",
+                        "ts": int(notification.created_at.timestamp()) if notification.created_at else None
+                    }
+                ]
+            }
+            
+            # 관련 테스트 케이스 정보 추가
+            if notification.related_test_case_id:
+                test_case = TestCase.query.get(notification.related_test_case_id)
+                if test_case:
+                    slack_message["blocks"].append({
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*관련 테스트 케이스:*\n{test_case.name}"
+                        }
+                    })
+            
+            # 슬랙 웹훅으로 전송
+            response = requests.post(
+                slack_webhook_url,
+                json=slack_message,
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"슬랙 알림 전송 성공: User {user_id}, Notification {notification.id}")
+            else:
+                logger.warning(f"슬랙 알림 전송 실패: Status {response.status_code}, Response: {response.text}")
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"슬랙 웹훅 요청 오류: {str(e)}")
+        except Exception as e:
+            logger.error(f"슬랙 알림 전송 오류: {str(e)}", exc_info=True)
+    
     def get_user_notifications(self, user_id, unread_only=False, limit=50):
         """사용자 알림 조회"""
         try:
+            logger.info(f"🔍 알림 서비스 조회: user_id={user_id}, unread_only={unread_only}, limit={limit}")
+            
             query = Notification.query.filter_by(user_id=user_id)
+            
+            # 전체 알림 수 확인
+            total_count = query.count()
+            logger.info(f"🔍 사용자 {user_id}의 전체 알림 수: {total_count}개")
             
             if unread_only:
                 query = query.filter_by(read=False)
             
             notifications = query.order_by(Notification.created_at.desc()).limit(limit).all()
             
-            return [n.to_dict() for n in notifications]
+            logger.info(f"🔍 조회된 알림 수: {len(notifications)}개")
+            
+            result = [n.to_dict() for n in notifications]
+            logger.info(f"🔍 변환된 알림 수: {len(result)}개")
+            
+            return result
             
         except Exception as e:
-            logger.error(f"알림 조회 오류: {str(e)}")
+            logger.error(f"❌ 알림 조회 오류: {str(e)}", exc_info=True)
             return []
     
     def mark_as_read(self, notification_id, user_id):

@@ -23,8 +23,15 @@ def get_notifications():
     
     try:
         user_id = request.user.id
+        username = getattr(request.user, 'username', 'Unknown')
         unread_only = request.args.get('unread_only', 'false').lower() == 'true'
         limit = request.args.get('limit', 50, type=int)
+        
+        logger.info(f"🔔 알림 조회 요청: User {user_id} ({username}), unread_only={unread_only}, limit={limit}")
+        
+        # 전체 알림 수 확인 (디버깅)
+        total_all = Notification.query.filter_by(user_id=user_id).count()
+        logger.info(f"🔔 데이터베이스 전체 알림 수: {total_all}개")
         
         notifications = notification_service.get_user_notifications(
             user_id, 
@@ -37,6 +44,10 @@ def get_notifications():
             user_id=user_id,
             read=False
         ).count()
+        
+        logger.info(f"✅ 알림 조회 결과: User {user_id}, 총 {len(notifications)}개, 읽지 않음 {unread_count}개")
+        if len(notifications) > 0:
+            logger.info(f"📋 첫 번째 알림: {notifications[0].get('title', 'N/A')}")
         
         response = jsonify({
             'notifications': notifications,
@@ -199,6 +210,8 @@ def update_notification_settings():
             settings.email_enabled = data['email_enabled']
         if 'slack_enabled' in data:
             settings.slack_enabled = data['slack_enabled']
+        if 'slack_webhook_url' in data:
+            settings.slack_webhook_url = data['slack_webhook_url']
         if 'in_app_enabled' in data:
             settings.in_app_enabled = data['in_app_enabled']
         

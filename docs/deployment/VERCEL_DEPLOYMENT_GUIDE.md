@@ -18,6 +18,13 @@ SECRET_KEY=your-super-secret-flask-key-here
 VERCEL=1
 ```
 
+#### 선택 환경변수 (Slack 알림)
+```bash
+# Slack Webhook URL (선택사항)
+# 설정하면 테스트 실패/완료 등의 알림이 Slack으로 전송됩니다
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+```
+
 #### DATABASE_URL 형식 예시
 ```bash
 # MySQL (PlanetScale, Railway, AWS RDS 등)

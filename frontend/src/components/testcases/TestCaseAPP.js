@@ -1,5 +1,5 @@
 // src/TestCaseApp.js - 리팩토링된 버전
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import config from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
@@ -165,6 +165,13 @@ const TestCaseAPP = ({ setActiveTab }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [, setTargetFolderId] = useState('');
   
+  // 댓글 관련 상태
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentContent, setEditingCommentContent] = useState('');
+  
   // 폴더 및 정렬 상태
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [expandedFolders, setExpandedFolders] = useState(new Set());
@@ -311,6 +318,31 @@ const TestCaseAPP = ({ setActiveTab }) => {
     handleItemsPerPageChange
   } = useTestCasePagination(filteredTestCases);
 
+  // 특정 테스트 케이스를 여는 함수 (다른 컴포넌트에서 호출 가능)
+  const openTestCaseDetail = (testCaseId) => {
+    const testCase = testCases.find(tc => tc.id === testCaseId);
+    if (testCase) {
+      setSelectedTestCase(testCase);
+      setShowDetailModal(true);
+      fetchComments(testCaseId);
+    } else {
+      console.warn(`테스트 케이스 #${testCaseId}를 찾을 수 없습니다.`);
+    }
+  };
+
+  // window 객체에 함수 등록 (다른 컴포넌트에서 호출 가능하도록)
+  useEffect(() => {
+    if (setActiveTab) {
+      window.setActiveTab = setActiveTab;
+    }
+    window.openTestCaseDetail = openTestCaseDetail;
+    
+    return () => {
+      if (window.openTestCaseDetail === openTestCaseDetail) {
+        delete window.openTestCaseDetail;
+      }
+    };
+  }, [testCases, setActiveTab]);
 
   // 이벤트 핸들러들
   const handleFolderSelect = (folderId) => {
@@ -452,6 +484,110 @@ const TestCaseAPP = ({ setActiveTab }) => {
     }
   };
 
+  // 댓글 조회
+  const fetchComments = async (testCaseId) => {
+    if (!testCaseId) return;
+    setLoadingComments(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${config.apiUrl}/api/collaboration/comments`, {
+        params: {
+          entity_type: 'test_case',
+          entity_id: testCaseId
+        },
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setComments(response.data || []);
+    } catch (err) {
+      console.error('댓글 조회 오류:', err);
+      setComments([]);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  // 댓글 추가
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !selectedTestCase) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${config.apiUrl}/api/collaboration/comments`, {
+        entity_type: 'test_case',
+        entity_id: selectedTestCase.id,
+        content: newComment.trim()
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      setNewComment('');
+      fetchComments(selectedTestCase.id);
+    } catch (err) {
+      console.error('댓글 추가 오류:', err);
+      alert('댓글 추가 중 오류가 발생했습니다: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  // 댓글 편집 시작
+  const handleStartEdit = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditingCommentContent(comment.content);
+  };
+
+  // 댓글 편집 취소
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditingCommentContent('');
+  };
+
+  // 댓글 수정
+  const handleUpdateComment = async (commentId) => {
+    if (!editingCommentContent.trim() || !selectedTestCase) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${config.apiUrl}/api/collaboration/comments/${commentId}`, {
+        content: editingCommentContent.trim()
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      setEditingCommentId(null);
+      setEditingCommentContent('');
+      fetchComments(selectedTestCase.id);
+    } catch (err) {
+      console.error('댓글 수정 오류:', err);
+      alert('댓글 수정 중 오류가 발생했습니다: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  // 댓글 삭제
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${config.apiUrl}/api/collaboration/comments/${commentId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      fetchComments(selectedTestCase.id);
+    } catch (err) {
+      console.error('댓글 삭제 오류:', err);
+      alert('댓글 삭제 중 오류가 발생했습니다: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   const handleFileUpload = async () => {
     if (!selectedFile) {
       alert('파일을 선택해주세요.');
@@ -479,17 +615,48 @@ const TestCaseAPP = ({ setActiveTab }) => {
 
   const handleDownload = async () => {
     try {
-      const response = await axios.get(`${config.apiUrl}/testcases/download`, {
+      // 현재 적용된 필터 정보를 쿼리 파라미터로 전달
+      const params = new URLSearchParams();
+      
+      if (searchTerm && searchTerm.trim()) {
+        params.append('search', searchTerm.trim());
+      }
+      if (statusFilter && statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+      if (environmentFilter && environmentFilter !== 'all') {
+        params.append('environment', environmentFilter);
+      }
+      if (categoryFilter && categoryFilter !== 'all') {
+        params.append('category', categoryFilter);
+      }
+      if (creatorFilter && creatorFilter !== 'all') {
+        params.append('creator', creatorFilter);
+      }
+      if (assigneeFilter && assigneeFilter !== 'all') {
+        params.append('assignee', assigneeFilter);
+      }
+      if (selectedFolder) {
+        params.append('folder_id', selectedFolder);
+      }
+      
+      const queryString = params.toString();
+      const url = queryString 
+        ? `${config.apiUrl}/testcases/download?${queryString}`
+        : `${config.apiUrl}/testcases/download`;
+      
+      const response = await axios.get(url, {
         responseType: 'blob',
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
-      link.href = url;
+      link.href = blobUrl;
       link.setAttribute('download', `testcases_${new Date().toISOString().slice(0, 10)}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       alert('파일 다운로드 중 오류가 발생했습니다: ' + err.message);
     }
@@ -511,7 +678,8 @@ const TestCaseAPP = ({ setActiveTab }) => {
     return nodes.map(node => {
       const hasChildren = node.children && node.children.length > 0;
       const isExpanded = expandedFolders.has(node.id);
-      const isFolder = node.type === 'environment' || node.type === 'deployment_date' || node.type === 'feature';
+      const nodeType = node.type || getFolderType(node.id, folderTree);
+      const isFolder = nodeType === 'environment' || nodeType === 'deployment_date' || nodeType === 'feature';
       
       return (
         <div key={node.id} style={{ marginLeft: level * 20 }}>
@@ -535,16 +703,22 @@ const TestCaseAPP = ({ setActiveTab }) => {
               </span>
             )}
             <span className="folder-icon">
-              {getFolderType(node.id, folderTree) === 'environment' ? '🌍' : 
-               getFolderType(node.id, folderTree) === 'deployment_date' ? '📅' : 
-               getFolderType(node.id, folderTree) === 'feature' ? '🔧' : '📄'}
+              {
+                nodeType === 'project' ? '🗂️' :
+                nodeType === 'environment' ? '🌍' : 
+                nodeType === 'deployment_date' ? '📅' : 
+                nodeType === 'feature' ? '🔧' : '📄'
+              }
             </span>
             <span className="folder-name">{node.name}</span>
             {isFolder && (
               <span className="folder-type-badge">
-                {getFolderType(node.id, folderTree) === 'environment' ? '환경' : 
-                 getFolderType(node.id, folderTree) === 'deployment_date' ? '배포일자' : 
-                 getFolderType(node.id, folderTree) === 'feature' ? '기능명' : ''}
+                {
+                  nodeType === 'project' ? '프로젝트' :
+                  nodeType === 'environment' ? '환경' : 
+                  nodeType === 'deployment_date' ? '배포일자' : 
+                  nodeType === 'feature' ? '기능명' : ''
+                }
               </span>
             )}
           </div>
@@ -570,22 +744,34 @@ const TestCaseAPP = ({ setActiveTab }) => {
     <div className="testcase-container">
       <div className="testcase-header">
         <h1>테스트 케이스 관리</h1>
+        {user && user.role === 'guest' && (
+          <div className="guest-notice" style={{ 
+            padding: '10px', 
+            backgroundColor: '#fff3cd', 
+            border: '1px solid #ffc107', 
+            borderRadius: '4px',
+            marginBottom: '10px',
+            fontSize: '14px'
+          }}>
+            👀 게스트 모드: 조회만 가능합니다.
+          </div>
+        )}
         <div className="header-actions">
             {user && (user.role === 'admin' || user.role === 'user') && (
-              <button 
-                className="testcase-btn testcase-btn-add"
-                onClick={() => setShowAddModal(true)}
-              >
-                ➕ 테스트 케이스 추가
-              </button>
-            )}
-            {user && (user.role === 'admin' || user.role === 'user') && (
-              <button 
-                className="testcase-btn testcase-btn-upload"
-                onClick={() => setShowUploadModal(true)}
-              >
-                📤 엑셀 업로드
-              </button>
+              <>
+                <button 
+                  className="testcase-btn testcase-btn-add"
+                  onClick={() => setShowAddModal(true)}
+                >
+                  ➕ 테스트 케이스 추가
+                </button>
+                <button 
+                  className="testcase-btn testcase-btn-upload"
+                  onClick={() => setShowUploadModal(true)}
+                >
+                  📤 엑셀 업로드
+                </button>
+              </>
             )}
             <button 
               className="testcase-btn testcase-btn-download"
@@ -651,7 +837,9 @@ const TestCaseAPP = ({ setActiveTab }) => {
             )}
           </div>
           <div className="tree-container">
-            {renderFolderTree(folderTree)}
+            <div className="tree-scroll-inner">
+              {renderFolderTree(folderTree)}
+            </div>
           </div>
         </div>
 
@@ -693,6 +881,7 @@ const TestCaseAPP = ({ setActiveTab }) => {
             onViewDetails={(testCase) => {
               setSelectedTestCase(testCase);
               setShowDetailModal(true);
+              fetchComments(testCase.id);
             }}
             users={users}
             user={user}
@@ -830,6 +1019,108 @@ const TestCaseAPP = ({ setActiveTab }) => {
                 </table>
               </div>
               
+          {/* 댓글 섹션 */}
+          <div className="testcase-comments-section" style={{ marginTop: '24px' }}>
+            <h5>💬 댓글 ({comments.length})</h5>
+            <div className="comments-container">
+              {loadingComments ? (
+                <div className="comments-loading">댓글을 불러오는 중...</div>
+              ) : comments.length === 0 ? (
+                <div className="no-comments">
+                  <p>아직 댓글이 없습니다. 첫 번째 댓글을 작성해보세요!</p>
+                </div>
+              ) : (
+                <div className="comments-list">
+                  {comments.map((comment) => {
+                    const isOwnComment = user && (comment.author_id === user.id || comment.author?.id === user.id);
+                    const isEditing = editingCommentId === comment.id;
+                    
+                    return (
+                      <div key={comment.id} className="comment-item">
+                        <div className="comment-header">
+                          <div className="comment-header-left">
+                            <span className="comment-author">
+                              👤 {comment.author_name || comment.author?.username || 'Unknown User'}
+                            </span>
+                            <span className="comment-date">
+                              {comment.created_at ? formatUTCToKST(comment.created_at) : ''}
+                              {comment.is_edited && <span className="comment-edited-badge"> (수정됨)</span>}
+                            </span>
+                          </div>
+                          {isOwnComment && !isEditing && (
+                            <div className="comment-actions">
+                              <button
+                                className="comment-edit-btn"
+                                onClick={() => handleStartEdit(comment)}
+                                title="댓글 수정"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className="comment-delete-btn"
+                                onClick={() => handleDeleteComment(comment.id)}
+                                title="댓글 삭제"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        {isEditing ? (
+                          <div className="comment-edit-form">
+                            <textarea
+                              className="comment-textarea"
+                              value={editingCommentContent}
+                              onChange={(e) => setEditingCommentContent(e.target.value)}
+                              rows="3"
+                            />
+                            <div className="comment-edit-actions">
+                              <button
+                                className="testcase-btn testcase-btn-primary"
+                                onClick={() => handleUpdateComment(comment.id)}
+                                disabled={!editingCommentContent.trim()}
+                              >
+                                저장
+                              </button>
+                              <button
+                                className="testcase-btn testcase-btn-secondary"
+                                onClick={handleCancelEdit}
+                              >
+                                취소
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="comment-body">
+                            {comment.content}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
+              {/* 댓글 작성 */}
+              <div className="comment-add">
+                <textarea
+                  className="comment-textarea"
+                  placeholder="댓글을 입력하세요... (@username 형식으로 멘션 가능)"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows="3"
+                />
+                <button
+                  className="testcase-btn testcase-btn-primary"
+                  onClick={handleAddComment}
+                  disabled={!newComment.trim()}
+                >
+                  댓글 작성
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* 이슈 관리: 목록 컴포넌트로 교체 */}
               <div className="testcase-jira-integration" style={{ marginTop: '24px' }}>
                 <h5>🔗 이슈 관리</h5>

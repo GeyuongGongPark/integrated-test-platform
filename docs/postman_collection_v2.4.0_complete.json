@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Integrated Test Platform API v2.4.0 - Complete",
-    "description": "# 🚀 통합 테스트 플랫폼 API Postman Collection v2.4.0 - Complete\n\n## 📋 완전한 API 컬렉션\n\n이 컬렉션은 백엔드에 실제로 구현된 모든 API 엔드포인트를 포함합니다.\n\n### 주요 기능\n- **테스트 케이스 관리**: CRUD, 조회, 실행, 히스토리\n- **JIRA 이슈 관리**: 이슈 생성, 조회, 수정, 통계\n- **대시보드 & 통계**: 실시간 대시보드, 환경별 통계\n- **성능 테스트**: K6 엔진 연동, 결과 분석\n- **자동화 테스트**: Playwright 연동, 스크린샷 관리\n- **프로젝트 & 폴더**: 계층적 구조 관리\n- **사용자 관리**: 인증, 권한, 프로필\n\n## 🌐 환경 설정\n\n### 로컬 개발 환경\n- `base_url`: `http://localhost:8000`\n\n### Vercel 프로덕션 환경\n- `base_url`: `https://backend-alpha-liard.vercel.app`\n\n## 📚 API 엔드포인트 그룹\n\n### 🔐 Authentication & Users\n- 사용자 회원가입, 로그인, 프로필 관리\n- JWT 토큰 기반 인증\n- 역할별 권한 관리\n\n### 📁 Projects & Folders\n- 프로젝트 CRUD\n- 폴더 계층 구조 관리\n- 환경별 폴더 분류\n\n### 🧪 Test Cases (완전한 CRUD)\n- 테스트 케이스 생성, 조회, 수정, 삭제\n- 페이징 및 필터링\n- Excel 업로드/다운로드\n- 테스트 실행 및 결과 관리\n- 히스토리 추적\n\n### 🎫 JIRA Issues\n- 이슈 생성, 조회, 수정, 삭제\n- 이슈 통계 및 분석\n- 검색 및 필터링\n- 댓글 관리\n\n### 📊 Dashboard & Analytics\n- 실시간 대시보드\n- 환경별 테스트 통계\n- 성능 지표\n- 테스트 실행 히스토리\n\n### ⚡ Performance Tests\n- K6 성능 테스트\n- 테스트 결과 분석\n- 성능 지표 수집\n\n### 🤖 Automation Tests\n- Playwright 자동화 테스트\n- 스크린샷 관리\n- 테스트 스크립트 관리\n\n### 🔍 System & Health\n- 서버 상태 확인\n- 데이터베이스 초기화\n- CORS 테스트\n\n---\n\n**마지막 업데이트**: 2025년 1월 9일\n**가이드 버전**: 2.4.0 Complete\n**상태**: 백엔드에 구현된 모든 API 포함",
+    "description": "# 🚀 통합 테스트 플랫폼 API Postman Collection v2.4.0 - Complete\n\n## 📋 완전한 API 컬렉션\n\n이 컬렉션은 백엔드에 실제로 구현된 모든 API 엔드포인트를 포함합니다.\n\n### 주요 기능\n- **테스트 케이스 관리**: CRUD, 조회, 실행, 히스토리\n- **JIRA 이슈 관리**: 이슈 생성, 조회, 수정, 통계\n- **대시보드 & 통계**: 실시간 대시보드, 환경별 통계\n- **성능 테스트**: K6 엔진 연동, 결과 분석\n- **자동화 테스트**: Playwright 연동, 스크린샷 관리\n- **프로젝트 & 폴더**: 계층적 구조 관리\n- **사용자 관리**: 인증, 권한, 프로필\n\n## 🌐 환경 설정\n\n### 로컬 개발 환경\n- `base_url`: `http://localhost:8000`\n\n### Vercel 프로덕션 환경\n- `base_url`: `https://backend-alpha-liard.vercel.app`\n\n## 📚 API 엔드포인트 그룹\n\n### 🔐 Authentication & Users\n- 사용자 회원가입, 로그인, 프로필 관리\n- JWT 토큰 기반 인증\n- 역할별 권한 관리\n\n### 📁 Projects & Folders\n- 프로젝트 CRUD\n- 폴더 계층 구조 관리\n- 환경별 폴더 분류\n\n### 🧪 Test Cases (완전한 CRUD)\n- 테스트 케이스 생성, 조회, 수정, 삭제\n- 페이징 및 필터링\n- Excel 업로드/다운로드\n- 테스트 실행 및 결과 관리\n- 히스토리 추적\n\n### 🎫 JIRA Issues\n- 이슈 생성, 조회, 수정, 삭제\n- 이슈 통계 및 분석\n- 검색 및 필터링\n- 댓글 관리\n\n### 📊 Dashboard & Analytics\n- 실시간 대시보드\n- 환경별 테스트 통계\n- 성능 지표\n- 테스트 실행 히스토리\n\n### ⚡ Performance Tests\n- K6 성능 테스트\n- 테스트 결과 분석\n- 성능 지표 수집\n\n### 🤖 Automation Tests\n- Playwright 자동화 테스트\n- 스크린샷 관리\n- 테스트 스크립트 관리\n\n### 🔍 System & Health\n- 서버 상태 확인\n- 데이터베이스 초기화\n- CORS 테스트\n\n---\n\n**마지막 업데이트**: 2025년 1월 12일\n**가이드 버전**: 2.4.0 Complete\n**상태**: 백엔드에 구현된 모든 주요 API 포함\n\n## 🔔 최신 업데이트\n\n### 테스트 케이스 상태 변경 알림 기능 추가\n- 테스트 케이스 상태 변경 시 작성자와 담당자에게 자동 알림 발송\n- Slack webhook을 통한 알림 지원\n- 실패 상태일 경우 높은 우선순위 알림\n\n### 추가된 API 그룹\n- 🔔 Notifications: 알림 조회, 읽음 처리, 설정 관리\n- 📅 Schedules: 테스트 스케줄 관리\n- 💬 Collaboration: 댓글, 멘션, 워크플로우 관리\n- 🔄 CI/CD: 통합 관리, 웹훅, 실행 기록\n- 📊 Test Data: 데이터 세트 관리, 매핑, 동적 데이터 생성\n- 📄 Reports: 리포트 생성, 실행, 다운로드\n- ⚙️ Queue: 테스트 실행 큐 관리, 태스크 상태, 워커 관리\n- 🔗 Dependencies: 테스트 케이스 의존성 관리, 그래프, 실행 순서\n- 🧪 Test Cases 확장: Bulk Delete, Screenshots, Test Results, Templates, Test Plans\n- 🎫 JIRA Issues 확장: Test Case별 이슈 조회, Health Check\n- 📊 Analytics 확장: 트렌드, Flaky 테스트, 회귀 감지, 실행 시간, 커버리지, 실패 패턴, 테스트 건강도",
     "version": "2.4.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -442,6 +442,38 @@
           }
         },
         {
+          "name": "Update Test Case Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Pass\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/testcases/{{current_testcase_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["testcases", "{{current_testcase_id}}", "status"]
+            },
+            "description": "테스트 케이스 상태 변경\n\n**엔드포인트:** `PUT /testcases/{id}/status`\n\n**인증:** Bearer Token 필요 (user_required)\n\n**요청 본문:**\n```json\n{\n  \"status\": \"Pass\"\n}\n```\n\n**상태 값:**\n- `Pending`: 대기 중\n- `Pass`: 통과\n- `Fail`: 실패\n- `Blocked`: 차단됨\n\n**응답:**\n```json\n{\n  \"message\": \"테스트 케이스 상태 업데이트 완료\",\n  \"old_status\": \"Pending\",\n  \"new_status\": \"Pass\",\n  \"environment\": \"dev\"\n}\n```\n\n**알림 기능:**\n- 상태 변경 시 작성자(creator_id)와 담당자(assignee_id)에게 자동으로 알림 발송\n- Slack webhook을 통한 알림도 함께 발송됨\n- 실패(Fail) 상태일 경우 높은 우선순위로 알림 발송\n- 상태가 변경되지 않은 경우 알림 발송하지 않음"
+          },
+          "response": []
+        },
+        {
           "name": "Delete Test Case",
           "request": {
             "method": "DELETE",
@@ -576,6 +608,224 @@
               "path": ["templates"]
             },
             "description": "테스트 케이스 템플릿 목록 조회"
+          }
+        },
+        {
+          "name": "Create Test Case Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Template Name\",\n  \"description\": \"Template Description\",\n  \"main_category\": \"Functional\",\n  \"sub_category\": \"Login\",\n  \"pre_condition\": \"Pre condition\",\n  \"expected_result\": \"Expected result\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates",
+              "host": ["{{base_url}}"],
+              "path": ["templates"]
+            },
+            "description": "테스트 케이스 템플릿 생성"
+          }
+        },
+        {
+          "name": "Apply Template to Test Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_case_id\": {{current_testcase_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/templates/1/apply",
+              "host": ["{{base_url}}"],
+              "path": ["templates", "1", "apply"]
+            },
+            "description": "템플릿을 테스트 케이스에 적용"
+          }
+        },
+        {
+          "name": "Bulk Delete Test Cases",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"testcase_ids\": [1, 2, 3]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/testcases/bulk-delete",
+              "host": ["{{base_url}}"],
+              "path": ["testcases", "bulk-delete"]
+            },
+            "description": "다중 테스트 케이스 삭제 (관리자용)"
+          }
+        },
+        {
+          "name": "Get Test Case Screenshots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/testcases/{{current_testcase_id}}/screenshots",
+              "host": ["{{base_url}}"],
+              "path": ["testcases", "{{current_testcase_id}}", "screenshots"]
+            },
+            "description": "테스트 케이스 스크린샷 목록 조회"
+          }
+        },
+        {
+          "name": "Get Test Results",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/testresults/{{current_testcase_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["testresults", "{{current_testcase_id}}"]
+            },
+            "description": "테스트 케이스의 테스트 결과 조회"
+          }
+        },
+        {
+          "name": "Create Test Result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_case_id\": {{current_testcase_id}},\n  \"result\": \"Pass\",\n  \"execution_time\": 10.5,\n  \"notes\": \"Test execution notes\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/testresults",
+              "host": ["{{base_url}}"],
+              "path": ["testresults"]
+            },
+            "description": "테스트 결과 생성"
+          }
+        },
+        {
+          "name": "Get Test Plans",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/test-plans",
+              "host": ["{{base_url}}"],
+              "path": ["test-plans"]
+            },
+            "description": "테스트 계획 목록 조회"
+          }
+        },
+        {
+          "name": "Create Test Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Plan Name\",\n  \"description\": \"Test Plan Description\",\n  \"version\": \"1.0\",\n  \"environment\": \"dev\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test-plans",
+              "host": ["{{base_url}}"],
+              "path": ["test-plans"]
+            },
+            "description": "테스트 계획 생성"
+          }
+        },
+        {
+          "name": "Add Test Cases to Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_case_ids\": [{{current_testcase_id}}]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test-plans/1/test-cases",
+              "host": ["{{base_url}}"],
+              "path": ["test-plans", "1", "test-cases"]
+            },
+            "description": "테스트 계획에 테스트 케이스 추가"
+          }
+        },
+        {
+          "name": "Get Test Plan by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/test-plans/1",
+              "host": ["{{base_url}}"],
+              "path": ["test-plans", "1"]
+            },
+            "description": "특정 테스트 계획 상세 조회"
           }
         }
       ]
@@ -754,6 +1004,42 @@
             },
             "description": "이슈 댓글 목록 조회"
           }
+        },
+        {
+          "name": "Get Issues by Test Case ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/jira/issues/testcase/{{current_testcase_id}}?page=1&per_page=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "jira", "issues", "testcase", "{{current_testcase_id}}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "특정 테스트 케이스와 연결된 이슈 목록 조회"
+          }
+        },
+        {
+          "name": "JIRA Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/jira/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "jira", "health"]
+            },
+            "description": "JIRA 서버 상태 확인"
+          }
         }
       ]
     },
@@ -802,6 +1088,113 @@
               "path": ["test-summary-report"]
             },
             "description": "테스트 요약 리포트 조회"
+          }
+        },
+        {
+          "name": "Get Test Trends",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/trends?days=30",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "trends"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                },
+                {
+                  "key": "environment",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "test_case_id",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "시간대별 테스트 트렌드 분석"
+          }
+        },
+        {
+          "name": "Get Flaky Tests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/flaky-tests",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "flaky-tests"]
+            },
+            "description": "Flaky 테스트 감지"
+          }
+        },
+        {
+          "name": "Get Regression Detection",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/regression-detection",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "regression-detection"]
+            },
+            "description": "회귀 테스트 감지"
+          }
+        },
+        {
+          "name": "Get Execution Time Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/execution-time",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "execution-time"]
+            },
+            "description": "실행 시간 분석"
+          }
+        },
+        {
+          "name": "Get Coverage Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/coverage",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "coverage"]
+            },
+            "description": "테스트 커버리지 분석"
+          }
+        },
+        {
+          "name": "Get Failure Patterns",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/failure-patterns",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "failure-patterns"]
+            },
+            "description": "실패 패턴 분석"
+          }
+        },
+        {
+          "name": "Get Test Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/analytics/test-health",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "test-health"]
+            },
+            "description": "테스트 건강도 분석"
           }
         }
       ]
@@ -1251,6 +1644,1487 @@
               "path": ["health"]
             },
             "description": "CORS 설정 테스트"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications?unread_only=false&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "unread_only",
+                  "value": "false",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "사용자 알림 목록 조회"
+          }
+        },
+        {
+          "name": "Get Notification by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/1",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "1"]
+            },
+            "description": "알림 상세 조회"
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/1/read",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "1", "read"]
+            },
+            "description": "알림 읽음 처리"
+          }
+        },
+        {
+          "name": "Mark All Notifications as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/read-all",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "read-all"]
+            },
+            "description": "모든 알림 읽음 처리"
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/1",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "1"]
+            },
+            "description": "알림 삭제"
+          }
+        },
+        {
+          "name": "Get Notification Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/settings",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "settings"]
+            },
+            "description": "알림 설정 조회"
+          }
+        },
+        {
+          "name": "Update Notification Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email_enabled\": true,\n  \"slack_enabled\": false,\n  \"slack_webhook_url\": \"https://hooks.slack.com/services/YOUR/WEBHOOK/URL\",\n  \"in_app_enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications/settings",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "settings"]
+            },
+            "description": "알림 설정 업데이트"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Schedules",
+      "item": [
+        {
+          "name": "Get All Schedules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules",
+              "host": ["{{base_url}}"],
+              "path": ["schedules"]
+            },
+            "description": "모든 테스트 스케줄 조회"
+          }
+        },
+        {
+          "name": "Get Schedule by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/1",
+              "host": ["{{base_url}}"],
+              "path": ["schedules", "1"]
+            },
+            "description": "특정 스케줄 상세 조회"
+          }
+        },
+        {
+          "name": "Create Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Daily Test Schedule\",\n  \"test_case_id\": {{current_testcase_id}},\n  \"cron_expression\": \"0 9 * * *\",\n  \"enabled\": true,\n  \"environment\": \"dev\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules",
+              "host": ["{{base_url}}"],
+              "path": ["schedules"]
+            },
+            "description": "새 테스트 스케줄 생성"
+          }
+        },
+        {
+          "name": "Update Schedule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Schedule\",\n  \"cron_expression\": \"0 10 * * *\",\n  \"enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/schedules/1",
+              "host": ["{{base_url}}"],
+              "path": ["schedules", "1"]
+            },
+            "description": "스케줄 수정"
+          }
+        },
+        {
+          "name": "Delete Schedule",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/1",
+              "host": ["{{base_url}}"],
+              "path": ["schedules", "1"]
+            },
+            "description": "스케줄 삭제"
+          }
+        },
+        {
+          "name": "Toggle Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/1/toggle",
+              "host": ["{{base_url}}"],
+              "path": ["schedules", "1", "toggle"]
+            },
+            "description": "스케줄 활성화/비활성화 토글"
+          }
+        },
+        {
+          "name": "Run Schedule Now",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/schedules/1/run-now",
+              "host": ["{{base_url}}"],
+              "path": ["schedules", "1", "run-now"]
+            },
+            "description": "스케줄 즉시 실행"
+          }
+        }
+      ]
+    },
+    {
+      "name": "💬 Collaboration",
+      "item": [
+        {
+          "name": "Get Comments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/comments?entity_type=testcase&entity_id={{current_testcase_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["comments"],
+              "query": [
+                {
+                  "key": "entity_type",
+                  "value": "testcase"
+                },
+                {
+                  "key": "entity_id",
+                  "value": "{{current_testcase_id}}"
+                },
+                {
+                  "key": "include_deleted",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "댓글 목록 조회"
+          }
+        },
+        {
+          "name": "Create Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entity_type\": \"testcase\",\n  \"entity_id\": {{current_testcase_id}},\n  \"content\": \"This is a comment\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/comments",
+              "host": ["{{base_url}}"],
+              "path": ["comments"]
+            },
+            "description": "댓글 생성"
+          }
+        },
+        {
+          "name": "Update Comment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated comment\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/comments/1",
+              "host": ["{{base_url}}"],
+              "path": ["comments", "1"]
+            },
+            "description": "댓글 수정"
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/comments/1",
+              "host": ["{{base_url}}"],
+              "path": ["comments", "1"]
+            },
+            "description": "댓글 삭제"
+          }
+        },
+        {
+          "name": "Get Mentions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentions",
+              "host": ["{{base_url}}"],
+              "path": ["mentions"]
+            },
+            "description": "사용자 멘션 목록 조회"
+          }
+        },
+        {
+          "name": "Mark Mention as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentions/1/read",
+              "host": ["{{base_url}}"],
+              "path": ["mentions", "1", "read"]
+            },
+            "description": "멘션 읽음 처리"
+          }
+        },
+        {
+          "name": "Get Workflows",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workflows",
+              "host": ["{{base_url}}"],
+              "path": ["workflows"]
+            },
+            "description": "워크플로우 목록 조회"
+          }
+        },
+        {
+          "name": "Get Workflow by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workflows/1",
+              "host": ["{{base_url}}"],
+              "path": ["workflows", "1"]
+            },
+            "description": "워크플로우 상세 조회"
+          }
+        },
+        {
+          "name": "Create Workflow",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Workflow\",\n  \"workflow_type\": \"testcase\",\n  \"initial_status\": \"draft\",\n  \"steps\": [\n    {\"status\": \"draft\", \"next_statuses\": [\"review\"]},\n    {\"status\": \"review\", \"next_statuses\": [\"approved\", \"rejected\"]}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/workflows",
+              "host": ["{{base_url}}"],
+              "path": ["workflows"]
+            },
+            "description": "워크플로우 생성"
+          }
+        },
+        {
+          "name": "Update Workflow",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Workflow\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/workflows/1",
+              "host": ["{{base_url}}"],
+              "path": ["workflows", "1"]
+            },
+            "description": "워크플로우 수정"
+          }
+        },
+        {
+          "name": "Apply Workflow to Entity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entity_type\": \"testcase\",\n  \"entity_id\": {{current_testcase_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/workflows/1/apply",
+              "host": ["{{base_url}}"],
+              "path": ["workflows", "1", "apply"]
+            },
+            "description": "엔티티에 워크플로우 적용"
+          }
+        },
+        {
+          "name": "Transition Workflow State",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entity_type\": \"testcase\",\n  \"entity_id\": {{current_testcase_id}},\n  \"next_status\": \"review\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/workflows/transition",
+              "host": ["{{base_url}}"],
+              "path": ["workflows", "transition"]
+            },
+            "description": "워크플로우 상태 전환"
+          }
+        },
+        {
+          "name": "Get Workflow State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workflows/state?entity_type=testcase&entity_id={{current_testcase_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["workflows", "state"],
+              "query": [
+                {
+                  "key": "entity_type",
+                  "value": "testcase"
+                },
+                {
+                  "key": "entity_id",
+                  "value": "{{current_testcase_id}}"
+                }
+              ]
+            },
+            "description": "엔티티의 워크플로우 상태 조회"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔄 CI/CD",
+      "item": [
+        {
+          "name": "Get CI/CD Integrations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cicd/integrations",
+              "host": ["{{base_url}}"],
+              "path": ["cicd", "integrations"]
+            },
+            "description": "CI/CD 통합 목록 조회"
+          }
+        },
+        {
+          "name": "Get CI/CD Integration by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cicd/integrations/1",
+              "host": ["{{base_url}}"],
+              "path": ["cicd", "integrations", "1"]
+            },
+            "description": "CI/CD 통합 상세 조회"
+          }
+        },
+        {
+          "name": "Create CI/CD Integration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"GitHub Integration\",\n  \"integration_type\": \"github\",\n  \"webhook_url\": \"https://api.github.com/repos/owner/repo/hooks\",\n  \"enabled\": true,\n  \"trigger_on_push\": true,\n  \"trigger_on_pr\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cicd/integrations",
+              "host": ["{{base_url}}"],
+              "path": ["cicd", "integrations"]
+            },
+            "description": "CI/CD 통합 생성"
+          }
+        },
+        {
+          "name": "Update CI/CD Integration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Integration\",\n  \"enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cicd/integrations/1",
+              "host": ["{{base_url}}"],
+              "path": ["cicd", "integrations", "1"]
+            },
+            "description": "CI/CD 통합 수정"
+          }
+        },
+        {
+          "name": "Delete CI/CD Integration",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cicd/integrations/1",
+              "host": ["{{base_url}}"],
+              "path": ["cicd", "integrations", "1"]
+            },
+            "description": "CI/CD 통합 삭제"
+          }
+        },
+        {
+          "name": "Test CI/CD Integration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cicd/integrations/1/test",
+              "host": ["{{base_url}}"],
+              "path": ["cicd", "integrations", "1", "test"]
+            },
+            "description": "CI/CD 통합 테스트 (수동 트리거)"
+          }
+        },
+        {
+          "name": "Get CI/CD Executions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cicd/executions?limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["cicd", "executions"],
+              "query": [
+                {
+                  "key": "integration_id",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "CI/CD 실행 기록 조회"
+          }
+        },
+        {
+          "name": "Get CI/CD Execution by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cicd/executions/1",
+              "host": ["{{base_url}}"],
+              "path": ["cicd", "executions", "1"]
+            },
+            "description": "CI/CD 실행 기록 상세 조회"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Test Data",
+      "item": [
+        {
+          "name": "Get Data Sets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-data/datasets",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "datasets"]
+            },
+            "description": "데이터 세트 목록 조회"
+          }
+        },
+        {
+          "name": "Get Data Set by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-data/datasets/1",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "datasets", "1"]
+            },
+            "description": "데이터 세트 상세 조회"
+          }
+        },
+        {
+          "name": "Create Data Set",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Data Set\",\n  \"data\": {\"username\": \"testuser\", \"password\": \"testpass\"},\n  \"environment\": \"dev\",\n  \"data_type\": \"json\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test-data/datasets",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "datasets"]
+            },
+            "description": "데이터 세트 생성"
+          }
+        },
+        {
+          "name": "Update Data Set",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Data Set\",\n  \"data\": {\"username\": \"updated\", \"password\": \"updated\"}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test-data/datasets/1",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "datasets", "1"]
+            },
+            "description": "데이터 세트 수정"
+          }
+        },
+        {
+          "name": "Delete Data Set",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/test-data/datasets/1",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "datasets", "1"]
+            },
+            "description": "데이터 세트 삭제"
+          }
+        },
+        {
+          "name": "Create Data Set Version",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\"username\": \"v2\", \"password\": \"v2\"},\n  \"version\": \"2.0\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test-data/datasets/1/versions",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "datasets", "1", "versions"]
+            },
+            "description": "데이터 세트 버전 생성"
+          }
+        },
+        {
+          "name": "Get Data Set Versions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-data/datasets/1/versions",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "datasets", "1", "versions"]
+            },
+            "description": "데이터 세트 버전 목록 조회"
+          }
+        },
+        {
+          "name": "Get Test Case Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-data/testcases/{{current_testcase_id}}/data",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "testcases", "{{current_testcase_id}}", "data"]
+            },
+            "description": "테스트 케이스에 매핑된 데이터 조회"
+          }
+        },
+        {
+          "name": "Get Mappings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/test-data/mappings",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "mappings"]
+            },
+            "description": "테스트 케이스-데이터 세트 매핑 목록 조회"
+          }
+        },
+        {
+          "name": "Create Mapping",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_case_id\": {{current_testcase_id}},\n  \"data_set_id\": 1,\n  \"field_mapping\": {\"username\": \"data.user.email\"},\n  \"priority\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test-data/mappings",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "mappings"]
+            },
+            "description": "테스트 케이스-데이터 세트 매핑 생성"
+          }
+        },
+        {
+          "name": "Update Mapping",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priority\": 2,\n  \"enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test-data/mappings/1",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "mappings", "1"]
+            },
+            "description": "매핑 수정"
+          }
+        },
+        {
+          "name": "Delete Mapping",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/test-data/mappings/1",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "mappings", "1"]
+            },
+            "description": "매핑 삭제"
+          }
+        },
+        {
+          "name": "Generate Dynamic Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema\": {\n    \"username\": \"string\",\n    \"email\": \"email\",\n    \"age\": \"number\"\n  },\n  \"count\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test-data/generate",
+              "host": ["{{base_url}}"],
+              "path": ["test-data", "generate"]
+            },
+            "description": "동적 테스트 데이터 생성"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📄 Reports",
+      "item": [
+        {
+          "name": "Get Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports",
+              "host": ["{{base_url}}"],
+              "path": ["reports"]
+            },
+            "description": "리포트 목록 조회"
+          }
+        },
+        {
+          "name": "Get Report by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/1",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "1"]
+            },
+            "description": "리포트 상세 조회"
+          }
+        },
+        {
+          "name": "Create Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Report\",\n  \"report_type\": \"test_summary\",\n  \"config\": {\"include_charts\": true},\n  \"output_format\": \"html\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reports",
+              "host": ["{{base_url}}"],
+              "path": ["reports"]
+            },
+            "description": "리포트 생성"
+          }
+        },
+        {
+          "name": "Update Report",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Report\",\n  \"is_public\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reports/1",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "1"]
+            },
+            "description": "리포트 수정"
+          }
+        },
+        {
+          "name": "Delete Report",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/1",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "1"]
+            },
+            "description": "리포트 삭제"
+          }
+        },
+        {
+          "name": "Generate Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"execution_params\": {}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reports/1/generate",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "1", "generate"]
+            },
+            "description": "리포트 생성 및 실행"
+          }
+        },
+        {
+          "name": "Get Report Execution",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/executions/1",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "executions", "1"]
+            },
+            "description": "리포트 실행 기록 조회"
+          }
+        },
+        {
+          "name": "Download Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/executions/1/download",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "executions", "1", "download"]
+            },
+            "description": "리포트 파일 다운로드"
+          }
+        },
+        {
+          "name": "Get Report Executions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/1/executions",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "1", "executions"]
+            },
+            "description": "리포트의 실행 기록 목록 조회"
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Queue",
+      "item": [
+        {
+          "name": "Queue Test Case Execution",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"environment\": \"dev\",\n  \"execution_parameters\": {}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/queue/testcases/{{current_testcase_id}}/execute",
+              "host": ["{{base_url}}"],
+              "path": ["queue", "testcases", "{{current_testcase_id}}", "execute"]
+            },
+            "description": "테스트 케이스를 큐에 추가하여 비동기 실행"
+          }
+        },
+        {
+          "name": "Queue Batch Execution",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_case_ids\": [{{current_testcase_id}}],\n  \"environment\": \"dev\",\n  \"max_workers\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/queue/testcases/batch-execute",
+              "host": ["{{base_url}}"],
+              "path": ["queue", "testcases", "batch-execute"]
+            },
+            "description": "여러 테스트 케이스를 병렬로 실행"
+          }
+        },
+        {
+          "name": "Get Task Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/queue/tasks/{task_id}",
+              "host": ["{{base_url}}"],
+              "path": ["queue", "tasks", "{task_id}"]
+            },
+            "description": "태스크 상태 조회"
+          }
+        },
+        {
+          "name": "Cancel Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/queue/tasks/{task_id}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["queue", "tasks", "{task_id}", "cancel"]
+            },
+            "description": "태스크 취소"
+          }
+        },
+        {
+          "name": "Get Queue Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/queue/stats",
+              "host": ["{{base_url}}"],
+              "path": ["queue", "stats"]
+            },
+            "description": "큐 통계 조회"
+          }
+        },
+        {
+          "name": "Get Workers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/queue/workers",
+              "host": ["{{base_url}}"],
+              "path": ["queue", "workers"]
+            },
+            "description": "워커 목록 조회"
+          }
+        },
+        {
+          "name": "Purge Queue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queue_name\": \"test_execution\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/queue/purge",
+              "host": ["{{base_url}}"],
+              "path": ["queue", "purge"]
+            },
+            "description": "큐 비우기 (관리자만)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔗 Dependencies",
+      "item": [
+        {
+          "name": "Get Dependencies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dependencies",
+              "host": ["{{base_url}}"],
+              "path": ["dependencies"]
+            },
+            "description": "의존성 목록 조회"
+          }
+        },
+        {
+          "name": "Create Dependency",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_case_id\": {{current_testcase_id}},\n  \"depends_on_test_case_id\": 1,\n  \"dependency_type\": \"required\",\n  \"priority\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/dependencies",
+              "host": ["{{base_url}}"],
+              "path": ["dependencies"]
+            },
+            "description": "의존성 생성"
+          }
+        },
+        {
+          "name": "Update Dependency",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dependency_type\": \"optional\",\n  \"priority\": 2,\n  \"enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/dependencies/1",
+              "host": ["{{base_url}}"],
+              "path": ["dependencies", "1"]
+            },
+            "description": "의존성 수정"
+          }
+        },
+        {
+          "name": "Delete Dependency",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dependencies/1",
+              "host": ["{{base_url}}"],
+              "path": ["dependencies", "1"]
+            },
+            "description": "의존성 삭제"
+          }
+        },
+        {
+          "name": "Get Dependency Graph",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dependencies/graph",
+              "host": ["{{base_url}}"],
+              "path": ["dependencies", "graph"]
+            },
+            "description": "의존성 그래프 조회"
+          }
+        },
+        {
+          "name": "Get Execution Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_case_ids\": [1, 2, 3]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/dependencies/execution-order",
+              "host": ["{{base_url}}"],
+              "path": ["dependencies", "execution-order"]
+            },
+            "description": "테스트 케이스 실행 순서 계산"
+          }
+        },
+        {
+          "name": "Check Dependency Conditions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dependencies/testcases/{{current_testcase_id}}/check",
+              "host": ["{{base_url}}"],
+              "path": ["dependencies", "testcases", "{{current_testcase_id}}", "check"]
+            },
+            "description": "테스트 케이스의 의존성 조건 확인"
+          }
+        },
+        {
+          "name": "Get Test Case Dependencies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dependencies/testcases/{{current_testcase_id}}/dependencies",
+              "host": ["{{base_url}}"],
+              "path": ["dependencies", "testcases", "{{current_testcase_id}}", "dependencies"]
+            },
+            "description": "테스트 케이스가 의존하는 테스트 케이스 목록 조회"
+          }
+        },
+        {
+          "name": "Get Dependent Tests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dependencies/testcases/{{current_testcase_id}}/dependent",
+              "host": ["{{base_url}}"],
+              "path": ["dependencies", "testcases", "{{current_testcase_id}}", "dependent"]
+            },
+            "description": "특정 테스트 케이스에 의존하는 테스트 케이스 목록 조회"
           }
         }
       ]

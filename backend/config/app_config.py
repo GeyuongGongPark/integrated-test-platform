@@ -133,6 +133,13 @@ def configure_app(app):
     logger.debug(f".env 파일 경로: {env_path}")
     logger.debug(f".env 파일 존재: {os.path.exists(env_path)}")
     
+    # Slack webhook URL 확인
+    slack_webhook_url = os.getenv('SLACK_WEBHOOK_URL')
+    if slack_webhook_url:
+        logger.info(f"✅ SLACK_WEBHOOK_URL 환경 변수 로드됨: {slack_webhook_url[:30]}...")
+    else:
+        logger.warning("⚠️ SLACK_WEBHOOK_URL 환경 변수가 설정되지 않았습니다. .env 파일을 확인하세요.")
+    
     return app
 
 def is_vercel_environment():

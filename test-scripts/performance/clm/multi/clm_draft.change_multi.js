@@ -1,6 +1,6 @@
 import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
 import login_to_dashborad from "../../login/login_to_dashborad.js";
-import { URLS } from '../../url/base.js';
+import { URLS } from '../../url/url_base.js';
 import { getFormattedTimestamp } from "../../common/utils.js";
 
 export const options = {

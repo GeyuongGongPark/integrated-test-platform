@@ -40,8 +40,8 @@ class CollaborationService:
             db.session.add(comment)
             db.session.commit()
             
-            # 멘션 추출 및 생성
-            self._extract_and_create_mentions(comment, content)
+            # 멘션 추출 및 생성 (작성자는 제외)
+            self._extract_and_create_mentions(comment, content, author_id)
             
             logger.info(f"댓글 생성 완료: {entity_type}:{entity_id} by User {author_id}")
             return comment
@@ -51,38 +51,67 @@ class CollaborationService:
             db.session.rollback()
             raise
     
-    def _extract_and_create_mentions(self, comment, content):
-        """댓글 내용에서 멘션 추출 및 생성"""
+    def _extract_and_create_mentions(self, comment, content, author_id):
+        """댓글 내용에서 멘션 추출 및 생성 (본인 멘션도 포함)"""
         try:
+            logger.info(f"🔍 멘션 추출 시작: Comment {comment.id}, Content: {content[:100]}..., Author: {author_id}")
+            
             # @username 형식의 멘션 찾기
             mention_pattern = r'@(\w+)'
             mentions = re.findall(mention_pattern, content)
             
+            logger.info(f"🔍 발견된 멘션 패턴: {mentions}")
+            
+            if not mentions:
+                logger.info("⏭️ 멘션 패턴이 발견되지 않음")
+                return
+            
             for username in mentions:
-                # 사용자 찾기
-                user = User.query.filter_by(username=username).first()
-                if user:
-                    mention = Mention(
-                        entity_type=comment.entity_type,
-                        entity_id=comment.entity_id,
-                        mentioned_user_id=user.id,
-                        comment_id=comment.id
-                    )
-                    db.session.add(mention)
-                    
-                    # 멘션 알림 전송
-                    notification_service.create_notification(
+                logger.info(f"🔍 멘션 처리 중: @{username}")
+                
+                # 사용자 찾기 (대소문자 구분 없이)
+                user = User.query.filter(
+                    db.func.lower(User.username) == db.func.lower(username)
+                ).first()
+                
+                if not user:
+                    logger.warning(f"⚠️ 사용자를 찾을 수 없음: @{username}")
+                    continue
+                
+                logger.info(f"✅ 사용자 발견: User {user.id} ({user.username})")
+                
+                # 멘션 레코드 생성
+                mention = Mention(
+                    entity_type=comment.entity_type,
+                    entity_id=comment.entity_id,
+                    mentioned_user_id=user.id,
+                    comment_id=comment.id
+                )
+                db.session.add(mention)
+                logger.info(f"✅ 멘션 레코드 추가: Mention for User {user.id}")
+                
+                # 멘션 알림 전송 (본인인 경우에도 전송)
+                logger.info(f"🔔 멘션 알림 생성 시도: User {user.id}, Comment {comment.id}, Entity {comment.entity_type}:{comment.entity_id}, Author {author_id}")
+                try:
+                    notification = notification_service.create_notification(
                         user_id=user.id,
                         notification_type='mention',
+                        title='멘션 알림',
                         message=f"댓글에서 멘션되었습니다: {comment.content[:50]}...",
-                        link=f"/{comment.entity_type}s/{comment.entity_id}",
+                        related_test_case_id=comment.entity_id if comment.entity_type == 'test_case' else None,
                         priority='medium'
                     )
+                    logger.info(f"✅ 멘션 알림 생성 성공: Notification ID {notification.id if notification else 'None'}")
+                except Exception as e:
+                    logger.error(f"❌ 멘션 알림 생성 실패: {str(e)}", exc_info=True)
+                    # 알림 생성 실패해도 멘션 레코드는 저장
             
             db.session.commit()
+            logger.info(f"✅ 멘션 추출 완료: Comment {comment.id}")
             
         except Exception as e:
-            logger.error(f"멘션 추출 오류: {str(e)}")
+            logger.error(f"❌ 멘션 추출 오류: {str(e)}", exc_info=True)
+            db.session.rollback()
     
     def update_comment(self, comment_id, content, user_id):
         """댓글 수정"""
@@ -133,7 +162,9 @@ class CollaborationService:
     def get_comments(self, entity_type, entity_id, include_deleted=False):
         """엔티티의 댓글 목록 조회"""
         try:
-            query = Comment.query.filter_by(
+            from sqlalchemy.orm import joinedload
+            
+            query = Comment.query.options(joinedload(Comment.author)).filter_by(
                 entity_type=entity_type,
                 entity_id=entity_id,
                 parent_comment_id=None  # 부모 댓글만 조회
@@ -148,8 +179,8 @@ class CollaborationService:
             result = []
             for comment in comments:
                 comment_dict = comment.to_dict()
-                # 대댓글 추가
-                replies = Comment.query.filter_by(
+                # 대댓글 추가 (author 관계도 함께 로드)
+                replies = Comment.query.options(joinedload(Comment.author)).filter_by(
                     parent_comment_id=comment.id,
                     is_deleted=False
                 ).order_by(Comment.created_at.asc()).all()
