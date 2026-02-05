@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import TestCaseModal from './TestCaseModal';
 
 const TestCaseFormModal = ({ 
@@ -9,8 +9,19 @@ const TestCaseFormModal = ({
   onSubmit, 
   onCancel,
   users = [],
-  isEdit = false 
+  isEdit = false,
+  onAiGenerate,
+  aiGenerating = false,
+  aiError = ''
 }) => {
+  const [aiPrompt, setAiPrompt] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) {
+      setAiPrompt('');
+    }
+  }, [isOpen]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit();
@@ -46,6 +57,27 @@ const TestCaseFormModal = ({
       size="large"
     >
       <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label>AI 프롬프트로 설계</label>
+          <textarea
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            placeholder="기능/시나리오를 입력하면 테스트 케이스 초안을 제안합니다."
+            rows="3"
+          />
+          <div className="ai-actions">
+            <button
+              type="button"
+              className="testcase-btn testcase-btn-primary"
+              onClick={() => onAiGenerate && onAiGenerate(aiPrompt)}
+              disabled={aiGenerating}
+            >
+              {aiGenerating ? '생성 중...' : 'AI로 채우기'}
+            </button>
+            {aiError && <p className="error-text">{aiError}</p>}
+          </div>
+        </div>
+
         <div className="form-group">
           <label>대분류 *</label>
           <input 

@@ -14,6 +14,7 @@ import os
 import subprocess
 import time
 import json
+import requests
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -159,6 +160,110 @@ def get_testcase(id):
     }
     response = jsonify(data)
     return add_cors_headers(response), 200
+
+
+@testcases_bp.route('/testcases/ai/generate', methods=['POST', 'OPTIONS'])
+@user_required
+def generate_testcases_ai():
+    """OpenAI로 테스트 케이스 초안 생성"""
+    if request.method == 'OPTIONS':
+        from utils.common_helpers import handle_options_request
+        return handle_options_request()
+
+    prompt = (request.get_json() or {}).get('prompt', '').strip()
+    if not prompt:
+        response = jsonify({'error': 'prompt가 필요합니다.'})
+        return add_cors_headers(response), 400
+
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        response = jsonify({'error': 'OPENAI_API_KEY가 설정되지 않았습니다.'})
+        return add_cors_headers(response), 500
+
+    model = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
+    try:
+        payload = {
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a QA test case designer. Generate concise test cases in Korean. "
+                        "Return only JSON with key 'test_cases' containing an array of objects. "
+                        "Each object fields: name, main_category, sub_category, detail_category, "
+                        "pre_condition, expected_result, remark. Keep values short."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.25,
+            "max_tokens": 800,
+            "response_format": {"type": "json_object"},
+        }
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+
+        r = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30,
+        )
+        if not r.ok:
+            response = jsonify({'error': f'OpenAI 호출 실패: {r.status_code} {r.text}'})
+            return add_cors_headers(response), 502
+
+        result = r.json()
+        content = (
+            result.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+            .strip()
+        )
+
+        parsed = {}
+        try:
+            parsed = json.loads(content) if content else {}
+        except json.JSONDecodeError:
+            parsed = {}
+
+        items = []
+        raw_items = parsed.get("test_cases") if isinstance(parsed, dict) else None
+        if raw_items is None and isinstance(parsed, list):
+            raw_items = parsed
+
+        if isinstance(raw_items, list):
+            for idx, item in enumerate(raw_items):
+                if not isinstance(item, dict):
+                    continue
+                items.append({
+                    "name": item.get("name") or f"AI 테스트 케이스 {idx+1}",
+                    "main_category": item.get("main_category", ""),
+                    "sub_category": item.get("sub_category", ""),
+                    "detail_category": item.get("detail_category", ""),
+                    "pre_condition": item.get("pre_condition", ""),
+                    "expected_result": item.get("expected_result", ""),
+                    "remark": item.get("remark", ""),
+                })
+
+        response = jsonify({
+            "items": items,
+            "raw": content,
+            "model": model,
+            "usage": result.get("usage", {}),
+        })
+        return add_cors_headers(response), 200
+
+    except requests.exceptions.Timeout:
+        response = jsonify({'error': 'OpenAI 응답 대기 시간 초과'})
+        return add_cors_headers(response), 504
+    except Exception as e:
+        logger.error(f"AI 테스트 케이스 생성 오류: {str(e)}")
+        response = jsonify({'error': 'AI 생성 중 오류가 발생했습니다.'})
+        return add_cors_headers(response), 500
 
 @testcases_bp.route('/testcases/<int:id>/history', methods=['GET'])
 @guest_allowed
