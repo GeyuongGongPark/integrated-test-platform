@@ -1,5 +1,5 @@
-/* 공통 모달 스타일 - 모든 컴포넌트에서 사용 */
-.modal-overlay {
+/* 공통 모달 스타일 - PromptModal, TestCaseModal 등에서만 사용 (네임스페이스로 격리) */
+.common-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -15,11 +15,11 @@
   height: 100vh;
 }
 
-.fullscreen-modal {
+.common-modal-overlay.fullscreen-modal {
   padding: 0;
 }
 
-.modal {
+.common-modal-overlay .modal {
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
@@ -36,31 +36,31 @@
   bottom: auto;
 }
 
-.modal-small {
+.common-modal-overlay .modal-small {
   width: 100%;
   max-width: 400px;
   max-height: 60vh;
 }
 
-.modal-medium {
+.common-modal-overlay .modal-medium {
   width: 100%;
   max-width: 600px;
   max-height: 80vh;
 }
 
-.modal-large {
+.common-modal-overlay .modal-large {
   width: 100%;
   max-width: 800px;
   max-height: 90vh;
 }
 
-.fullscreen-modal-content {
+.common-modal-overlay .fullscreen-modal-content {
   width: 100%;
   max-width: 900px;
   max-height: 90vh;
 }
 
-.modal-header {
+.common-modal-overlay .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -69,14 +69,14 @@
   background: #f8f9fa;
 }
 
-.modal-header h3 {
+.common-modal-overlay .modal-header h3 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
   color: #333;
 }
 
-.modal-close {
+.common-modal-overlay .modal-close {
   background: none;
   border: none;
   font-size: 24px;
@@ -92,18 +92,18 @@
   transition: background-color 0.2s;
 }
 
-.modal-close:hover {
+.common-modal-overlay .modal-close:hover {
   background-color: #f0f0f0;
   color: #333;
 }
 
-.modal-body {
+.common-modal-overlay .modal-body {
   padding: 24px;
   overflow-y: auto;
   flex: 1;
 }
 
-.modal-actions {
+.common-modal-overlay .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -114,19 +114,19 @@
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
-  .modal-overlay {
+  .common-modal-overlay {
     padding: 10px;
   }
   
-  .modal {
+  .common-modal-overlay .modal {
     width: 100%;
     max-width: none;
     max-height: 95vh;
   }
   
-  .modal-header,
-  .modal-body,
-  .modal-actions {
+  .common-modal-overlay .modal-header,
+  .common-modal-overlay .modal-body,
+  .common-modal-overlay .modal-actions {
     padding: 16px;
   }
 }

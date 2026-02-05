@@ -35,7 +35,7 @@ const PromptModal = ({ isOpen, onClose, title, message, defaultValue = '', onCon
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleCancel}>
+    <div className="common-modal-overlay" onClick={handleCancel}>
       <div className="modal modal-small" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{title || '입력'}</h3>

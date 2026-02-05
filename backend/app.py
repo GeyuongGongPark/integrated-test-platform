@@ -31,6 +31,7 @@ from routes.test_data import test_data_bp
 from routes.collaboration import collaboration_bp
 from routes.dependencies import dependencies_bp
 from routes.reports import reports_bp
+from routes.settings import settings_bp
 from utils.cors import setup_cors
 from flask_jwt_extended import JWTManager
 from utils.cors import setup_cors
@@ -179,6 +180,7 @@ app.register_blueprint(test_data_bp)
 app.register_blueprint(collaboration_bp, url_prefix='/api/collaboration')
 app.register_blueprint(dependencies_bp)
 app.register_blueprint(reports_bp)
+app.register_blueprint(settings_bp)
 
 # 헬퍼 함수들
 def create_cors_response(data=None, status_code=200):

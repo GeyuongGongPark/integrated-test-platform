@@ -39,9 +39,40 @@ def execute_test_case(self, test_case_id, environment='dev', execution_parameter
             test_case = TestCase.query.get(test_case_id)
             if not test_case:
                 raise ValueError(f"테스트 케이스를 찾을 수 없습니다: {test_case_id}")
+
+            # 테스트 단계(JSON)만 있고 자동화 코드 경로가 없는 경우 → 단계 실행기로 실행
+            if not test_case.automation_code_path and getattr(test_case, 'test_steps', None):
+                try:
+                    import json
+                    steps_data = json.loads(test_case.test_steps)
+                except (TypeError, ValueError):
+                    steps_data = None
+                if isinstance(steps_data, list) and len(steps_data) > 0:
+                    base_url = (execution_parameters or {}).get('baseUrl') or (execution_parameters or {}).get('base_url')
+                    from utils.playwright_steps_runner import run_playwright_steps
+                    _start = time.time()
+                    run_result = run_playwright_steps(steps_data, base_url=base_url)
+                    execution_duration = time.time() - _start
+                    test_result = TestResult(
+                        test_case_id=test_case_id,
+                        result=run_result['status'],
+                        environment=test_case.environment or environment,
+                        execution_duration=execution_duration,
+                        error_message=run_result.get('error')
+                    )
+                    db.session.add(test_result)
+                    db.session.commit()
+                    return {
+                        'status': run_result['status'],
+                        'output': run_result.get('output', ''),
+                        'error': run_result.get('error'),
+                        'execution_duration': execution_duration
+                    }
+                # test_steps 비어 있음 → 아래에서 에러
+                # test_steps가 비어 있거나 잘못된 경우 아래에서 에러 처리
             
             if not test_case.automation_code_path:
-                raise ValueError("자동화 코드 경로가 설정되지 않았습니다")
+                raise ValueError("자동화 코드 경로 또는 테스트 단계(test_steps)를 설정해 주세요")
             
             # 테스트 데이터 가져오기 (매핑된 데이터 세트가 있는 경우)
             test_data = None

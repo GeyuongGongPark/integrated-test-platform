@@ -79,7 +79,7 @@
   font-style: italic;
 }
 
-.btn-clear-search {
+.jira-issues-list-container .btn-clear-search {
   background: #6c757d;
   color: white;
   border: none;
@@ -91,7 +91,7 @@
   flex-shrink: 0;
 }
 
-.btn-clear-search:hover {
+.jira-issues-list-container .btn-clear-search:hover {
   background: #5a6268;
   transform: translateY(-1px);
 }
@@ -216,7 +216,7 @@
   margin-bottom: 20px;
 }
 
-.retry-button {
+.jira-issues-list-container .retry-button {
   padding: 10px 20px;
   background: #0052cc;
   color: white;
@@ -228,7 +228,7 @@
   transition: all 0.2s ease;
 }
 
-.retry-button:hover {
+.jira-issues-list-container .retry-button:hover {
   background: #0041a3;
   transform: translateY(-1px);
 }
@@ -475,39 +475,39 @@
   transform: none !important;
 }
 
-.btn-primary {
+.jira-issues-list-container .btn-primary {
   background: #0052cc;
   color: white;
   box-shadow: 0 2px 4px rgba(0, 82, 204, 0.2);
 }
 
-.btn-primary:hover:not(:disabled) {
+.jira-issues-list-container .btn-primary:hover:not(:disabled) {
   background: #0041a3;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 82, 204, 0.3);
 }
 
-.btn-secondary {
+.jira-issues-list-container .btn-secondary {
   background: #6c757d;
   color: white;
 }
 
-.btn-secondary:hover:not(:disabled) {
+.jira-issues-list-container .btn-secondary:hover:not(:disabled) {
   background: #5a6268;
   transform: translateY(-1px);
 }
 
-.btn-info {
+.jira-issues-list-container .btn-info {
   background: #17a2b8;
   color: white;
 }
 
-.btn-info:hover:not(:disabled) {
+.jira-issues-list-container .btn-info:hover:not(:disabled) {
   background: #138496;
   transform: translateY(-1px);
 }
 
-.btn-sm {
+.jira-issues-list-container .btn-sm {
   padding: 6px 12px;
   font-size: 12px;
 }
@@ -638,7 +638,76 @@
   font-weight: 500;
 }
 
-/* 모달 스타일은 공통 Modal.css에서 관리 */
+/* 이슈 상세 모달 (이 페이지 전용 - common 모달과 분리) */
+.jira-issues-list-container .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.jira-issues-list-container .modal-overlay .modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+}
+
+.jira-issues-list-container .modal-overlay .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.jira-issues-list-container .modal-overlay .modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.jira-issues-list-container .modal-overlay .modal-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.jira-issues-list-container .modal-overlay .modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.jira-issues-list-container .modal-overlay .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
 
 .issue-detail-content {
   max-height: 60vh;
@@ -719,13 +788,13 @@
   display: block;
 }
 
-/* 버튼 색상 추가 */
-.btn-warning {
+/* 이슈 페이지 전용 버튼 색상 */
+.jira-issues-list-container .btn-warning {
   background: #ff991f;
   color: white;
 }
 
-.btn-warning:hover:not(:disabled) {
+.jira-issues-list-container .btn-warning:hover:not(:disabled) {
   background: #e6850e;
   transform: translateY(-1px);
 }

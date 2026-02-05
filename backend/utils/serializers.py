@@ -20,6 +20,7 @@ def serialize_testcase(tc, include_relations=False):
         'pre_condition': tc.pre_condition,
         'expected_result': tc.expected_result,
         'remark': tc.remark,
+        'test_steps': getattr(tc, 'test_steps', None),
         'automation_code_path': tc.automation_code_path,
         'environment': tc.environment,
         'result_status': getattr(tc, 'result_status', None),

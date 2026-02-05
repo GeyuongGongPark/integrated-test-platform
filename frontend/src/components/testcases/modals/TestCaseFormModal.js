@@ -154,6 +154,19 @@ const TestCaseFormModal = ({
             rows="3"
           />
         </div>
+
+        <div className="form-group">
+          <label>테스트 단계 (JSON, 코드 없이 실행)</label>
+          <textarea 
+            value={testCase.test_steps || ''}
+            onChange={(e) => handleChange('test_steps', e.target.value)}
+            placeholder={'예: [{"action":"navigate","url":"/"},{"action":"fill","selector":"#id","value":"admin"},{"action":"click","selector":"button[type=submit]"}]'}
+            rows="5"
+          />
+          <small className="form-hint">
+            자동화 코드 경로 없이 실행 버튼으로 동작합니다. action: navigate, click, fill, type, press, waitForTimeout, assertText 등.
+          </small>
+        </div>
         
         <div className="form-group">
           <label>자동화 코드 경로</label>
@@ -161,7 +174,7 @@ const TestCaseFormModal = ({
             type="text" 
             value={testCase.automation_code_path || ''}
             onChange={(e) => handleChange('automation_code_path', e.target.value)}
-            placeholder="자동화 코드 파일 경로를 입력하세요 (예: test-scripts/playwright/login.spec.js)"
+            placeholder="자동화 코드 파일 경로 (비워두면 위 테스트 단계만 사용)"
           />
         </div>
         

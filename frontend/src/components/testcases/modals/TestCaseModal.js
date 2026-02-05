@@ -20,7 +20,7 @@ const TestCaseModal = ({
   };
 
   return (
-    <div className="modal-overlay fullscreen-modal">
+    <div className="common-modal-overlay fullscreen-modal">
       <div className={`modal ${sizeClasses[size]}`}>
         <div className="modal-header">
           <h3>{title}</h3>

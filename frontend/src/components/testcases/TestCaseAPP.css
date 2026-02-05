@@ -57,37 +57,38 @@
   color: white;
 }
 
-.btn-upload {
+/* 테스트케이스 페이지 전용 버튼 (다른 페이지와 겹치지 않도록 스코프) */
+.testcase-container .btn-upload {
   background: #28a745;
   color: white;
 }
 
-.btn-download {
+.testcase-container .btn-download {
   background: #007bff;
   color: white;
 }
 
-.btn-execute {
+.testcase-container .btn-execute {
   background: #ffc107;
   color: #333;
 }
 
-.btn-edit {
+.testcase-container .btn-edit {
   background: #17a2b8;
   color: white;
 }
 
-.btn-delete {
+.testcase-container .btn-delete {
   background: #dc3545;
   color: white;
 }
 
-.btn-primary {
+.testcase-container .btn-primary {
   background: #007bff;
   color: white;
 }
 
-.btn-secondary {
+.testcase-container .btn-secondary {
   background: #6c757d;
   color: white;
 }
@@ -445,7 +446,7 @@
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
 }
 
-.btn-sort {
+.testcase-container .btn-sort {
   background: #17a2b8;
   color: white;
   border: none;
@@ -457,12 +458,12 @@
   min-width: 40px;
 }
 
-.btn-sort:hover {
+.testcase-container .btn-sort:hover {
   background: #138496;
   transform: translateY(-1px);
 }
 
-.btn-clear-filters {
+.testcase-container .btn-clear-filters {
   background: #6c757d5a;
   color: white;
   border: none;
@@ -473,7 +474,7 @@
   transition: all 0.2s ease;
 }
 
-.btn-clear-filters:hover {
+.testcase-container .btn-clear-filters:hover {
   background: #5a6268;
   transform: translateY(-1px);
 }
@@ -631,8 +632,8 @@
   color: #856404;
 }
 
-/* 아이콘 버튼들 - 오른쪽 기준 통일 */
-.btn-icon {
+/* 테스트케이스 페이지 전용 아이콘 버튼 (스코프) */
+.testcase-container .btn-icon {
   min-width: 40px;
   width: 40px;
   height: 40px;
@@ -647,37 +648,37 @@
   justify-content: center;
 }
 
-.btn-details {
+.testcase-container .btn-details {
   background: #17a2b8 !important;
   color: white !important;
 }
 
-.btn-details:hover {
+.testcase-container .btn-details:hover {
   background: #138496 !important;
   color: white !important;
 }
 
-.btn-edit-icon {
+.testcase-container .btn-edit-icon {
   background: #17a2b8 !important;
   color: white !important;
 }
 
-.btn-edit-icon:hover {
+.testcase-container .btn-edit-icon:hover {
   background: #138496 !important;
   color: white !important;
 }
 
-.btn-delete-icon {
+.testcase-container .btn-delete-icon {
   background: #dc3545 !important;
   color: white !important;
 }
 
-.btn-delete-icon:hover {
+.testcase-container .btn-delete-icon:hover {
   background: #c82333 !important;
   color: white !important;
 }
 
-.btn-automation {
+.testcase-container .btn-automation {
   background: #ffc107;
   color: #333;
   padding: 8px;
@@ -693,7 +694,7 @@
   height: 36px;
 }
 
-.btn-automation:hover {
+.testcase-container .btn-automation:hover {
   background: #e0a800;
   color: #333;
 }
@@ -760,8 +761,8 @@
   display: none;
 }
 
-/* 모달 */
-.modal-overlay {
+/* 테스트케이스 페이지 전용 모달 (스코프) */
+.testcase-container .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -774,19 +775,19 @@
   z-index: 1000;
 }
 
-.modal {
+.testcase-container .modal {
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
   min-width: 400px;
 }
 
-.modal h3 {
+.testcase-container .modal h3 {
   margin-bottom: 20px;
   color: #333;
 }
 
-.modal input[type="file"] {
+.testcase-container .modal input[type="file"] {
   width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
@@ -794,7 +795,7 @@
   margin-bottom: 20px;
 }
 
-.form-group {
+.testcase-container .modal .form-group {
   margin-bottom: 25px !important;
   display: block !important;
   width: 100% !important;
@@ -802,7 +803,7 @@
   float: none !important;
 }
 
-.form-group label {
+.testcase-container .modal .form-group label {
   display: block !important;
   margin-bottom: 5px !important;
   font-weight: 500 !important;
@@ -812,8 +813,8 @@
   float: none !important;
 }
 
-.form-group input,
-.form-group textarea {
+.testcase-container .modal .form-group input,
+.testcase-container .modal .form-group textarea {
   width: 100% !important;
   padding: 10px !important;
   border: 1px solid #ddd !important;
@@ -826,19 +827,19 @@
   float: none !important;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.testcase-container .modal .form-group input:focus,
+.testcase-container .modal .form-group textarea:focus {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 
-.form-group textarea {
+.testcase-container .modal .form-group textarea {
   resize: vertical;
   min-height: 80px;
 }
 
-.modal-actions {
+.testcase-container .modal-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
@@ -859,177 +860,47 @@
   font-size: 1.2em;
 }
 
-/* 기존 모달 스타일을 전체화면 모달에서 무시 */
-/* fullscreen-modal-content 클래스가 있는 모달만 투명 배경 적용 */
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content {
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: none !important;
-  margin: 0 !important;
-  min-width: auto !important;
-  width: auto !important;
-  height: auto !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-}
-
-/* 일반 모달(small, medium, large)은 배경을 유지 */
-.modal-overlay.fullscreen-modal .modal.modal-small,
-.modal-overlay.fullscreen-modal .modal.modal-medium,
-.modal-overlay.fullscreen-modal .modal.modal-large {
-  background: white !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
-  border-radius: 12px !important;
-}
-
-/* 전체화면 모달 스타일 - 더 강력한 선택자 사용 */
-.modal-overlay.fullscreen-modal {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  background: rgba(0, 0, 0, 0.8) !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  z-index: 2000 !important;
-  padding: 20px !important;
-  width: 100vw !important;
-  height: 100vh !important;
-}
-
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content {
+/* 공통 모달(TestCaseModal) 전체화면 보강 - common-modal-overlay 사용처 전용 */
+.common-modal-overlay.fullscreen-modal .modal.fullscreen-modal-content {
   width: 100% !important;
   max-width: 800px !important;
   max-height: 90vh !important;
-  background: white !important;
-  border-radius: 12px !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-  min-width: auto !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  position: relative !important;
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
 }
 
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-header {
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
+.common-modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-header {
   padding: 20px 30px !important;
-  border-bottom: 1px solid #e9ecef !important;
-  background: #ffffff !important;
 }
 
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-header h3 {
-  margin: 0 !important;
-  color: #333 !important;
-  font-size: 1.5em !important;
-  font-weight: 600 !important;
-}
-
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-close {
-  background: none !important;
-  border: none !important;
-  font-size: 28px !important;
-  cursor: pointer !important;
-  color: #666 !important;
-  padding: 0 !important;
-  width: 40px !important;
-  height: 40px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border-radius: 50% !important;
-  transition: all 0.2s ease !important;
-}
-
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-close:hover {
-  background: #e9ecef !important;
-  color: #333 !important;
-}
-
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-body {
+.common-modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-body {
   padding: 30px !important;
-  flex: 1 !important;
-  overflow-y: auto !important;
 }
 
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group {
+.common-modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group {
   margin-bottom: 25px !important;
 }
 
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group label {
-  display: block !important;
+.common-modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group label {
   margin-bottom: 8px !important;
   font-weight: 600 !important;
-  color: #333 !important;
   font-size: 14px !important;
 }
 
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group input,
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group textarea,
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group select {
-  width: 100% !important;
+.common-modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group input,
+.common-modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group textarea,
+.common-modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group select {
   padding: 12px 16px !important;
   border: 2px solid #e9ecef !important;
   border-radius: 8px !important;
-  font-size: 14px !important;
-  transition: all 0.2s ease !important;
-  background: white !important;
 }
 
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group input:focus,
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group textarea:focus,
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group select:focus {
-  outline: none !important;
-  border-color: #007bff !important;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1) !important;
-}
-
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .form-group textarea {
-  resize: vertical !important;
-  min-height: 80px !important;
-}
-
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .help-text {
-  margin-top: 5px !important;
-  font-size: 12px !important;
-  color: #666 !important;
-  font-style: italic !important;
-}
-
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-actions {
-  display: flex !important;
-  gap: 15px !important;
-  justify-content: flex-end !important;
+.common-modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-actions {
   padding: 20px 30px !important;
-  border-top: 1px solid #e9ecef !important;
-  background: #ffffff !important;
 }
 
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-actions .btn {
+.common-modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-actions .btn {
   padding: 12px 24px !important;
-  font-size: 14px !important;
   font-weight: 600 !important;
   border-radius: 8px !important;
-  transition: all 0.2s ease !important;
-}
-
-.modal-overlay.fullscreen-modal .modal.fullscreen-modal-content .modal-actions .btn:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* 반응형 디자인 */
@@ -1052,10 +923,10 @@
     margin-right: 10px;
   }
   
-  .btn-details,
-  .btn-edit-icon,
-  .btn-delete-icon,
-  .btn-automation {
+  .testcase-container .btn-details,
+  .testcase-container .btn-edit-icon,
+  .testcase-container .btn-delete-icon,
+  .testcase-container .btn-automation {
     min-width: 35px;
     height: 35px;
     font-size: 12px;
@@ -1074,32 +945,32 @@
     justify-content: center;
   }
   
-  .modal {
+  .testcase-container .modal {
     margin: 20px;
   }
 
-  .fullscreen-modal {
+  .common-modal-overlay.fullscreen-modal {
     padding: 10px;
   }
   
-  .fullscreen-modal-content {
+  .common-modal-overlay .fullscreen-modal-content {
     max-height: 95vh;
   }
   
-  .fullscreen-modal-content .modal-header {
+  .common-modal-overlay .fullscreen-modal-content .modal-header {
     padding: 15px 20px;
   }
   
-  .fullscreen-modal-content .modal-body {
+  .common-modal-overlay .fullscreen-modal-content .modal-body {
     padding: 20px;
   }
   
-  .fullscreen-modal-content .modal-actions {
+  .common-modal-overlay .fullscreen-modal-content .modal-actions {
     padding: 15px 20px;
     flex-direction: column;
   }
   
-  .fullscreen-modal-content .modal-actions .btn {
+  .common-modal-overlay .fullscreen-modal-content .modal-actions .btn {
     width: 100%;
   }
 }
@@ -1241,7 +1112,7 @@
   margin: 20px 0;
 }
 
-.retry-button {
+.testcase-container .retry-button {
   background: #007bff;
   color: white;
   border: none;
@@ -1251,7 +1122,7 @@
   margin-top: 10px;
 }
 
-.retry-button:hover {
+.testcase-container .retry-button:hover {
   background: #0056b3;
 }
 
@@ -1676,15 +1547,15 @@
   flex-wrap: wrap;
 }
 
-/* 액션 버튼 컨테이너 */
-.action-buttons {
+/* 액션 버튼 컨테이너 (테스트케이스 페이지 전용) */
+.testcase-container .action-buttons {
   display: flex;
   gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
 }
 
-.action-buttons .btn-icon {
+.testcase-container .action-buttons .btn-icon {
   padding: 8px;
   min-width: 36px;
   height: 36px;
@@ -1696,7 +1567,7 @@
   transition: all 0.2s ease;
 }
 
-.action-buttons .btn-icon:hover {
+.testcase-container .action-buttons .btn-icon:hover {
   background: #f8f9fa;
   border-color: #007bff;
   transform: translateY(-1px);

@@ -109,6 +109,7 @@ class TestCase(db.Model):
     pre_condition = db.Column(db.Text)  # 사전 조건
     expected_result = db.Column(db.Text)  # 예상 결과
     remark = db.Column(db.Text)  # 비고
+    test_steps = db.Column(db.Text)  # 테스트 단계(JSON). automation_code_path 없이 실행 시 사용
     automation_code_path = db.Column(db.String(500))  # 자동화 코드 경로
     automation_code_type = db.Column(db.String(50))  # 자동화 코드 타입
     result_status = db.Column(db.String(20), default='pending')  # pending, passed, failed, blocked
@@ -1315,3 +1316,16 @@ class JiraComment(db.Model):
     
     def __repr__(self):
         return f'<JiraComment {self.id}: {self.body[:50]}...>'
+
+
+class SystemConfig(db.Model):
+    """시스템 전역 설정 (키-값). AI TC 기본 프롬프트 등."""
+    __tablename__ = 'SystemConfig'
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.Text, nullable=True)
+    updated_at = db.Column(db.DateTime, default=get_kst_now, onupdate=get_kst_now)
+
+    def __repr__(self):
+        return f'<SystemConfig {self.key}>'
