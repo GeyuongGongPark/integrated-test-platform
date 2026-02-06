@@ -95,7 +95,7 @@
 
 .testcase-content {
   display: grid;
-  grid-template-columns: 350px 1fr;
+  grid-template-columns: 320px minmax(0, 1fr) 360px;
   gap: 25px;
   min-height: 600px;
 }
@@ -105,6 +105,7 @@
   padding: 25px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   height: fit-content;
+  background: white;
 }
 
 .folder-tree h3 {
@@ -277,6 +278,112 @@
 .testcase-list {
   padding: 25px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: white;
+}
+
+.testcase-stats {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stats-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.stats-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 12px;
+}
+
+.stats-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+
+.stats-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #495057;
+}
+
+.stats-value {
+  font-weight: 600;
+  color: #212529;
+}
+
+.stats-footer {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.stats-passrate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.stats-passrate-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #007bff;
+  margin: 4px 0;
+}
+
+.stats-passrate-subtext {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.testcase-detail-panel {
+  padding: 25px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: white;
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.detail-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #007bff;
+}
+
+.detail-panel-header h3 {
+  margin: 0;
+  font-size: 1.2em;
+  color: #333;
+}
+
+.detail-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-panel-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6c757d;
+  border: 1px dashed #dee2e6;
+  border-radius: 8px;
+  background: #f8f9fa;
 }
 
 .testcase-list-header {
@@ -904,6 +1011,17 @@
 }
 
 /* 반응형 디자인 */
+@media (max-width: 1200px) {
+  .testcase-content {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .testcase-detail-panel {
+    grid-column: 1 / -1;
+    position: static;
+  }
+}
+
 @media (max-width: 768px) {
   .testcase-content {
     grid-template-columns: 1fr;
