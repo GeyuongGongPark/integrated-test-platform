@@ -254,7 +254,7 @@
 
 .profile-field span {
   color: #2d3748;
-  text-align: right;
+  text-align: left;
   flex: 1;
   margin-left: 16px;
 }

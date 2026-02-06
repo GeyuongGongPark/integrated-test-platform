@@ -1,0 +1,140 @@
+.prompt-settings-container {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.prompt-settings-header {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.prompt-settings-header h2 {
+  color: #333;
+  margin: 0 0 12px 0;
+  font-size: 1.5em;
+}
+
+.prompt-settings-desc {
+  margin: 0;
+  color: #555;
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+
+.prompt-settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.prompt-settings-section {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.prompt-settings-section h3 {
+  color: #333;
+  margin: 0 0 8px 0;
+  font-size: 1.2em;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 8px;
+}
+
+.prompt-format-hint {
+  margin: 0 0 12px 0;
+  color: #6c757d;
+  font-size: 0.9em;
+}
+
+.prompt-textarea {
+  width: 100%;
+  min-height: 420px;
+  padding: 16px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.prompt-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.prompt-settings-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.prompt-settings-btn-save {
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.prompt-settings-btn-save:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.prompt-settings-btn-save:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.prompt-settings-btn-reload {
+  padding: 10px 20px;
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.prompt-settings-btn-reload:hover:not(:disabled) {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.prompt-settings-btn-reload:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.prompt-settings-message {
+  margin: 12px 0 0 0;
+  color: #28a745;
+  font-size: 0.95em;
+}
+
+.prompt-settings-error {
+  margin: 12px 0 0 0;
+  color: #dc3545;
+  font-size: 0.95em;
+}
+
+.prompt-settings-loading {
+  text-align: center;
+  padding: 48px 20px;
+  color: #6c757d;
+  font-size: 1em;
+}

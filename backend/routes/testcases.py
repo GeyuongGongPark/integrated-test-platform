@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, send_file
-from models import db, TestCase, TestResult, Screenshot, Project, Folder, User, TestCaseTemplate, TestPlan, TestPlanTestCase
+from models import db, TestCase, TestResult, Screenshot, Project, Folder, User, TestCaseTemplate, TestPlan, TestPlanTestCase, SystemConfig
 from utils.cors import add_cors_headers
 from utils.auth_decorators import admin_required, user_required, guest_allowed
 from utils.serializers import serialize_testcase, serialize_project, serialize_folder
@@ -14,6 +14,7 @@ import os
 import subprocess
 import time
 import json
+import requests
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -146,6 +147,7 @@ def get_testcase(id):
         'expected_result': tc.expected_result,
         'result_status': tc.result_status,
         'remark': tc.remark,
+        'test_steps': tc.test_steps,
         'automation_code_path': tc.automation_code_path,
         'automation_code_type': tc.automation_code_type,
         'folder_id': tc.folder_id,
@@ -159,6 +161,117 @@ def get_testcase(id):
     }
     response = jsonify(data)
     return add_cors_headers(response), 200
+
+
+@testcases_bp.route('/testcases/ai/generate', methods=['POST', 'OPTIONS'])
+@user_required
+def generate_testcases_ai():
+    """OpenAI로 테스트 케이스 초안 생성"""
+    if request.method == 'OPTIONS':
+        from utils.common_helpers import handle_options_request
+        return handle_options_request()
+
+    prompt = (request.get_json() or {}).get('prompt', '').strip()
+    if not prompt:
+        response = jsonify({'error': 'prompt가 필요합니다.'})
+        return add_cors_headers(response), 400
+
+    # 설정에 저장된 기본 프롬프트가 있으면 앞에 붙임
+    default_row = SystemConfig.query.filter_by(key='tc_default_prompt').first()
+    if default_row and (default_row.value or '').strip():
+        full_prompt = (default_row.value or '').strip() + "\n\n--- 사용자 입력 ---\n\n" + prompt
+    else:
+        full_prompt = prompt
+
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key:
+        response = jsonify({'error': 'OPENAI_API_KEY가 설정되지 않았습니다.'})
+        return add_cors_headers(response), 500
+
+    model = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
+    try:
+        payload = {
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a QA test case designer. Generate concise test cases in Korean. "
+                        "Return only JSON with key 'test_cases' containing an array of objects. "
+                        "Each object fields: name, main_category, sub_category, detail_category, "
+                        "pre_condition, expected_result, remark. Keep values short."
+                    ),
+                },
+                {"role": "user", "content": full_prompt},
+            ],
+            "temperature": 0.25,
+            "max_tokens": 800,
+            "response_format": {"type": "json_object"},
+        }
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+
+        r = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30,
+        )
+        if not r.ok:
+            response = jsonify({'error': f'OpenAI 호출 실패: {r.status_code} {r.text}'})
+            return add_cors_headers(response), 502
+
+        result = r.json()
+        content = (
+            result.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+            .strip()
+        )
+
+        parsed = {}
+        try:
+            parsed = json.loads(content) if content else {}
+        except json.JSONDecodeError:
+            parsed = {}
+
+        items = []
+        raw_items = parsed.get("test_cases") if isinstance(parsed, dict) else None
+        if raw_items is None and isinstance(parsed, list):
+            raw_items = parsed
+
+        if isinstance(raw_items, list):
+            for idx, item in enumerate(raw_items):
+                if not isinstance(item, dict):
+                    continue
+                items.append({
+                    "name": item.get("name") or f"AI 테스트 케이스 {idx+1}",
+                    "main_category": item.get("main_category", ""),
+                    "sub_category": item.get("sub_category", ""),
+                    "detail_category": item.get("detail_category", ""),
+                    "pre_condition": item.get("pre_condition", ""),
+                    "expected_result": item.get("expected_result", ""),
+                    "remark": item.get("remark", ""),
+                })
+
+        response = jsonify({
+            "items": items,
+            "raw": content,
+            "model": model,
+            "usage": result.get("usage", {}),
+        })
+        return add_cors_headers(response), 200
+
+    except requests.exceptions.Timeout:
+        response = jsonify({'error': 'OpenAI 응답 대기 시간 초과'})
+        return add_cors_headers(response), 504
+    except Exception as e:
+        logger.error(f"AI 테스트 케이스 생성 오류: {str(e)}")
+        response = jsonify({'error': 'AI 생성 중 오류가 발생했습니다.'})
+        return add_cors_headers(response), 500
 
 @testcases_bp.route('/testcases/<int:id>/history', methods=['GET'])
 @guest_allowed
@@ -234,6 +347,7 @@ def create_testcase():
         expected_result=data.get('expected_result', ''),
         result_status=data.get('result_status', 'N/T'),
         remark=data.get('remark', ''),
+        test_steps=data.get('test_steps') or None,
         environment=folder_environment,  # 폴더의 환경 정보 사용
         folder_id=folder_id,
         automation_code_path=data.get('automation_code_path', ''),
@@ -451,6 +565,8 @@ def update_testcase(id):
         tc.expected_result = data.get('expected_result', tc.expected_result)
         tc.result_status = data.get('result_status', tc.result_status)
         tc.remark = data.get('remark', tc.remark)
+        if 'test_steps' in data:
+            tc.test_steps = data.get('test_steps') or None
         tc.folder_id = new_folder_id
         tc.automation_code_path = data.get('automation_code_path', tc.automation_code_path)
         tc.automation_code_type = data.get('automation_code_type', tc.automation_code_type)
@@ -925,6 +1041,7 @@ def download_testcases_excel():
                 'expected_result': tc.expected_result,
                 'result_status': tc.result_status,
                 'remark': tc.remark,
+                'test_steps': getattr(tc, 'test_steps', None),
                 'environment': tc.environment,
                 'automation_code_path': tc.automation_code_path,
                 'automation_code_type': tc.automation_code_type,
@@ -969,14 +1086,51 @@ def download_testcases_excel():
 # 자동화 코드 실행 API
 @testcases_bp.route('/testcases/<int:id>/execute', methods=['POST'])
 def execute_automation_code(id):
-    """테스트 케이스의 자동화 코드 실행"""
+    """테스트 케이스의 자동화 코드 실행 (스크립트 경로 또는 test_steps JSON 지원)"""
     try:
         test_case = TestCase.query.get_or_404(id)
-        
+        body = request.get_json() or {}
+        base_url = body.get('baseUrl') or body.get('base_url') or os.environ.get('PLAYWRIGHT_BASE_URL', 'http://localhost:3000')
+
+        # 테스트 단계(JSON)만 있고 자동화 코드 경로가 없는 경우 → 단계 실행기로 실행
+        if not test_case.automation_code_path and test_case.test_steps:
+            try:
+                steps_data = json.loads(test_case.test_steps)
+            except (json.JSONDecodeError, TypeError):
+                response = jsonify({'error': '테스트 단계(test_steps) JSON 형식이 올바르지 않습니다'})
+                return add_cors_headers(response), 400
+            if not isinstance(steps_data, list) or len(steps_data) == 0:
+                response = jsonify({'error': '테스트 단계는 비어 있지 않은 배열이어야 합니다'})
+                return add_cors_headers(response), 400
+
+            start_time = time.time()
+            from utils.playwright_steps_runner import run_playwright_steps
+            run_result = run_playwright_steps(steps_data, base_url=base_url)
+            execution_duration = time.time() - start_time
+
+            test_result = TestResult(
+                test_case_id=id,
+                result=run_result['status'],
+                environment=test_case.environment,
+                execution_duration=execution_duration,
+                error_message=run_result.get('error')
+            )
+            db.session.add(test_result)
+            db.session.commit()
+
+            response = jsonify({
+                'message': '테스트 단계 실행 완료',
+                'result': run_result['status'],
+                'output': run_result.get('output', ''),
+                'error': run_result.get('error', ''),
+                'execution_duration': execution_duration
+            })
+            return add_cors_headers(response), 200
+
         if not test_case.automation_code_path:
-            response = jsonify({'error': '자동화 코드 경로가 설정되지 않았습니다'})
+            response = jsonify({'error': '자동화 코드 경로 또는 테스트 단계(test_steps)를 설정해 주세요'})
             return add_cors_headers(response), 400
-        
+
         # 자동화 코드 실행
         script_path = test_case.automation_code_path
         script_type = test_case.automation_code_type or 'playwright'

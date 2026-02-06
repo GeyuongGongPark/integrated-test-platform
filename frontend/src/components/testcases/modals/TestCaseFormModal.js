@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import TestCaseModal from './TestCaseModal';
 
 const TestCaseFormModal = ({ 
@@ -9,8 +9,19 @@ const TestCaseFormModal = ({
   onSubmit, 
   onCancel,
   users = [],
-  isEdit = false 
+  isEdit = false,
+  onAiGenerate,
+  aiGenerating = false,
+  aiError = ''
 }) => {
+  const [aiPrompt, setAiPrompt] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) {
+      setAiPrompt('');
+    }
+  }, [isOpen]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit();
@@ -46,6 +57,27 @@ const TestCaseFormModal = ({
       size="large"
     >
       <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label>AI 프롬프트로 설계</label>
+          <textarea
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            placeholder="기능/시나리오를 입력하면 테스트 케이스 초안을 제안합니다."
+            rows="3"
+          />
+          <div className="ai-actions">
+            <button
+              type="button"
+              className="testcase-btn testcase-btn-primary"
+              onClick={() => onAiGenerate && onAiGenerate(aiPrompt)}
+              disabled={aiGenerating}
+            >
+              {aiGenerating ? '생성 중...' : 'AI로 채우기'}
+            </button>
+            {aiError && <p className="error-text">{aiError}</p>}
+          </div>
+        </div>
+
         <div className="form-group">
           <label>대분류 *</label>
           <input 
@@ -122,6 +154,19 @@ const TestCaseFormModal = ({
             rows="3"
           />
         </div>
+
+        <div className="form-group">
+          <label>테스트 단계 (JSON, 코드 없이 실행)</label>
+          <textarea 
+            value={testCase.test_steps || ''}
+            onChange={(e) => handleChange('test_steps', e.target.value)}
+            placeholder={'예: [{"action":"navigate","url":"/"},{"action":"fill","selector":"#id","value":"admin"},{"action":"click","selector":"button[type=submit]"}]'}
+            rows="5"
+          />
+          <small className="form-hint">
+            자동화 코드 경로 없이 실행 버튼으로 동작합니다. action: navigate, click, fill, type, press, waitForTimeout, assertText 등.
+          </small>
+        </div>
         
         <div className="form-group">
           <label>자동화 코드 경로</label>
@@ -129,7 +174,7 @@ const TestCaseFormModal = ({
             type="text" 
             value={testCase.automation_code_path || ''}
             onChange={(e) => handleChange('automation_code_path', e.target.value)}
-            placeholder="자동화 코드 파일 경로를 입력하세요 (예: test-scripts/playwright/login.spec.js)"
+            placeholder="자동화 코드 파일 경로 (비워두면 위 테스트 단계만 사용)"
           />
         </div>
         

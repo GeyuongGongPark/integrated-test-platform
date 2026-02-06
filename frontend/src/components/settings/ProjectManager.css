@@ -17,7 +17,7 @@
   font-size: 1.8em;
 }
 
-.btn {
+.project-manager .btn {
   padding: 10px 20px;
   border: none;
   border-radius: 6px;
@@ -27,32 +27,32 @@
   transition: all 0.2s ease;
 }
 
-.btn-add {
+.project-manager .btn-add {
   background: #007bff;
   color: white;
 }
 
-.btn-add:hover {
+.project-manager .btn-add:hover {
   background: #0056b3;
   transform: translateY(-1px);
 }
 
-.btn-edit {
+.project-manager .btn-edit {
   background: #28a745;
   color: white;
   margin-right: 8px;
 }
 
-.btn-edit:hover {
+.project-manager .btn-edit:hover {
   background: #1e7e34;
 }
 
-.btn-delete {
+.project-manager .btn-delete {
   background: #dc3545;
   color: white;
 }
 
-.btn-delete:hover {
+.project-manager .btn-delete:hover {
   background: #c82333;
 }
 
@@ -116,7 +116,7 @@
   z-index: 1000;
 }
 
-.modal {
+.project-manager .modal-overlay .modal {
   background: white;
   border-radius: 8px;
   padding: 30px;
@@ -125,7 +125,7 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-.modal-header {
+.project-manager .modal-overlay .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -134,13 +134,13 @@
   border-bottom: 1px solid #e9ecef;
 }
 
-.modal-header h3 {
+.project-manager .modal-overlay .modal-header h3 {
   margin: 0;
   color: #333;
   font-size: 1.4em;
 }
 
-.modal-close {
+.project-manager .modal-overlay .modal-close {
   background: none;
   border: none;
   font-size: 24px;
@@ -154,22 +154,22 @@
   justify-content: center;
 }
 
-.modal-close:hover {
+.project-manager .modal-overlay .modal-close:hover {
   color: #333;
 }
 
-.form-group {
+.project-manager .modal .form-group {
   margin-bottom: 20px;
 }
 
-.form-group label {
+.project-manager .modal .form-group label {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
   color: #333;
 }
 
-.form-control {
+.project-manager .modal .form-control {
   width: 100%;
   padding: 12px;
   border: 1px solid #ddd;
@@ -178,39 +178,39 @@
   transition: border-color 0.2s ease;
 }
 
-.form-control:focus {
+.project-manager .modal .form-control:focus {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-textarea.form-control {
+.project-manager .modal textarea.form-control {
   resize: vertical;
   min-height: 100px;
 }
 
-.modal-actions {
+.project-manager .modal-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
   margin-top: 30px;
 }
 
-.btn-cancel {
+.project-manager .btn-cancel {
   background: #6c757d;
   color: white;
 }
 
-.btn-cancel:hover {
+.project-manager .btn-cancel:hover {
   background: #545b62;
 }
 
-.btn-save {
+.project-manager .btn-save {
   background: #007bff;
   color: white;
 }
 
-.btn-save:hover {
+.project-manager .btn-save:hover {
   background: #0056b3;
 }
 
@@ -228,8 +228,8 @@ textarea.form-control {
   font-size: 16px;
 }
 
-/* 전체화면 모달 스타일 */
-.fullscreen-modal {
+/* 프로젝트 관리 페이지 전용 모달 (스코프) */
+.project-manager .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -243,7 +243,7 @@ textarea.form-control {
   padding: 20px;
 }
 
-.fullscreen-modal-content {
+.project-manager .modal-overlay .modal.fullscreen-modal-content {
   width: 100%;
   max-width: 800px;
   max-height: 90vh;
@@ -255,7 +255,7 @@ textarea.form-control {
   overflow: hidden;
 }
 
-.fullscreen-modal-content .modal-header {
+.project-manager .modal-overlay .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -264,14 +264,14 @@ textarea.form-control {
   background: #f8f9fa;
 }
 
-.fullscreen-modal-content .modal-header h3 {
+.project-manager .modal-overlay .modal-header h3 {
   margin: 0;
   color: #333;
   font-size: 1.5em;
   font-weight: 600;
 }
 
-.fullscreen-modal-content .modal-close {
+.project-manager .modal-overlay .modal-close {
   background: none;
   border: none;
   font-size: 28px;
@@ -287,22 +287,22 @@ textarea.form-control {
   transition: all 0.2s ease;
 }
 
-.fullscreen-modal-content .modal-close:hover {
+.project-manager .modal-overlay .modal-close:hover {
   background: #e9ecef;
   color: #333;
 }
 
-.fullscreen-modal-content .modal-body {
+.project-manager .modal-overlay .modal-body {
   padding: 30px;
   flex: 1;
   overflow-y: auto;
 }
 
-.fullscreen-modal-content .form-group {
+.project-manager .modal-overlay .modal .form-group {
   margin-bottom: 25px;
 }
 
-.fullscreen-modal-content .form-group label {
+.project-manager .modal-overlay .modal .form-group label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
@@ -310,9 +310,9 @@ textarea.form-control {
   font-size: 14px;
 }
 
-.fullscreen-modal-content .form-group input,
-.fullscreen-modal-content .form-group textarea,
-.fullscreen-modal-content .form-group select {
+.project-manager .modal-overlay .modal .form-group input,
+.project-manager .modal-overlay .modal .form-group textarea,
+.project-manager .modal-overlay .modal .form-group select {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid #e9ecef;
@@ -322,20 +322,20 @@ textarea.form-control {
   background: white;
 }
 
-.fullscreen-modal-content .form-group input:focus,
-.fullscreen-modal-content .form-group textarea:focus,
-.fullscreen-modal-content .form-group select:focus {
+.project-manager .modal-overlay .modal .form-group input:focus,
+.project-manager .modal-overlay .modal .form-group textarea:focus,
+.project-manager .modal-overlay .modal .form-group select:focus {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
-.fullscreen-modal-content .form-group textarea {
+.project-manager .modal-overlay .modal .form-group textarea {
   resize: vertical;
   min-height: 120px;
 }
 
-.fullscreen-modal-content .modal-actions {
+.project-manager .modal-overlay .modal-actions {
   display: flex;
   gap: 15px;
   justify-content: flex-end;
@@ -344,7 +344,7 @@ textarea.form-control {
   background: #f8f9fa;
 }
 
-.fullscreen-modal-content .modal-actions .btn {
+.project-manager .modal-overlay .modal-actions .btn {
   padding: 12px 24px;
   font-size: 14px;
   font-weight: 600;
@@ -352,7 +352,7 @@ textarea.form-control {
   transition: all 0.2s ease;
 }
 
-.fullscreen-modal-content .modal-actions .btn:hover {
+.project-manager .modal-overlay .modal-actions .btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -376,33 +376,33 @@ textarea.form-control {
     justify-content: flex-end;
   }
   
-  .modal {
+  .project-manager .modal-overlay .modal {
     width: 95%;
     margin: 20px;
   }
 
-  .fullscreen-modal {
+  .project-manager .modal-overlay {
     padding: 10px;
   }
   
-  .fullscreen-modal-content {
+  .project-manager .modal-overlay .modal.fullscreen-modal-content {
     max-height: 95vh;
   }
   
-  .fullscreen-modal-content .modal-header {
+  .project-manager .modal-overlay .modal-header {
     padding: 15px 20px;
   }
   
-  .fullscreen-modal-content .modal-body {
+  .project-manager .modal-overlay .modal-body {
     padding: 20px;
   }
   
-  .fullscreen-modal-content .modal-actions {
+  .project-manager .modal-overlay .modal-actions {
     padding: 15px 20px;
     flex-direction: column;
   }
   
-  .fullscreen-modal-content .modal-actions .btn {
+  .project-manager .modal-overlay .modal-actions .btn {
     width: 100%;
   }
 } 

@@ -3,6 +3,8 @@ Flask-SQLAlchemy==3.0.5
 Flask-Migrate==4.0.5
 Flask-CORS==6.0.0
 Flask-JWT-Extended==4.5.3
+flasgger==0.9.7.1
+openai==1.44.0
 PyMySQL==1.1.1
 psycopg2-binary==2.9.10
 python-dotenv==1.0.0

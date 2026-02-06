@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ProjectManager from './ProjectManager';
 import FolderManager from './FolderManager';
 import AccountManager from './AccountManager';
+import PromptSettings from './PromptSettings';
 import { useAuth } from '../../contexts/AuthContext';
 import './Settings.css';
 
@@ -22,12 +23,18 @@ const Settings = () => {
     return user && (user.role === 'admin' || user.role === 'user');
   };
 
+  const canAccessPromptSettings = () => {
+    return user && (user.role === 'admin' || user.role === 'user');
+  };
+
   const renderContent = () => {
     switch (activeMenu) {
       case 'projects':
         return canAccessProjects() ? <ProjectManager /> : <div>접근 권한이 없습니다.</div>;
       case 'folders':
         return canAccessFolders() ? <FolderManager /> : <div>접근 권한이 없습니다.</div>;
+      case 'tc-prompt':
+        return canAccessPromptSettings() ? <PromptSettings /> : <div>접근 권한이 없습니다.</div>;
       case 'accounts':
         return canAccessAccounts() ? <AccountManager /> : <div>접근 권한이 없습니다.</div>;
       default:
@@ -75,6 +82,16 @@ const Settings = () => {
                     onClick={() => setActiveMenu('folders')}
                   >
                     📁 폴더 관리
+                  </button>
+                </li>
+              )}
+              {canAccessPromptSettings() && (
+                <li>
+                  <button 
+                    className={`snb-item ${activeMenu === 'tc-prompt' ? 'active' : ''}`}
+                    onClick={() => setActiveMenu('tc-prompt')}
+                  >
+                    🤖 AI TC 프롬프트
                   </button>
                 </li>
               )}

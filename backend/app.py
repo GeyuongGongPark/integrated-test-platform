@@ -8,6 +8,7 @@ import time
 from dotenv import load_dotenv
 from sqlalchemy import text
 from sqlalchemy import inspect
+from flasgger import Swagger
 
 # 모델 및 Blueprint 임포트
 from models import db, TestCase, TestResult, Screenshot
@@ -30,6 +31,7 @@ from routes.test_data import test_data_bp
 from routes.collaboration import collaboration_bp
 from routes.dependencies import dependencies_bp
 from routes.reports import reports_bp
+from routes.settings import settings_bp
 from utils.cors import setup_cors
 from flask_jwt_extended import JWTManager
 from utils.cors import setup_cors
@@ -49,6 +51,47 @@ app = Flask(__name__)
 
 # 앱 설정 적용
 configure_app(app)
+
+# Swagger 설정
+swagger_template = {
+    "swagger": "2.0",
+    "info": {
+        "title": "Integrated Test Platform API",
+        "description": "테스트/자동화 플랫폼 API를 Swagger UI에서 바로 호출할 수 있습니다.",
+        "version": "1.0.0"
+    },
+    "schemes": ["http", "https"],
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT 액세스 토큰을 `Bearer <token>` 형태로 전달"
+        }
+    }
+}
+
+swagger_config = {
+    "headers": [],
+    "specs": [
+        {
+            "endpoint": "apispec_1",
+            "route": "/apidocs/swagger.json",
+            "rule_filter": lambda rule: True,
+            "model_filter": lambda tag: True,
+        }
+    ],
+    "swagger_ui": True,
+    "specs_route": "/apidocs/",
+    # 정적 자산 경로를 명시적으로 고정 (Flasgger 기본: /flasgger_static)
+    "static_url_path": "/flasgger_static",
+    "swagger_ui_css": "/flasgger_static/swagger-ui.css",
+    "swagger_ui_bundle_js": "/flasgger_static/swagger-ui-bundle.js",
+    "swagger_ui_standalone_preset_js": "/flasgger_static/swagger-ui-standalone-preset.js",
+    "jquery_js": "/flasgger_static/lib/jquery.min.js",
+}
+
+swagger = Swagger(app, template=swagger_template, config=swagger_config)
 
 # 환경 확인
 is_vercel = is_vercel_environment()
@@ -137,6 +180,7 @@ app.register_blueprint(test_data_bp)
 app.register_blueprint(collaboration_bp, url_prefix='/api/collaboration')
 app.register_blueprint(dependencies_bp)
 app.register_blueprint(reports_bp)
+app.register_blueprint(settings_bp)
 
 # 헬퍼 함수들
 def create_cors_response(data=None, status_code=200):

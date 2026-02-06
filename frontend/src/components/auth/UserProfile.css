@@ -1,0 +1,69 @@
+.profile-page-container {
+  padding: 20px;
+  max-width: auto;
+  margin: 0 auto;
+  background: #f8f9fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.profile-page-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 25px;
+}
+
+.profile-main-card {
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.profile-section-header {
+  margin-bottom: 20px;
+}
+
+.profile-section-header h2 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 1.4em;
+}
+
+.profile-section-header p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.95em;
+}
+
+.profile-password-form {
+  margin-top: 10px;
+}
+
+.profile-placeholder h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #333;
+  font-size: 1.4em;
+}
+
+.profile-placeholder p {
+  margin: 4px 0;
+  color: #6c757d;
+  font-size: 0.95em;
+}
+
+.profile-snb {
+  /* 시각적으로 settings-snb와 동일하게 보이도록 Settings.css의 스타일을 활용함 */
+}
+
+@media (max-width: 768px) {
+  .profile-page-content {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-page-container {
+    padding: 15px;
+  }
+}
+

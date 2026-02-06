@@ -21,7 +21,7 @@
   font-size: 1.8em;
 }
 
-.btn-add {
+.account-container .btn-add {
   background: #28a745;
   color: white;
   padding: 10px 20px;
@@ -32,7 +32,7 @@
   transition: all 0.2s ease;
 }
 
-.btn-add:hover {
+.account-container .btn-add:hover {
   background: #218838;
   transform: translateY(-1px);
 }
@@ -295,43 +295,43 @@
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
-.btn-primary {
+.account-container .btn-primary {
   background: #007bff;
   color: white;
 }
 
-.btn-primary:hover {
+.account-container .btn-primary:hover {
   background: #0056b3;
 }
 
-.btn-secondary {
+.account-container .btn-secondary {
   background: #6c757d;
   color: white;
 }
 
-.btn-secondary:hover {
+.account-container .btn-secondary:hover {
   background: #545b62;
 }
 
-.btn-edit {
+.account-container .btn-edit {
   background: #17a2b8;
   color: white;
   padding: 6px 12px;
   font-size: 12px;
 }
 
-.btn-edit:hover {
+.account-container .btn-edit:hover {
   background: #138496;
 }
 
-.btn-delete {
+.account-container .btn-delete {
   background: #dc3545;
   color: white;
   padding: 6px 12px;
   font-size: 12px;
 }
 
-.btn-delete:hover {
+.account-container .btn-delete:hover {
   background: #c82333;
 }
 
@@ -381,8 +381,8 @@
   gap: 10px;
 }
 
-/* 모달 스타일 */
-.modal-overlay {
+/* 계정 관리 페이지 전용 모달 (스코프) */
+.account-container .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -395,7 +395,7 @@
   z-index: 1000;
 }
 
-.modal {
+.account-container .modal-overlay .modal {
   background: white;
   border-radius: 12px;
   padding: 0;
@@ -408,26 +408,26 @@
   flex-direction: column;
 }
 
-.modal-wide {
+.account-container .modal-overlay .modal-wide {
   min-width: 600px;
   max-width: 800px;
 }
 
-.modal-header {
+.account-container .modal-overlay .modal-header {
   background: transparent;
   color: #333;
   padding: 25px 30px;
   border-radius: 12px 12px 0 0;
 }
 
-.modal-header h3 {
+.account-container .modal-overlay .modal-header h3 {
   margin: 0;
   font-size: 1.4em;
   font-weight: 600;
   text-align: center;
 }
 
-.modal-content-grid {
+.account-container .modal-overlay .modal-content-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 30px;
@@ -436,13 +436,13 @@
   overflow-y: auto;
 }
 
-.modal-section {
+.account-container .modal-overlay .modal-section {
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
 
-.modal-section h4 {
+.account-container .modal-overlay .modal-section h4 {
   margin: 0 0 15px 0;
   color: #495057;
   font-size: 1.1em;
@@ -451,45 +451,44 @@
   font-weight: 600;
 }
 
-.form-row {
+.account-container .modal-overlay .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 15px;
 }
 
-.form-help {
+.account-container .modal-overlay .form-help {
   color: #6c757d;
   font-size: 12px;
   margin-top: 5px;
   display: block;
 }
 
-.modal-body {
+.account-container .modal-overlay .modal-body {
   padding: 30px;
   flex: 1;
   overflow-y: auto;
 }
 
-.modal-footer {
+.account-container .modal-overlay .modal-footer {
   background: transparent;
   padding: 20px 30px;
   border-radius: 0 0 12px 12px;
-  /* border-top: 1px solid #e9ecef; */
 }
 
-.form-group {
+.account-container .modal-overlay .form-group {
   margin-bottom: 20px;
 }
 
-.form-group label {
+.account-container .modal-overlay .form-group label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
   color: #555;
 }
 
-.form-group input,
-.form-group select {
+.account-container .modal-overlay .form-group input,
+.account-container .modal-overlay .form-group select {
   width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
@@ -505,7 +504,7 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }
 
-.modal-actions {
+.account-container .modal-overlay .modal-actions {
   background-color: #ffffff;
   display: flex;
   gap: 15px;
@@ -595,12 +594,12 @@
     gap: 15px;
   }
   
-  .modal-actions {
+  .account-container .modal-overlay .modal-actions {
     flex-direction: column;
     gap: 10px;
   }
   
-  .modal-actions .btn {
+  .account-container .modal-overlay .modal-actions .btn {
     width: 100%;
     justify-content: center;
   }

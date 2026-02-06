@@ -25,7 +25,41 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
-    """사용자 회원가입"""
+    """사용자 회원가입
+    ---
+    tags:
+      - Auth
+    consumes:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+            email:
+              type: string
+            password:
+              type: string
+            first_name:
+              type: string
+            last_name:
+              type: string
+            role:
+              type: string
+          required:
+            - username
+            - email
+            - password
+    responses:
+      201:
+        description: 회원가입 성공
+      400:
+        description: 유효하지 않은 요청
+    """
     if request.method == 'OPTIONS':
         return handle_options_request()
     
@@ -87,7 +121,32 @@ def create_new_user(data):
 
 @auth_bp.route('/login', methods=['POST', 'OPTIONS'])
 def login():
-    """사용자 로그인"""
+    """사용자 로그인
+    ---
+    tags:
+      - Auth
+    consumes:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+            password:
+              type: string
+          required:
+            - username
+            - password
+    responses:
+      200:
+        description: 로그인 성공 및 토큰 반환
+      401:
+        description: 인증 실패
+    """
     if request.method == 'OPTIONS':
         return handle_options_request()
     
@@ -136,7 +195,18 @@ def login():
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
-    """액세스 토큰 갱신"""
+    """액세스 토큰 갱신
+    ---
+    tags:
+      - Auth
+    security:
+      - BearerAuth: []
+    responses:
+      200:
+        description: 새 액세스 토큰 반환
+      401:
+        description: 인증 실패
+    """
     try:
         current_user_id = get_jwt_identity()
         new_access_token = create_access_token(identity=current_user_id)
@@ -152,7 +222,14 @@ def refresh():
 
 @auth_bp.route('/guest', methods=['POST', 'OPTIONS'])
 def guest_login():
-    """게스트 로그인"""
+    """게스트 로그인
+    ---
+    tags:
+      - Auth
+    responses:
+      200:
+        description: 게스트 토큰 반환
+    """
     if request.method == 'OPTIONS':
         return handle_options_request()
     
