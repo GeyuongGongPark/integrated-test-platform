@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { formatUTCToKST } from '../../utils/dateUtils';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@tms/contexts/AuthContext';
+import { formatUTCToKST } from '@tms/utils/dateUtils';
 import './Auth.css';
 import './UserProfile.css';
 
@@ -8,6 +8,7 @@ const UserProfile = () => {
   const { user, changePassword, logout } = useAuth();
   const [activeMenu, setActiveMenu] = useState('account'); // account, notifications, login, login-fail, security, logout
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const isGuest = user?.role === 'guest';
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -68,6 +69,12 @@ const UserProfile = () => {
     logout();
   };
 
+  useEffect(() => {
+    if (isGuest && !['account', 'logout'].includes(activeMenu)) {
+      setActiveMenu('account');
+    }
+  }, [activeMenu, isGuest]);
+
   const renderAccountSection = () => (
     <>
       <div className="profile-section-header">
@@ -92,10 +99,18 @@ const UserProfile = () => {
           <label>역할</label>
           <span>{user?.role === 'admin' ? '관리자' : user?.role === 'user' ? '사용자' : user?.role || '알 수 없음'}</span>
         </div>
-        <div className="profile-field">
-          <label>가입일</label>
-          <span>{user?.created_at ? formatUTCToKST(user.created_at) : '알 수 없음'}</span>
-        </div>
+        {!isGuest && (
+          <div className="profile-field">
+            <label>가입일</label>
+            <span>{user?.created_at ? formatUTCToKST(user.created_at) : '알 수 없음'}</span>
+          </div>
+        )}
+        {isGuest && (
+          <div className="profile-field">
+            <label>로그인 일시</label>
+            <span>{user?.created_at ? formatUTCToKST(user.created_at) : '알 수 없음'}</span>
+          </div>
+        )}
       </div>
 
       {message.text && (
@@ -104,17 +119,19 @@ const UserProfile = () => {
         </div>
       )}
 
-      <div className="profile-actions">
-        <button
-          type="button"
-          className="auth-button auth-button-secondary"
-          onClick={() => setShowPasswordForm(!showPasswordForm)}
-        >
-          {showPasswordForm ? '비밀번호 변경 취소' : '🔒 비밀번호 변경'}
-        </button>
-      </div>
+      {!isGuest && (
+        <div className="profile-actions">
+          <button
+            type="button"
+            className="auth-button auth-button-secondary"
+            onClick={() => setShowPasswordForm(!showPasswordForm)}
+          >
+            {showPasswordForm ? '비밀번호 변경 취소' : '🔒 비밀번호 변경'}
+          </button>
+        </div>
+      )}
 
-      {showPasswordForm && (
+      {!isGuest && showPasswordForm && (
         <form onSubmit={handlePasswordSubmit} className="auth-form profile-password-form">
           <div className="form-group">
             <label htmlFor="currentPassword">현재 비밀번호</label>
@@ -257,42 +274,50 @@ const UserProfile = () => {
                   계정 설정
                 </button>
               </li>
+              {!isGuest && (
+                <li>
+                  <button
+                    className={`snb-item ${activeMenu === 'notifications' ? 'active' : ''}`}
+                    onClick={() => setActiveMenu('notifications')}
+                  >
+                    알림 / 이메일 수신 설정
+                  </button>
+                </li>
+              )}
+              {!isGuest && (
+                <li>
+                  <button
+                    className={`snb-item ${activeMenu === 'login' ? 'active' : ''}`}
+                    onClick={() => setActiveMenu('login')}
+                  >
+                    로그인 기록
+                  </button>
+                </li>
+              )}
+              {!isGuest && (
+                <li>
+                  <button
+                    className={`snb-item ${activeMenu === 'login-fail' ? 'active' : ''}`}
+                    onClick={() => setActiveMenu('login-fail')}
+                  >
+                    로그인 실패 기록
+                  </button>
+                </li>
+              )}
+              {!isGuest && (
+                <li>
+                  <button
+                    className={`snb-item ${activeMenu === 'security' ? 'active' : ''}`}
+                    onClick={() => setActiveMenu('security')}
+                  >
+                    보안
+                  </button>
+                </li>
+              )}
               <li>
                 <button
-                  className={`snb-item ${activeMenu === 'notifications' ? 'active' : ''}`}
-                  onClick={() => setActiveMenu('notifications')}
-                >
-                  알림 / 이메일 수신 설정
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`snb-item ${activeMenu === 'login' ? 'active' : ''}`}
-                  onClick={() => setActiveMenu('login')}
-                >
-                  로그인 기록
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`snb-item ${activeMenu === 'login-fail' ? 'active' : ''}`}
-                  onClick={() => setActiveMenu('login-fail')}
-                >
-                  로그인 실패 기록
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`snb-item ${activeMenu === 'security' ? 'active' : ''}`}
-                  onClick={() => setActiveMenu('security')}
-                >
-                  보안
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`snb-item ${activeMenu === 'logout' ? 'active' : ''}`}
-                  onClick={() => setActiveMenu('logout')}
+                  className="snb-item"
+                  onClick={handleLogout}
                 >
                   로그아웃
                 </button>
