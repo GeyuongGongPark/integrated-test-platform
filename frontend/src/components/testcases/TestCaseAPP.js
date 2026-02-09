@@ -1,9 +1,9 @@
 // src/TestCaseApp.js - 리팩토링된 버전
 import React, { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
-import config from '../../config';
-import { useAuth } from '../../contexts/AuthContext';
-import { formatUTCToKST } from '../../utils/dateUtils';
+import config from '@tms/config';
+import { useAuth } from '@tms/contexts/AuthContext';
+import { formatUTCToKST } from '@tms/utils/dateUtils';
 import JiraIssuesList from '../jira/JiraIssuesList';
 
 // 컴포넌트 임포트
@@ -14,9 +14,9 @@ import TestCaseModal from './modals/TestCaseModal';
 import TestCaseFormModal from './modals/TestCaseFormModal';
 
 // 훅 임포트
-import { useTestCaseData } from '../../hooks/useTestCaseData';
-import { useTestCaseFilters } from '../../hooks/useTestCaseFilters';
-import { useTestCasePagination } from '../../hooks/useTestCasePagination';
+import { useTestCaseData } from '@tms/hooks/useTestCaseData';
+import { useTestCaseFilters } from '@tms/hooks/useTestCaseFilters';
+import { useTestCasePagination } from '@tms/hooks/useTestCasePagination';
 
 // 스타일 임포트
 import './TestCaseAPP.css';
@@ -402,14 +402,74 @@ const TestCaseAPP = ({ setActiveTab }) => {
     const total = filteredTestCases.length;
     const tested = Math.max(total - counts.nt, 0);
     const passRate = tested > 0 ? Math.round((counts.pass / tested) * 100) : 0;
+    const calcPercent = (value) => (total > 0 ? Math.round((value / total) * 100) : 0);
+    const percentPass = calcPercent(counts.pass);
+    const percentFail = calcPercent(counts.fail);
+    const percentBlock = calcPercent(counts.block);
+    const percentNt = Math.max(0, 100 - percentPass - percentFail - percentBlock);
+    const ntCombined = counts.nt + counts.na;
 
     return {
       total,
       tested,
       passRate,
+      percentPass,
+      percentFail,
+      percentBlock,
+      percentNt,
+      ntCombined,
       ...counts
     };
   }, [filteredTestCases]);
+
+  const pieSegments = useMemo(() => {
+    const total = statusSummary.total;
+    const segments = [
+      { key: 'pass', label: 'Pass', value: statusSummary.pass, color: '#28a745' },
+      { key: 'block', label: 'Block', value: statusSummary.block, color: '#ffc107' },
+      { key: 'fail', label: 'Fail', value: statusSummary.fail, color: '#dc3545' },
+      { key: 'nt', label: 'N/T', value: statusSummary.ntCombined, color: '#e2e3e5' }
+    ].filter((item) => item.value > 0);
+
+    if (total === 0) {
+      return [];
+    }
+
+    let startAngle = 0;
+    return segments.map((segment) => {
+      const angle = (segment.value / total) * 360;
+      const endAngle = startAngle + angle;
+      const percent = Math.round((segment.value / total) * 100);
+      const data = {
+        ...segment,
+        startAngle,
+        endAngle,
+        percent
+      };
+      startAngle = endAngle;
+      return data;
+    });
+  }, [statusSummary]);
+
+  const polarToCartesian = (cx, cy, r, angleInDegrees) => {
+    const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+    return {
+      x: cx + r * Math.cos(angleInRadians),
+      y: cy + r * Math.sin(angleInRadians)
+    };
+  };
+
+  const describeArc = (cx, cy, r, startAngle, endAngle) => {
+    const start = polarToCartesian(cx, cy, r, endAngle);
+    const end = polarToCartesian(cx, cy, r, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+    return [
+      `M ${cx} ${cy}`,
+      `L ${start.x} ${start.y}`,
+      `A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`,
+      'Z'
+    ].join(' ');
+  };
 
   // 페이지네이션 훅
   const {
@@ -951,22 +1011,63 @@ const TestCaseAPP = ({ setActiveTab }) => {
           <div className="testcase-stats">
             <div className="stats-card stats-overview">
               <div className="stats-title">진행 현황</div>
-              <div className="stats-metrics">
-                <div className="stats-item">
-                  <span className="stats-label">Pass</span>
-                  <span className="stats-value">{statusSummary.pass}</span>
+              <div className="stats-donut-wrap">
+                <div className="stats-pie">
+                  <svg className="stats-pie-svg" viewBox="0 0 100 100" role="img">
+                    {statusSummary.total === 0 ? (
+                      <circle cx="50" cy="50" r="50" fill="#e2e3e5">
+                        <title>데이터 없음</title>
+                      </circle>
+                    ) : pieSegments.length === 1 ? (
+                      <circle cx="50" cy="50" r="50" fill={pieSegments[0].color}>
+                        <title>{`${pieSegments[0].label}: ${pieSegments[0].value} (${pieSegments[0].percent}%)`}</title>
+                      </circle>
+                    ) : (
+                      pieSegments.map((segment) => (
+                        <path
+                          key={segment.key}
+                          d={describeArc(50, 50, 50, segment.startAngle, segment.endAngle)}
+                          fill={segment.color}
+                        >
+                          <title>{`${segment.label}: ${segment.value} (${segment.percent}%)`}</title>
+                        </path>
+                      ))
+                    )}
+                  </svg>
                 </div>
-                <div className="stats-item">
-                  <span className="stats-label">Fail</span>
-                  <span className="stats-value">{statusSummary.fail}</span>
-                </div>
-                <div className="stats-item">
-                  <span className="stats-label">Block</span>
-                  <span className="stats-value">{statusSummary.block}</span>
-                </div>
-                <div className="stats-item">
-                  <span className="stats-label">N/T</span>
-                  <span className="stats-value">{statusSummary.nt}</span>
+                <div className="stats-table">
+                  <div className="stats-table-title">상세 테이블</div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>상태</th>
+                        <th>건수</th>
+                        <th>비율</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><span className="stats-status stats-status-pass">Pass</span></td>
+                        <td>{statusSummary.pass}</td>
+                        <td>{statusSummary.percentPass}%</td>
+                      </tr>
+                      <tr>
+                        <td><span className="stats-status stats-status-block">Block</span></td>
+                        <td>{statusSummary.block}</td>
+                        <td>{statusSummary.percentBlock}%</td>
+                      </tr>
+                      <tr>
+                        <td><span className="stats-status stats-status-fail">Fail</span></td>
+                        <td>{statusSummary.fail}</td>
+                        <td>{statusSummary.percentFail}%</td>
+                      </tr>
+                      <tr>
+                        <td><span className="stats-status stats-status-nt">N/T</span></td>
+                        <td>{statusSummary.ntCombined}</td>
+                        <td>{statusSummary.percentNt}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
               <div className="stats-footer">
