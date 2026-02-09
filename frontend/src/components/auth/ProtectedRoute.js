@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@tms/contexts/AuthContext';
 import Auth from './Auth';
 
 const ProtectedRoute = ({ children }) => {

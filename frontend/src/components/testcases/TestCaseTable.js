@@ -1,5 +1,5 @@
 import React from 'react';
-// import { formatUTCToKST } from '../../utils/dateUtils';
+// import { formatUTCToKST } from '@tms/utils/dateUtils';
 import './TestCaseTable.css';
 
 const TestCaseTable = ({

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import config from '../../config';
-import { useAuth } from '../../contexts/AuthContext';
+import config from '@tms/config';
+import { useAuth } from '@tms/contexts/AuthContext';
 import './ProjectManager.css';
 
 axios.defaults.baseURL = config.apiUrl;

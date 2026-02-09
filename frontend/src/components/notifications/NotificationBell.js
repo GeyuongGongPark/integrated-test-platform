@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import config from '../../config';
+import config from '@tms/config';
 import './NotificationBell.css';
 
 const NotificationBell = () => {

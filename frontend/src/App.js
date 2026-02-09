@@ -12,7 +12,7 @@ import UserProfile from './components/auth/UserProfile';
 import JiraIssuesList from './components/jira/JiraIssuesList';
 import NotificationBell from './components/notifications/NotificationBell';
 import { ErrorBoundary } from './components/utils';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from '@tms/contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function AppContent() {

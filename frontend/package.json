@@ -18,13 +18,14 @@
     "react-dom": "^19.2.1",
     "react-scripts": "^5.0.1",
     "react-syntax-highlighter": "^16.1.0",
+    "vercel": "^50.13.2",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "CI=false react-scripts build",
+    "start": "craco start",
+    "build": "CI=false craco build",
     "vercel-build": "CI=false npm run build",
-    "test": "react-scripts test",
+    "test": "craco test",
     "eject": "react-scripts eject"
   },
   "homepage": ".",
@@ -55,5 +56,8 @@
     "nth-check": "^2.1.1",
     "postcss": "^8.4.31",
     "svgo": "^2.8.0"
+  },
+  "devDependencies": {
+    "@craco/craco": "^7.1.0"
   }
 }

@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import config from '../../config';
-import { useAuth } from '../../contexts/AuthContext';
-import { formatUTCToKST } from '../../utils/dateUtils';
+import config from '@tms/config';
+import { useAuth } from '@tms/contexts/AuthContext';
+import { formatUTCToKST } from '@tms/utils/dateUtils';
 import JiraIssuesList from '../jira/JiraIssuesList';
 
 // 컴포넌트 임포트
@@ -13,9 +13,9 @@ import TestCaseModal from './modals/TestCaseModal';
 import TestCaseFormModal from './modals/TestCaseFormModal';
 
 // 훅 임포트
-import { useTestCaseData } from '../../hooks/useTestCaseData';
-import { useTestCaseFilters } from '../../hooks/useTestCaseFilters';
-import { useTestCasePagination } from '../../hooks/useTestCasePagination';
+import { useTestCaseData } from '@tms/hooks/useTestCaseData';
+import { useTestCaseFilters } from '@tms/hooks/useTestCaseFilters';
+import { useTestCasePagination } from '@tms/hooks/useTestCasePagination';
 
 // 스타일 임포트
 import './TestCaseAPP.css';

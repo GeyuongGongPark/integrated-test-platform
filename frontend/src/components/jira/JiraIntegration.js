@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import config from '../../config';
+import config from '@tms/config';
 import PromptModal from '../common/PromptModal';
 import './JiraIntegration.css';
 

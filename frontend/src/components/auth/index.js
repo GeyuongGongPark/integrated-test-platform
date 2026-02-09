@@ -1,4 +1,4 @@
 export { default as Auth } from './Auth';
 export { default as Login } from './Login';
 export { default as Register } from './Register';
-export { AuthProvider, useAuth } from '../../contexts/AuthContext';
+export { AuthProvider, useAuth } from '@tms/contexts/AuthContext';

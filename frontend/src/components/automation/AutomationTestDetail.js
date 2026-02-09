@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import config from '../../config';
-import { formatUTCToKST, formatUnixTimestampToKST } from '../../utils/dateUtils';
+import config from '@tms/config';
+import { formatUTCToKST, formatUnixTimestampToKST } from '@tms/utils/dateUtils';
 import './AutomationTestDetail.css';
 
 // 스크린샷 갤러리 컴포넌트

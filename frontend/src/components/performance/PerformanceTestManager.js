@@ -1,9 +1,9 @@
 // src/PerformanceTestManager.js
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import config from '../../config';
-import { useAuth } from '../../contexts/AuthContext';
-import { formatUTCToKST } from '../../utils/dateUtils';
+import config from '@tms/config';
+import { useAuth } from '@tms/contexts/AuthContext';
+import { formatUTCToKST } from '@tms/utils/dateUtils';
 import './PerformanceTestManager.css';
 import '../common/Modal.css';
 

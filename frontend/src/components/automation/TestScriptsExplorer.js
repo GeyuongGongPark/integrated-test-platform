@@ -27,7 +27,7 @@ const FileTreeItem = ({ item, level = 0, scriptType }) => {
   const loadChildren = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/test-scripts/explore?path=${encodeURIComponent(item.path)}`);
+      const response = await axios.get(`${config.apiUrl}/api/test-scripts/explore?path=${encodeURIComponent(item.path)}`);
       
       // scriptType에 따라 필터링
       let filteredChildren = response.data.children || [];

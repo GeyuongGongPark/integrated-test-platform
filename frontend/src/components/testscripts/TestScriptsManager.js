@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import config from '../../config';
-import { useAuth } from '../../contexts/AuthContext';
+import config from '@tms/config';
+import { useAuth } from '@tms/contexts/AuthContext';
 import MonacoEditor from '@monaco-editor/react';
 import PromptModal from '../common/PromptModal';
 import './TestScriptsManager.css';

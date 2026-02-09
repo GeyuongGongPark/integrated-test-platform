@@ -3,7 +3,7 @@ import ProjectManager from './ProjectManager';
 import FolderManager from './FolderManager';
 import AccountManager from './AccountManager';
 import PromptSettings from './PromptSettings';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@tms/contexts/AuthContext';
 import './Settings.css';
 
 const Settings = () => {
