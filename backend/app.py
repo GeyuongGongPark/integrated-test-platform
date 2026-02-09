@@ -111,27 +111,14 @@ migrate = Migrate(app, db)
 jwt = JWTManager(app)
 
 # SocketIO 초기화 (CORS 설정 포함)
-# async_mode를 명시적으로 지정하여 에러 방지
-# eventlet이 설치되어 있으면 사용, 없으면 threading 모드 사용
-try:
-    import eventlet
-    # eventlet이 설치되어 있으면 사용
-    socketio = SocketIO(
-        app,
-        cors_allowed_origins="*",
-        async_mode='eventlet',
-        logger=True,
-        engineio_logger=True
-    )
-except (ImportError, ValueError):
-    # eventlet이 없거나 사용할 수 없는 경우 threading 모드 사용
-    socketio = SocketIO(
-        app,
-        cors_allowed_origins="*",
-        async_mode='threading',
-        logger=True,
-        engineio_logger=True
-    )
+# 기본값은 threading으로 고정 (eventlet에서 요청이 멈추는 현상 방지)
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='threading',
+    logger=True,
+    engineio_logger=True
+)
 
 @jwt.expired_token_loader
 def expired_token_callback(jwt_header, jwt_payload):

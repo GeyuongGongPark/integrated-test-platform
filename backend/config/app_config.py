@@ -84,21 +84,23 @@ def get_database_engine_options(database_url):
             logger.info("로컬 환경에서 SQLite 사용")
         return {}
     else:
-        # MySQL 환경 (Vercel 또는 로컬)
+        # MySQL/Postgres 환경 (Vercel 또는 로컬)
         options = {
             'pool_pre_ping': True,
             'pool_recycle': 300,
-            'connect_args': {
+        }
+
+        if 'mysql' in database_url:
+            options['connect_args'] = {
                 'connect_timeout': 10,
                 'read_timeout': 30,
                 'write_timeout': 30
             }
-        }
-        
-        # Vercel 환경에서만 SSL 사용
-        if is_vercel:
-            options['connect_args']['ssl'] = {'ssl': True}
-        
+
+            # Vercel 환경에서만 SSL 사용
+            if is_vercel:
+                options['connect_args']['ssl'] = {'ssl': True}
+
         return options
 
 def configure_app(app):

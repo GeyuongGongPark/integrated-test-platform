@@ -16,16 +16,17 @@ def test_database_connection(app):
     
     for i in range(max_retries):
         try:
-            # 데이터베이스 연결 테스트
-            if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
-                db.session.execute(text('SELECT 1'))
-                logger.info(f"SQLite 연결 테스트 성공 (시도 {i+1}/{max_retries})")
-                return True
-            else:
-                db.session.execute(text('SELECT 1'))
-                db.session.commit()
-                logger.info(f"MySQL 연결 테스트 성공 (시도 {i+1}/{max_retries})")
-                return True
+            with app.app_context():
+                # 데이터베이스 연결 테스트
+                if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
+                    db.session.execute(text('SELECT 1'))
+                    logger.info(f"SQLite 연결 테스트 성공 (시도 {i+1}/{max_retries})")
+                    return True
+                else:
+                    db.session.execute(text('SELECT 1'))
+                    db.session.commit()
+                    logger.info(f"MySQL 연결 테스트 성공 (시도 {i+1}/{max_retries})")
+                    return True
         except Exception as e:
             logger.error(f"데이터베이스 연결 실패 (시도 {i+1}/{max_retries}): {e}")
             if i < max_retries - 1:

@@ -10,6 +10,10 @@ def admin_required(fn):
     """관리자 권한 확인 데코레이터"""
     @wraps(fn)
     def wrapper(*args, **kwargs):
+        # OPTIONS 요청은 인증 없이 통과 (CORS preflight)
+        if request.method == 'OPTIONS':
+            return fn(*args, **kwargs)
+
         try:
             logger.debug(f"admin_required 데코레이터 실행 - 요청 URL: {request.url}")
             logger.debug(f"Authorization 헤더: {request.headers.get('Authorization', '없음')}")

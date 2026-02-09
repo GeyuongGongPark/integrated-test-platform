@@ -49,18 +49,16 @@ def get_testcases_summary_all():
     
     try:
         # 실제 DB에 저장된 값으로 환경별/테스트 결과별 카운트 계산
-        query = text("""
-            SELECT 
-                environment, 
-                result_status, 
-                COUNT(*) as count 
-            FROM TestCases
-            GROUP BY environment, result_status
-            ORDER BY environment, result_status
-        """)
-        
-        result = db.session.execute(query)
-        stats = result.fetchall()
+        stats = (
+            db.session.query(
+                TestCase.environment,
+                TestCase.result_status,
+                func.count().label('count')
+            )
+            .group_by(TestCase.environment, TestCase.result_status)
+            .order_by(TestCase.environment, TestCase.result_status)
+            .all()
+        )
         
         # 환경별로 데이터 그룹화
         env_stats = {}
